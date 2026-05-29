@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Campus Connect",
+    "slug": "campus-connect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
+    "scheme": "campusconnect",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.campusconnect.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow access to camera to take photos for posts and profile",
+        "NSPhotoLibraryUsageDescription": "Allow access to photo library to select images for posts and profile",
+        "NSPhotoLibraryAddUsageDescription": "Allow saving photos to your library"
+      }
+    },
+    "android": {
+      "package": "com.campusconnect.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "android.permission.DETECT_SCREEN_CAPTURE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#4F46E5",
+          "sounds": []
+        }
+      ],
+      "expo-updates"
+    ],
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 5000,
+      "url": "https://u.expo.dev/af96bf4c-8624-458c-b7a1-6d99f8958bfb"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "af96bf4c-8624-458c-b7a1-6d99f8958bfb"
+      }
+    },
+    "owner": "jaswanth202122"
+  }
+}
