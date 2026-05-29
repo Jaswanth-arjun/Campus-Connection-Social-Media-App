@@ -41,7 +41,8 @@
         }
       ],
       "expo-updates",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ],
     "updates": {
       "enabled": true,
