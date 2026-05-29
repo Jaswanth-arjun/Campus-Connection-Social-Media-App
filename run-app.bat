@@ -32,7 +32,7 @@ echo   Emulator connected!
 :waitboot
 adb shell getprop sys.boot_completed 2>nul | findstr "1" >nul
 if %errorlevel% neq 0 (
-    timeout /t 2 /nobreak >nul
+    ping -n 3 127.0.0.1 >nul
     goto waitboot
 )
 echo   Pixel 8 fully booted!
@@ -54,7 +54,7 @@ start "Campus Connect Metro Bundler" cmd.exe /c "npx expo start --clear"
 :: 6. Launch Expo Go on the emulator automatically
 echo.
 echo [5/5] Launching Expo Go on the emulator...
-timeout /t 5 /nobreak >nul
+ping -n 6 127.0.0.1 >nul
 adb shell monkey -p host.exp.exponent -c android.intent.category.LAUNCHER 1 >nul 2>&1
 echo.
 echo ====================================================
