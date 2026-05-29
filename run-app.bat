@@ -22,7 +22,7 @@ if %errorlevel% equ 0 (
 
 :: 3. Start the emulator if not running
 echo   Starting Pixel 8 Emulator...
-start "" emulator.exe @Pixel_8 -gpu host -no-snapshot-load
+start "" emulator.exe @Pixel_8 -gpu host -no-snapshot-load -dns-server 8.8.8.8,8.8.4.4
 
 echo   Waiting for Pixel 8 to boot up (this may take a moment)...
 adb wait-for-device
