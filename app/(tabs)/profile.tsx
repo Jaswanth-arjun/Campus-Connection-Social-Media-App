@@ -55,11 +55,29 @@ export default function ProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.2, // Compressed for fast Firestore profile avatar storage
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setEditAvatar(result.assets[0].uri);
+      if (result.assets[0].base64) {
+        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setEditAvatar(base64Uri);
+      } else {
+        // Fallback for Web
+        try {
+          const res = await fetch(result.assets[0].uri);
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setEditAvatar(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          console.error(e);
+          setEditAvatar(result.assets[0].uri);
+        }
+      }
     }
   };
 
@@ -71,10 +89,18 @@ export default function ProfileScreen() {
       let avatarUrl = currentUser.avatar;
 
       if (editAvatar) {
-        avatarUrl = await storageService.uploadImage(
-          editAvatar,
-          `avatars/${currentUser.uid}/${Date.now()}`
-        );
+        if (editAvatar.startsWith('data:')) {
+          avatarUrl = editAvatar;
+        } else {
+          try {
+            avatarUrl = await storageService.uploadImage(
+              editAvatar,
+              `avatars/${currentUser.uid}/${Date.now()}`
+            );
+          } catch (e) {
+            avatarUrl = editAvatar;
+          }
+        }
       }
 
       await updateProfile({
