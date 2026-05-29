@@ -37,11 +37,28 @@ export const postService = {
       let fileUrl = '';
 
       if (imageUri) {
-        imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
+        if (imageUri.startsWith('data:')) {
+          imageUrl = imageUri;
+        } else {
+          try {
+            imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
+          } catch (e) {
+            // Fallback to direct URI (e.g. if it's already base64 or storage is unavailable)
+            imageUrl = imageUri;
+          }
+        }
       }
 
       if (fileUri && fileName) {
-        fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
+        if (fileUri.startsWith('data:')) {
+          fileUrl = fileUri;
+        } else {
+          try {
+            fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
+          } catch (e) {
+            fileUrl = fileUri;
+          }
+        }
       }
 
       const postRef = await addDoc(collection(db, 'posts'), {

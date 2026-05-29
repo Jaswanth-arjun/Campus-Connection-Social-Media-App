@@ -76,11 +76,29 @@ export default function FeedScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.25, // Highly compressed so it fits inside 1MB Firestore limit
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+      if (result.assets[0].base64) {
+        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setSelectedImage(base64Uri);
+      } else {
+        // Fallback for web or devices where base64 is missing
+        try {
+          const res = await fetch(result.assets[0].uri);
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSelectedImage(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          console.error('Error fallback reading image base64:', e);
+          setSelectedImage(result.assets[0].uri);
+        }
+      }
     }
   };
 
@@ -90,7 +108,37 @@ export default function FeedScreen() {
     });
 
     if (result.canceled === false && result.assets[0]) {
-      setSelectedFile({ uri: result.assets[0].uri, name: result.assets[0].name });
+      if (Platform.OS === 'web') {
+        try {
+          const res = await fetch(result.assets[0].uri);
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSelectedFile({ uri: reader.result as string, name: result.assets[0].name });
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          console.error('Web file read error:', e);
+        }
+      } else {
+        try {
+          const FileSystem = require('expo-file-system');
+          const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
+          let mimeType = 'application/octet-stream';
+          if (result.assets[0].name.toLowerCase().endsWith('.pdf')) mimeType = 'application/pdf';
+          else if (result.assets[0].name.toLowerCase().endsWith('.doc')) mimeType = 'application/msword';
+          else if (result.assets[0].name.toLowerCase().endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+          const base64Uri = `data:${mimeType};base64,${base64}`;
+          setSelectedFile({ uri: base64Uri, name: result.assets[0].name });
+        } catch (error) {
+          console.error('Error reading file as base64:', error);
+          Alert.alert('Error', 'Failed to read selected file');
+        }
+      }
     }
   };
 
