@@ -171,17 +171,19 @@ export default function FeedScreen() {
       setSelectedFile(null);
       setShowCreateModal(false);
 
-      Toast.show({
-        type: 'success',
-        text1: 'Posted!',
-        text2: 'Your post is now live 🎉',
-      });
+      if (Platform.OS === 'web') {
+        alert('Posted! Your post is now live 🎉');
+      } else {
+        Alert.alert('Success', 'Your post is now live 🎉');
+      }
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.message || 'Failed to create post',
-      });
+      console.error('Failed to create post:', error);
+      const errMsg = error.message || 'Failed to create post';
+      if (Platform.OS === 'web') {
+        alert('Error: ' + errMsg);
+      } else {
+        Alert.alert('Error', errMsg);
+      }
     } finally {
       setIsCreating(false);
     }
