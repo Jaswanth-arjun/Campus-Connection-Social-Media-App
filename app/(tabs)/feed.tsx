@@ -26,7 +26,7 @@ import Toast from 'react-native-toast-message';
 
 export default function FeedScreen() {
   const { currentUser } = useAuth();
-  const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore } = usePosts();
+  const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore, deletePost } = usePosts();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [content, setContent] = useState('');
@@ -52,6 +52,24 @@ export default function FeedScreen() {
 
   const handleComment = (postId: string) => {
     // Navigate to post detail
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      if (Platform.OS === 'web') {
+        alert('Post deleted successfully! 🎉');
+      } else {
+        Alert.alert('Deleted', 'Post deleted successfully! 🎉');
+      }
+    } catch (error: any) {
+      const errMsg = error.message || 'Failed to delete post';
+      if (Platform.OS === 'web') {
+        alert('Error: ' + errMsg);
+      } else {
+        Alert.alert('Error', errMsg);
+      }
+    }
   };
 
   const handleSearch = async () => {
@@ -272,6 +290,7 @@ export default function FeedScreen() {
               currentUserId={currentUser?.uid}
               onLike={() => handleLike(post.id)}
               onComment={() => handleComment(post.id)}
+              onDelete={() => handleDeletePost(post.id)}
             />
           ))
         )}

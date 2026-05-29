@@ -33,6 +33,7 @@ interface PostState {
   fetchPost: (postId: string) => Promise<void>;
   fetchComments: (postId: string) => Promise<void>;
   searchPosts: (query: string) => Promise<void>;
+  deletePost: (postId: string) => Promise<void>;
   setCurrentPost: (post: Post | null) => void;
   setPosts: (posts: Post[]) => void;
 }
@@ -160,6 +161,20 @@ export const usePostStore = create<PostState>((set, get) => ({
       set({ isLoading: true });
       const posts = await postService.searchPosts(query);
       set({ posts, isLoading: false });
+    } catch (error: any) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  deletePost: async (postId: string) => {
+    try {
+      set({ isLoading: true });
+      await postService.deletePost(postId);
+      set({
+        posts: get().posts.filter((post) => post.id !== postId),
+        isLoading: false,
+      });
     } catch (error: any) {
       set({ isLoading: false });
       throw error;

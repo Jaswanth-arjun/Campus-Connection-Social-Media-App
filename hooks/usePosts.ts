@@ -18,6 +18,7 @@ export const usePosts = (postId?: string) => {
     fetchPost,
     fetchComments,
     searchPosts,
+    deletePost,
     setCurrentPost,
     setPosts,
   } = usePostStore();
@@ -52,6 +53,7 @@ export const usePosts = (postId?: string) => {
     fetchPost,
     fetchComments,
     searchPosts,
+    deletePost,
     loadMore: () => fetchPosts(false),
   };
 };

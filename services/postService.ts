@@ -17,6 +17,7 @@ import {
   onSnapshot,
   QueryDocumentSnapshot,
   increment,
+  deleteDoc,
 } from 'firebase/firestore';
 import { Post, Comment } from '../types';
 import { storageService } from './storageService';
@@ -253,5 +254,13 @@ export const postService = {
       callback(posts);
     });
     return unsubscribe;
+  },
+
+  async deletePost(postId: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'posts', postId));
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to delete post');
+    }
   },
 };

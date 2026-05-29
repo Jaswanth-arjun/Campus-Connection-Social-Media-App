@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, Share } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Share, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,6 +12,7 @@ interface PostCardProps {
   currentUserId?: string;
   onLike?: () => void;
   onComment?: () => void;
+  onDelete?: () => void;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   currentUserId,
   onLike,
   onComment,
+  onDelete,
   className = '',
 }) => {
   const isLiked = currentUserId && post.likes.includes(currentUserId);
@@ -30,6 +32,26 @@ export const PostCard: React.FC<PostCardProps> = ({
         message: `${post.authorName}: ${post.content}\n\n— Campus Connect`,
       });
     } catch (_) {}
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      if (Platform.OS === 'web') {
+        const confirmDelete = window.confirm('Are you sure you want to delete this post?');
+        if (confirmDelete) {
+          onDelete();
+        }
+      } else {
+        Alert.alert(
+          'Delete Post',
+          'Are you sure you want to delete this post permanently?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: onDelete },
+          ]
+        );
+      }
+    }
   };
 
   return (
@@ -49,9 +71,15 @@ export const PostCard: React.FC<PostCardProps> = ({
             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
           </Text>
         </View>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="ellipsis-horizontal" size={18} color="#94A3B8" />
-        </TouchableOpacity>
+        {currentUserId === post.authorId && onDelete && (
+          <TouchableOpacity 
+            onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/30"
+          >
+            <Ionicons name="trash-outline" size={17} color="#EF4444" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Content */}
