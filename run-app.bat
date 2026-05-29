@@ -10,6 +10,7 @@ set "PATH=%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\emulator;%PATH%"
 
 :: 1. Kill any existing Node/Metro processes to avoid Port 8081 conflicts
 echo [1/5] Freeing up dev ports...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8081 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
 taskkill /f /im node.exe >nul 2>&1
 
 :: 2. Check if Pixel_8 emulator is already running
