@@ -49,7 +49,7 @@ echo.
 echo [4/5] Spawning Metro Server in a new window...
 echo       (This prevents IDE hangs and keeps the console fully interactive!)
 echo ====================================================
-start "Campus Connect Metro Bundler" cmd.exe /c "npx expo start --clear"
+start "Campus Connect Metro Bundler" cmd.exe /c "npx expo start --android --clear"
 
 :: 6. Launch Expo Go on the emulator automatically
 echo.
