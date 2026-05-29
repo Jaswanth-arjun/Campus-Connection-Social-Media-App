@@ -42,6 +42,7 @@ interface ChatState {
   setActiveRoom: (room: ChatRoom | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  setRooms: (rooms: ChatRoom[]) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -135,5 +136,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   addMessage: (message: Message) => {
     set({ messages: [...get().messages, message] });
+  },
+
+  setRooms: (rooms: ChatRoom[]) => {
+    set({ rooms });
   },
 }));

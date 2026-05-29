@@ -1,3 +1,5 @@
+// @ts-ignore
+import '../global.css';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { useAuth } from '../hooks/useAuth';
@@ -9,13 +11,9 @@ export default function RootLayout() {
   const { isLoading, isAuthenticated, loadUser } = useAuth();
   const { isChecking, isDownloading } = useAppUpdates();
 
-  useEffect(() => {
-    loadUser();
-  }, []);
-
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff' }}>
         <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
@@ -24,8 +22,9 @@ export default function RootLayout() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" redirect={!isAuthenticated} />
-        <Stack.Screen name="(tabs)" redirect={isAuthenticated} />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
       <Toast />
     </>

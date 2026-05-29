@@ -34,6 +34,7 @@ interface PostState {
   fetchComments: (postId: string) => Promise<void>;
   searchPosts: (query: string) => Promise<void>;
   setCurrentPost: (post: Post | null) => void;
+  setPosts: (posts: Post[]) => void;
 }
 
 export const usePostStore = create<PostState>((set, get) => ({
@@ -49,7 +50,7 @@ export const usePostStore = create<PostState>((set, get) => ({
       set({ isLoading: true });
       const { lastPost } = get();
       
-      const newPosts = await postService.fetchPosts(refresh ? undefined : lastPost);
+      const newPosts = await postService.fetchPosts(refresh ? undefined : (lastPost || undefined));
       
       if (refresh) {
         set({ posts: newPosts, lastPost: newPosts[newPosts.length - 1] as any, hasMore: newPosts.length >= 10 });
@@ -167,5 +168,9 @@ export const usePostStore = create<PostState>((set, get) => ({
 
   setCurrentPost: (post: Post | null) => {
     set({ currentPost: post });
+  },
+
+  setPosts: (posts: Post[]) => {
+    set({ posts });
   },
 }));

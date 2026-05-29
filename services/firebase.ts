@@ -2,7 +2,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getMessaging, Messaging } from 'firebase/messaging';
+import { Platform } from 'react-native';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -18,7 +18,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
-let messaging: Messaging;
+let messaging: any = null;
 
 if (!getApps().length) {
   try {
@@ -26,7 +26,15 @@ if (!getApps().length) {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
-    messaging = getMessaging(app);
+    // Only initialize messaging on native platforms (crashes on web without service worker)
+    if (Platform.OS !== 'web') {
+      try {
+        const { getMessaging } = require('firebase/messaging');
+        messaging = getMessaging(app);
+      } catch (e) {
+        console.warn('Firebase messaging not available:', e);
+      }
+    }
   } catch (error) {
     console.error('Firebase initialization error:', error);
   }
@@ -35,7 +43,14 @@ if (!getApps().length) {
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
-  messaging = getMessaging(app);
+  if (Platform.OS !== 'web') {
+    try {
+      const { getMessaging } = require('firebase/messaging');
+      messaging = getMessaging(app);
+    } catch (e) {
+      console.warn('Firebase messaging not available:', e);
+    }
+  }
 }
 
 export { app, auth, db, storage, messaging };

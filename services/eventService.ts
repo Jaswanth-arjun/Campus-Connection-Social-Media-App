@@ -7,12 +7,12 @@ import {
   getDoc,
   getDocs,
   query,
-  orderBy,
   where,
   arrayUnion,
   arrayRemove,
   serverTimestamp,
   onSnapshot,
+  limit,
 } from 'firebase/firestore';
 import { Event } from '../types';
 import { storageService } from './storageService';
@@ -66,23 +66,37 @@ export const eventService = {
   async fetchEvents(category?: string): Promise<Event[]> {
     try {
       let eventsQuery;
+      let shouldSortInMemory = false;
+
       if (category && category !== 'All') {
+        // Querying with where + orderBy on different fields requires a composite index.
+        // We query using only where, and sort in memory.
         eventsQuery = query(
           collection(db, 'events'),
-          where('category', '==', category),
-          orderBy('date', 'asc')
+          where('category', '==', category)
         );
+        shouldSortInMemory = true;
       } else {
+        const { orderBy } = require('firebase/firestore');
         eventsQuery = query(collection(db, 'events'), orderBy('date', 'asc'));
       }
 
       const snapshot = await getDocs(eventsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        date: doc.data().date?.toDate() || new Date(),
-      })) as Event[];
+      let events = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          date: data.date?.toDate() || new Date(),
+        };
+      }) as Event[];
+
+      if (shouldSortInMemory) {
+        events.sort((a, b) => a.date.getTime() - b.date.getTime());
+      }
+
+      return events;
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch events');
     }
@@ -127,20 +141,28 @@ export const eventService = {
 
   async searchEvents(queryText: string): Promise<Event[]> {
     try {
+      // where on title and orderBy on date requires a composite index.
+      // We search on title first and sort by date in memory.
       const eventsQuery = query(
         collection(db, 'events'),
         where('title', '>=', queryText),
         where('title', '<=', queryText + '\uf8ff'),
-        orderBy('date', 'asc'),
-        limit(20)
+        limit(50)
       );
       const snapshot = await getDocs(eventsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        date: doc.data().date?.toDate() || new Date(),
-      })) as Event[];
+      const events = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          date: data.date?.toDate() || new Date(),
+        };
+      }) as Event[];
+
+      return events
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .slice(0, 20);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to search events');
     }

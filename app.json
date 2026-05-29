@@ -5,7 +5,6 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "icon": "./assets/images/icon.png",
     "scheme": "campusconnect",
     "assetBundlePatterns": [
       "**/*"
@@ -21,10 +20,6 @@
     },
     "android": {
       "package": "com.campusconnect.app",
-      "adaptiveIcon": {
-        "backgroundColor": "#4F46E5",
-        "foregroundImage": "./assets/images/icon.png"
-      },
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -45,7 +40,8 @@
           "sounds": []
         }
       ],
-      "expo-updates"
+      "expo-updates",
+      "expo-secure-store"
     ],
     "updates": {
       "enabled": true,
@@ -57,9 +53,6 @@
       "policy": "appVersion"
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "af96bf4c-8624-458c-b7a1-6d99f8958bfb"
       }

@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   onSnapshot,
   QueryDocumentSnapshot,
+  increment,
 } from 'firebase/firestore';
 import { Post, Comment } from '../types';
 import { storageService } from './storageService';
@@ -82,11 +83,14 @@ export const postService = {
       }
 
       const snapshot = await getDocs(postsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Post[];
+      return snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Post[];
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch posts');
     }
@@ -145,7 +149,7 @@ export const postService = {
       } as Omit<Comment, 'id' | 'createdAt'> & { createdAt: any });
 
       await updateDoc(doc(db, 'posts', postId), {
-        commentsCount: arrayUnion(1),
+        commentsCount: increment(1),
       });
 
       return commentRef.id;
@@ -173,19 +177,27 @@ export const postService = {
 
   async searchPosts(queryText: string): Promise<Post[]> {
     try {
+      // Querying with range where + orderBy requires a composite index.
+      // We search by range and sort by createdAt in memory.
       const postsQuery = query(
         collection(db, 'posts'),
         where('content', '>=', queryText),
         where('content', '<=', queryText + '\uf8ff'),
-        orderBy('createdAt', 'desc'),
-        limit(20)
+        limit(50)
       );
       const snapshot = await getDocs(postsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Post[];
+      const posts = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Post[];
+
+      return posts
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 20);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to search posts');
     }
@@ -202,6 +214,26 @@ export const postService = {
       } else {
         callback(null);
       }
+    });
+    return unsubscribe;
+  },
+
+  subscribeToPosts(callback: (posts: Post[]) => void): () => void {
+    const postsQuery = query(
+      collection(db, 'posts'),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
+    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
+      const posts = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Post[];
+      callback(posts);
     });
     return unsubscribe;
   },

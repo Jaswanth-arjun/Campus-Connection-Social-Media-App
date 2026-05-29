@@ -19,12 +19,13 @@ export const useChat = (roomId?: string) => {
     setActiveRoom,
     setMessages,
     addMessage,
+    setRooms,
   } = useChatStore();
 
   useEffect(() => {
     if (currentUser) {
-      const unsubscribe = chatService.subscribeToRooms(currentUser.uid, (rooms) => {
-        // Update rooms in store
+      const unsubscribe = chatService.subscribeToRooms(currentUser.uid, (roomsList) => {
+        setRooms(roomsList);
       });
       fetchRooms(currentUser.uid);
       return () => unsubscribe();
@@ -33,15 +34,27 @@ export const useChat = (roomId?: string) => {
 
   useEffect(() => {
     if (roomId) {
-      const unsubscribe = chatService.subscribeToMessages(roomId, (messages) => {
-        setMessages(messages);
+      // 1. Subscribe to messages
+      const unsubscribe = chatService.subscribeToMessages(roomId, (messagesList) => {
+        setMessages(messagesList);
       });
+
+      // 2. Fetch and set the active room details (especially to get the actual name)
+      const existingRoom = rooms.find((r) => r.id === roomId);
+      if (existingRoom) {
+        setActiveRoom(existingRoom);
+      } else {
+        chatService.getRoom(roomId).then((room) => {
+          if (room) setActiveRoom(room);
+        });
+      }
+
       if (currentUser) {
         markMessagesAsRead(roomId, currentUser.uid);
       }
       return () => unsubscribe();
     }
-  }, [roomId, currentUser]);
+  }, [roomId, currentUser, rooms]);
 
   return {
     rooms,

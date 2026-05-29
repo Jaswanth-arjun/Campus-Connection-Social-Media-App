@@ -11,26 +11,29 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  RefreshControl,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePosts } from '../../hooks/usePosts';
 import { useAuth } from '../../hooks/useAuth';
 import { PostCard } from '../../components/PostCard';
 import { EmptyState } from '../../components/EmptyState';
-import { SearchBar } from '../../components/SearchBar';
+import { UserAvatar } from '../../components/UserAvatar';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
 
 export default function FeedScreen() {
   const { currentUser } = useAuth();
-  const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts } = usePosts();
+  const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore } = usePosts();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [content, setContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ uri: string; name: string } | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleLike = async (postId: string) => {
@@ -59,12 +62,21 @@ export default function FeedScreen() {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchPosts(true);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -89,7 +101,7 @@ export default function FeedScreen() {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Please add content, image, or file',
+        text2: 'Please add some content',
       });
       return;
     }
@@ -99,20 +111,22 @@ export default function FeedScreen() {
       await createPost(
         currentUser.uid,
         currentUser.name,
-        currentUser.avatar,
+        currentUser.avatar || '',
         content,
         selectedImage || undefined,
-        selectedFile?.uri,
-        selectedFile?.name
+        selectedFile?.uri || undefined,
+        selectedFile?.name || undefined
       );
-      setShowCreateModal(false);
+
       setContent('');
       setSelectedImage(null);
       setSelectedFile(null);
+      setShowCreateModal(false);
+
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'Post created successfully',
+        text1: 'Posted!',
+        text2: 'Your post is now live 🎉',
       });
     } catch (error: any) {
       Toast.show({
@@ -127,38 +141,72 @@ export default function FeedScreen() {
 
   const handleLoadMore = () => {
     if (hasMore && !isLoading) {
-      // Load more posts
+      loadMore();
     }
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <View className="px-4 pt-4 pb-2 bg-white dark:bg-gray-900">
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search posts..."
-          className="mb-2"
-        />
-        <TouchableOpacity onPress={handleSearch} className="bg-primary-600 rounded-lg py-2 items-center">
-          <Text className="text-white font-medium">Search</Text>
-        </TouchableOpacity>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <StatusBar barStyle="dark-content" />
+
+      {/* Premium Header */}
+      <View className="bg-white dark:bg-slate-900 px-4 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <View className="flex-row items-center justify-between mb-3">
+          <View>
+            <Text className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Feed
+            </Text>
+            <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+              Stay updated with your campus
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowCreateModal(true)}
+            className="bg-primary-600 w-10 h-10 rounded-xl items-center justify-center shadow-md shadow-primary-200 dark:shadow-none"
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Inline Search */}
+        <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-2.5">
+          <Ionicons name="search" size={18} color="#94A3B8" />
+          <TextInput
+            className="flex-1 text-slate-900 dark:text-white text-sm ml-2.5 py-0"
+            placeholder="Search posts, topics..."
+            placeholderTextColor="#94A3B8"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => { setSearchQuery(''); fetchPosts(true); }}>
+              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
+      {/* Posts Feed */}
       <ScrollView
         ref={scrollViewRef}
-        className="flex-1 px-4 py-4"
+        className="flex-1 px-4 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
+        }
         onScroll={({ nativeEvent }) => {
           if (isCloseToBottom(nativeEvent)) {
             handleLoadMore();
           }
-        }
-        }
+        }}
         scrollEventThrottle={400}
       >
         {isLoading && posts.length === 0 ? (
           <View className="flex-1 items-center justify-center py-20">
             <ActivityIndicator size="large" color="#4F46E5" />
+            <Text className="text-slate-400 mt-3 text-sm">Loading posts...</Text>
           </View>
         ) : posts.length === 0 ? (
           <EmptyState
@@ -179,88 +227,107 @@ export default function FeedScreen() {
         )}
 
         {isLoading && posts.length > 0 && (
-          <View className="py-4">
+          <View className="py-4 items-center">
             <ActivityIndicator size="small" color="#4F46E5" />
           </View>
         )}
+
+        {/* Bottom padding for tab bar */}
+        <View className="h-6" />
       </ScrollView>
 
-      <TouchableOpacity
-        onPress={() => setShowCreateModal(true)}
-        className="absolute bottom-20 right-4 bg-primary-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
+      {/* Create Post Modal */}
       <Modal visible={showCreateModal} animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 bg-white dark:bg-gray-900"
+          className="flex-1 bg-white dark:bg-slate-900"
         >
-          <View className="flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+          {/* Modal Header */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-              <Ionicons name="close" size={28} color="#9CA3AF" />
+              <Text className="text-slate-500 font-medium text-base">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-900 dark:text-white">Create Post</Text>
-            <TouchableOpacity onPress={handleCreatePost} disabled={isCreating}>
-              <Text className="text-primary-600 font-semibold">Post</Text>
+            <Text className="text-lg font-bold text-slate-900 dark:text-white">New Post</Text>
+            <TouchableOpacity
+              onPress={handleCreatePost}
+              disabled={isCreating}
+              className="bg-primary-600 px-5 py-2 rounded-xl shadow-sm"
+            >
+              {isCreating ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-semibold text-sm">Post</Text>
+              )}
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1 p-4">
+          <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+            {/* Author Row */}
             <View className="flex-row items-start mb-4">
-              <View className="w-10 h-10 rounded-full bg-gray-300 mr-3" />
-              <TextInput
-                className="flex-1 text-gray-900 dark:text-white text-lg"
-                placeholder="What's on your mind?"
-                placeholderTextColor="#9CA3AF"
-                value={content}
-                onChangeText={setContent}
-                multiline
-                textAlignVertical="top"
-              />
+              <UserAvatar uri={currentUser?.avatar} size={44} />
+              <View className="ml-3">
+                <Text className="font-semibold text-slate-900 dark:text-white text-base">
+                  {currentUser?.name}
+                </Text>
+                <Text className="text-xs text-slate-400">Posting to Campus Feed</Text>
+              </View>
             </View>
 
+            <TextInput
+              className="text-slate-900 dark:text-white text-base leading-6"
+              style={{ minHeight: 120 }}
+              placeholder="What's happening on campus?"
+              placeholderTextColor="#94A3B8"
+              value={content}
+              onChangeText={setContent}
+              multiline
+              textAlignVertical="top"
+            />
+
             {selectedImage && (
-              <View className="relative mb-4">
+              <View className="relative mb-4 mt-2">
                 <Image
                   source={{ uri: selectedImage }}
-                  className="w-full h-48 rounded-lg"
+                  className="w-full h-52 rounded-2xl"
+                  resizeMode="cover"
                 />
                 <TouchableOpacity
                   onPress={() => setSelectedImage(null)}
-                  className="absolute top-2 right-2 bg-black/50 rounded-full p-2"
+                  className="absolute top-3 right-3 bg-black/60 rounded-full p-1.5"
                 >
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             )}
 
             {selectedFile && (
-              <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4 flex-row items-center justify-between">
+              <View className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 mb-4 mt-2 flex-row items-center justify-between border border-slate-100 dark:border-slate-700">
                 <View className="flex-row items-center flex-1">
-                  <Ionicons name="document" size={24} color="#4F46E5" />
-                  <Text className="ml-2 text-gray-900 dark:text-white" numberOfLines={1}>
+                  <View className="bg-primary-50 dark:bg-primary-900 w-10 h-10 rounded-xl items-center justify-center mr-3">
+                    <Ionicons name="document" size={20} color="#4F46E5" />
+                  </View>
+                  <Text className="text-slate-700 dark:text-white text-sm flex-1" numberOfLines={1}>
                     {selectedFile.name}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedFile(null)}>
-                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                  <Ionicons name="close-circle" size={22} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
             )}
-
-            <View className="flex-row space-x-4">
-              <TouchableOpacity onPress={handlePickImage} className="flex-row items-center">
-                <Ionicons name="image" size={24} color="#4F46E5" />
-                <Text className="ml-2 text-gray-700 dark:text-gray-300">Photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handlePickFile} className="flex-row items-center">
-                <Ionicons name="document-attach" size={24} color="#4F46E5" />
-                <Text className="ml-2 text-gray-700 dark:text-gray-300">File</Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+
+          {/* Bottom Toolbar */}
+          <View className="flex-row items-center px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <TouchableOpacity onPress={handlePickImage} className="flex-row items-center mr-6 bg-primary-50 dark:bg-primary-950 px-4 py-2.5 rounded-xl">
+              <Ionicons name="image" size={20} color="#4F46E5" />
+              <Text className="ml-2 text-primary-600 dark:text-primary-400 font-medium text-sm">Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handlePickFile} className="flex-row items-center bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-xl">
+              <Ionicons name="document-attach" size={20} color="#64748B" />
+              <Text className="ml-2 text-slate-600 dark:text-slate-300 font-medium text-sm">File</Text>
+            </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { Message } from '../types';
 import { FileAttachment } from './FileAttachment';
+import { UserAvatar } from './UserAvatar';
 
 interface ChatBubbleProps {
   message: Message;
@@ -18,9 +19,9 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
     >
       {!isOwn && (
         <View className="mr-2">
-          <Image
-            source={{ uri: message.senderAvatar }}
-            className="w-8 h-8 rounded-full"
+          <UserAvatar
+            uri={message.senderAvatar}
+            size={32}
           />
         </View>
       )}

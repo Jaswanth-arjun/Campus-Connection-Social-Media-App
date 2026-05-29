@@ -5,6 +5,7 @@ import {
   signOut,
   sendPasswordResetEmail,
   updateProfile,
+  sendEmailVerification,
   User as FirebaseUser,
 } from 'firebase/auth';
 import {
@@ -32,6 +33,13 @@ export const authService = {
       const user = userCredential.user;
 
       await updateProfile(user, { displayName: name });
+      
+      // Send verification link to college email ID
+      try {
+        await sendEmailVerification(user);
+      } catch (err) {
+        console.warn('Failed to send verification email immediately:', err);
+      }
 
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,

@@ -19,10 +19,14 @@ export const usePosts = (postId?: string) => {
     fetchComments,
     searchPosts,
     setCurrentPost,
+    setPosts,
   } = usePostStore();
 
   useEffect(() => {
-    fetchPosts(true);
+    const unsubscribe = postService.subscribeToPosts((postsList) => {
+      setPosts(postsList);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

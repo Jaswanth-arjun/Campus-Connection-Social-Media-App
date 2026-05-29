@@ -8,20 +8,11 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug"
-      },
-      "channel": "development"
-    },
-    "emulator": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": {
         "buildType": "apk"
       },
       "channel": "development",
       "env": {
-        "APP_VARIANT": "emulator"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     },
     "preview": {
@@ -29,20 +20,20 @@
       "android": {
         "buildType": "apk"
       },
-      "ios": {
-        "simulator": false
-      },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      }
     },
     "production": {
       "distribution": "store",
       "android": {
         "buildType": "app-bundle"
       },
-      "ios": {
-        "autoIncrement": true
-      },
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      }
     }
   },
   "submit": {

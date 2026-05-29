@@ -27,13 +27,23 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
+    // Strict NBKRIST college email check: must end with @nbkrist.org
+    if (!email.toLowerCase().endsWith('@nbkrist.org')) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please use your valid NBKRIST email (e.g. rollnumber@nbkrist.org)',
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       await authService.resetPassword(email);
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Password reset email sent',
+        text2: 'Password reset email sent to your NBKRIST mail ID',
       });
       router.back();
     } catch (error: any) {
@@ -52,7 +62,7 @@ export default function ForgotPasswordScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white dark:bg-gray-900"
     >
-      <ScrollView className="flex-1" contentContainerClassName="flex-1 justify-center p-6">
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View className="mb-8">
           <Text className="text-4xl font-bold text-primary-600 mb-2">Reset Password</Text>
           <Text className="text-gray-600 dark:text-gray-400">
@@ -65,7 +75,7 @@ export default function ForgotPasswordScreen() {
             <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Email</Text>
             <TextInput
               className="bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-              placeholder="Enter your email"
+              placeholder="rollnumber@nbkrist.org"
               placeholderTextColor="#9CA3AF"
               value={email}
               onChangeText={setEmail}

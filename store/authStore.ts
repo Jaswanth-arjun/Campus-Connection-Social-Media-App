@@ -13,6 +13,7 @@ interface AuthState {
   updateProfile: (updates: Partial<User>) => Promise<void>;
   loadUser: () => Promise<void>;
   setCurrentUser: (user: User | null) => void;
+  setLoading: (isLoading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -29,6 +30,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
+      } else {
+        throw new Error('User profile not found');
       }
     } catch (error: any) {
       set({ isLoading: false });
@@ -45,6 +48,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
+      } else {
+        throw new Error('Failed to create user profile');
       }
     } catch (error: any) {
       set({ isLoading: false });
@@ -80,7 +85,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     try {
-      set({ isLoading: true });
       const userJson = await AsyncStorage.getItem('user');
       if (userJson) {
         const userData = JSON.parse(userJson);
@@ -94,6 +98,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setCurrentUser: (user: User | null) => {
-    set({ currentUser: user, isAuthenticated: !!user });
+    set({ currentUser: user, isAuthenticated: !!user, isLoading: false });
+  },
+
+  setLoading: (isLoading: boolean) => {
+    set({ isLoading });
   },
 }));

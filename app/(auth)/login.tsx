@@ -8,23 +8,35 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-
   const handleLogin = async () => {
     if (!email || !password) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
+        text1: 'Required',
         text2: 'Please fill in all fields',
+      });
+      return;
+    }
+
+    // Strict NBKRIST college email check: must end with @nbkrist.org
+    if (!email.toLowerCase().endsWith('@nbkrist.org')) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Email',
+        text2: 'Please use your valid NBKRIST email (e.g. rollnumber@nbkrist.org)',
       });
       return;
     }
@@ -40,8 +52,8 @@ export default function LoginScreen() {
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: error.message || 'Login failed',
+        text1: 'Login Failed',
+        text2: error.message || 'Please check your credentials',
       });
     } finally {
       setIsLoading(false);
@@ -51,65 +63,115 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white dark:bg-gray-900"
+      className="flex-1 bg-slate-50 dark:bg-slate-950"
     >
-      <ScrollView className="flex-1" contentContainerClassName="flex-1 justify-center p-6">
-        <View className="mb-8">
-          <Text className="text-4xl font-bold text-primary-600 mb-2">Campus Connect</Text>
-          <Text className="text-gray-600 dark:text-gray-400">Connect with your campus community</Text>
+      <StatusBar barStyle={Platform.OS === 'ios' ? 'dark-content' : 'default'} />
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Decorative Blob/Header */}
+        <View className="items-center mb-10">
+          <View className="w-16 h-16 bg-primary-600 rounded-2xl items-center justify-center shadow-lg shadow-primary-300 dark:shadow-none mb-4 rotate-12">
+            <Ionicons name="school" size={32} color="#FFFFFF" className="-rotate-12" />
+          </View>
+          <Text className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Campus Connect
+          </Text>
+          <Text className="text-slate-500 dark:text-slate-400 mt-2 text-center text-sm px-4">
+            The exclusive digital hub for college students. Connect, share, and collaborate.
+          </Text>
         </View>
 
-        <View className="space-y-4">
-          <View>
-            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Email</Text>
-            <TextInput
-              className="bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-              placeholder="Enter your email"
-              placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+        {/* Form Container */}
+        <View className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+          <Text className="text-xl font-bold text-slate-850 dark:text-white mb-6">
+            Welcome Back
+          </Text>
 
-          <View>
-            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Password</Text>
-            <TextInput
-              className="bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-              placeholder="Enter your password"
-              placeholderTextColor="#9CA3AF"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+          <View className="space-y-4">
+            {/* Email Input */}
+            <View>
+              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
+                College Email
+              </Text>
+              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
+                <Ionicons name="mail" size={20} color="#94A3B8" className="mr-3" />
+                <TextInput
+                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
+                  placeholder="rollnumber@nbkrist.org"
+                  placeholderTextColor="#94A3B8"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
 
-          <TouchableOpacity
-            onPress={() => router.push('/(auth)/forgot-password')}
-            className="self-end"
-          >
-            <Text className="text-primary-600 font-medium">Forgot Password?</Text>
-          </TouchableOpacity>
+            {/* Password Input */}
+            <View>
+              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
+                Password
+              </Text>
+              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
+                <Ionicons name="lock-closed" size={20} color="#94A3B8" className="mr-3" />
+                <TextInput
+                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
+                  placeholder="••••••••"
+                  placeholderTextColor="#94A3B8"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={20}
+                    color="#94A3B8"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoading}
-            className="bg-primary-600 rounded-xl py-4 items-center"
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text className="text-white font-semibold text-lg">Login</Text>
-            )}
-          </TouchableOpacity>
+            {/* Forgot Password Link */}
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/forgot-password')}
+              className="self-end pt-1"
+            >
+              <Text className="text-primary-600 dark:text-primary-400 font-medium text-sm">
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
 
-          <View className="flex-row items-center justify-center mt-4">
-            <Text className="text-gray-600 dark:text-gray-400">Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text className="text-primary-600 font-medium">Register</Text>
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              disabled={isLoading}
+              className="bg-primary-600 rounded-2xl py-4 items-center flex-row justify-center mt-2 shadow-lg shadow-primary-200 dark:shadow-none"
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text className="text-white font-semibold text-base mr-2">Login</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                </>
+              )}
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Footer */}
+        <View className="flex-row items-center justify-center mt-8">
+          <Text className="text-slate-500 dark:text-slate-400">Don't have an account? </Text>
+          <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+            <Text className="text-primary-600 dark:text-primary-400 font-semibold">Register</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

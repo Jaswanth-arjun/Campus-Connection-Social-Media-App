@@ -8,7 +8,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   onSnapshot,
   arrayUnion,
   serverTimestamp,
@@ -42,16 +41,21 @@ export const chatService = {
     try {
       const roomsQuery = query(
         collection(db, 'chatRooms'),
-        where('members', 'array-contains', userId),
-        orderBy('lastMessageTime', 'desc')
+        where('members', 'array-contains', userId)
       );
       const snapshot = await getDocs(roomsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        lastMessageTime: doc.data().lastMessageTime?.toDate() || new Date(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as ChatRoom[];
+      const rooms = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          lastMessageTime: data.lastMessageTime?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as ChatRoom[];
+
+      // Sort in memory to bypass composite index requirements
+      return rooms.sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch chat rooms');
     }
@@ -158,17 +162,22 @@ export const chatService = {
   },
 
   subscribeToMessages(roomId: string, callback: (messages: Message[]) => void): () => void {
+    // Only sorting by createdAt is fine here (no where clause with orderBy)
+    const { orderBy } = require('firebase/firestore');
     const messagesQuery = query(
       collection(db, 'chatRooms', roomId, 'messages'),
       orderBy('createdAt', 'asc')
     );
     
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const messages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Message[];
+      const messages = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Message[];
       callback(messages);
     });
     
@@ -178,17 +187,23 @@ export const chatService = {
   subscribeToRooms(userId: string, callback: (rooms: ChatRoom[]) => void): () => void {
     const roomsQuery = query(
       collection(db, 'chatRooms'),
-      where('members', 'array-contains', userId),
-      orderBy('lastMessageTime', 'desc')
+      where('members', 'array-contains', userId)
     );
     
     const unsubscribe = onSnapshot(roomsQuery, (snapshot) => {
-      const rooms = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        lastMessageTime: doc.data().lastMessageTime?.toDate() || new Date(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as ChatRoom[];
+      const rooms = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          lastMessageTime: data.lastMessageTime?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as ChatRoom[];
+
+      // Sort in memory to bypass composite index requirements
+      rooms.sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
+      
       callback(rooms);
     });
     

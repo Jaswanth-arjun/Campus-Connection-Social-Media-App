@@ -7,7 +7,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -19,6 +18,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -51,15 +52,20 @@ export const notificationService = {
     try {
       const notificationsQuery = query(
         collection(db, 'notifications'),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', userId)
       );
       const snapshot = await getDocs(notificationsQuery);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Notification[];
+      const docs = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Notification[];
+
+      // Sort in memory to bypass composite index requirements
+      return docs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error: any) {
       throw new Error(error.message || 'Failed to fetch notifications');
     }
@@ -95,16 +101,22 @@ export const notificationService = {
   subscribeToNotifications(userId: string, callback: (notifications: Notification[]) => void): () => void {
     const notificationsQuery = query(
       collection(db, 'notifications'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
     
     const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const notifications = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Notification[];
+      const notifications = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+      }) as Notification[];
+
+      // Sort in memory to bypass composite index requirements
+      notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
       callback(notifications);
     });
     
