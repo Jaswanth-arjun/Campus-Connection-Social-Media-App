@@ -4,24 +4,13 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 export const storageService = {
   async uploadImage(uri: string, path: string): Promise<string> {
     try {
-      // Robust React Native local URI to blob conversion using XMLHttpRequest
-      const blob: Blob = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-          resolve(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new TypeError('Network request failed'));
-        };
-        xhr.responseType = 'blob';
-        xhr.open('GET', uri, true);
-        xhr.send(null);
-      });
+      const response = await fetch(uri);
+      const blob = await response.blob();
 
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, blob);
       
-      // We must close/release the blob to avoid memory leaks
+      // Close/release blob if possible to prevent memory leaks
       if (typeof (blob as any).close === 'function') {
         (blob as any).close();
       }
@@ -35,19 +24,8 @@ export const storageService = {
 
   async uploadFile(uri: string, path: string, fileName: string): Promise<string> {
     try {
-      // Robust React Native local URI to blob conversion using XMLHttpRequest
-      const blob: Blob = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-          resolve(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new TypeError('Network request failed'));
-        };
-        xhr.responseType = 'blob';
-        xhr.open('GET', uri, true);
-        xhr.send(null);
-      });
+      const response = await fetch(uri);
+      const blob = await response.blob();
 
       const storageRef = ref(storage, `${path}/${fileName}`);
       await uploadBytes(storageRef, blob);
@@ -63,3 +41,4 @@ export const storageService = {
     }
   },
 };
+
