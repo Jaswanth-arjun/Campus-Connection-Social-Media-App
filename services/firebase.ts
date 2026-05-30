@@ -46,16 +46,6 @@ if (app) {
   } catch (error) {
     console.error('Firebase storage initialization error:', error);
   }
-
-  // Only initialize messaging on native platforms (crashes on web without service worker)
-  if (Platform.OS !== 'web') {
-    try {
-      const { getMessaging } = require('firebase/messaging');
-      messaging = getMessaging(app);
-    } catch (e) {
-      console.warn('Firebase messaging not available:', e);
-    }
-  }
 }
 
 export { app, auth, db, storage, messaging };

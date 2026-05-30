@@ -43,7 +43,7 @@ export const postService = {
         } else {
           try {
             imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
-          } catch (e) {
+          } catch {
             // Fallback to direct URI (e.g. if it's already base64 or storage is unavailable)
             imageUrl = imageUri;
           }
@@ -56,7 +56,7 @@ export const postService = {
         } else {
           try {
             fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
-          } catch (e) {
+          } catch {
             fileUrl = fileUri;
           }
         }
