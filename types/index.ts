@@ -10,6 +10,7 @@ export interface User {
   createdAt: Date;
   darkMode: boolean;
   isAdmin?: boolean;
+  coverImage?: string;
 }
 
 export interface Post {

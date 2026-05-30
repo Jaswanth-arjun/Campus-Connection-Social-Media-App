@@ -15,6 +15,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { usePosts } from '../../hooks/usePosts';
 import { useAuth } from '../../hooks/useAuth';
 import { PostCard } from '../../components/PostCard';
@@ -227,14 +228,24 @@ export default function FeedScreen() {
         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
       >
         <View className="flex-row items-center justify-between mb-3.5">
-          <View>
-            <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Feed
-            </Text>
-            <Text className="text-xs font-extrabold text-purple-400 mt-0.5">
-              Stay updated with your campus
-            </Text>
-          </View>
+          {currentUser ? (
+            <TouchableOpacity 
+              onPress={() => router.push('/profile')}
+              className="flex-row items-center active:opacity-85"
+            >
+              <UserAvatar uri={currentUser.avatar} size={42} />
+              <View className="ml-3">
+                <Text className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider leading-3">
+                  Welcome back,
+                </Text>
+                <Text className="text-base font-extrabold text-slate-800 tracking-tight leading-4 mt-0.5">
+                  {currentUser.name}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View />
+          )}
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
             className="bg-[#6A2FF9] w-11 h-11 rounded-2xl items-center justify-center shadow-lg shadow-purple-900/10 active:opacity-90"
