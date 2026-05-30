@@ -147,7 +147,7 @@ export default function VerifyEmailScreen() {
             onPress={checkVerificationStatus}
             disabled={isChecking}
             className="w-full bg-white items-center flex-row justify-center shadow-xl shadow-purple-950/20 active:bg-purple-50"
-            style={{ paddingVertical: 18, borderRadius: 28 }}
+            style={{ height: 58, borderRadius: 29 }}
           >
             {isChecking ? (
               <ActivityIndicator color="#6A2FF9" className="mr-2" />
@@ -163,7 +163,7 @@ export default function VerifyEmailScreen() {
             disabled={isResending || cooldown > 0}
             className={`w-full bg-[#5C24B3] border border-white/10 items-center flex-row justify-center ${cooldown > 0 ? 'opacity-60 bg-[#4C1A99]' : ''
               }`}
-            style={{ paddingVertical: 18, borderRadius: 28 }}
+            style={{ height: 58, borderRadius: 29 }}
           >
             {isResending ? (
               <ActivityIndicator color="#FFFFFF" className="mr-2" />

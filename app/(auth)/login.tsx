@@ -113,7 +113,7 @@ export default function LoginScreen() {
             <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2.5 ml-1" style={{ fontWeight: '900' }}>
               College Email
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 rounded-3xl px-5 shadow-inner" style={{ paddingVertical: 16 }}>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 px-5 shadow-inner" style={{ height: 58, borderRadius: 29 }}>
               <Ionicons name="mail-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
                 className="flex-1 text-white text-base py-0.5 font-semibold"
@@ -124,7 +124,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                style={{ fontWeight: '600' }}
+                style={{ fontWeight: '600', height: '100%', fontSize: 16 }}
               />
             </View>
           </View>
@@ -134,7 +134,7 @@ export default function LoginScreen() {
             <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2.5 ml-1" style={{ fontWeight: '900' }}>
               Password
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 rounded-3xl px-5 shadow-inner" style={{ paddingVertical: 16 }}>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 px-5 shadow-inner" style={{ height: 58, borderRadius: 29 }}>
               <Ionicons name="lock-closed-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
                 className="flex-1 text-white text-base py-0.5 font-semibold"
@@ -145,7 +145,7 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                style={{ fontWeight: '600' }}
+                style={{ fontWeight: '600', height: '100%', fontSize: 16 }}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="pl-2">
                 <Ionicons
@@ -172,7 +172,7 @@ export default function LoginScreen() {
             onPress={handleLogin}
             disabled={isLoading}
             className="bg-white items-center flex-row justify-center mt-6 shadow-xl shadow-purple-950/20 active:bg-purple-50"
-            style={{ paddingVertical: 18, borderRadius: 28 }}
+            style={{ height: 58, borderRadius: 29 }}
           >
             {isLoading ? (
               <ActivityIndicator color="#6A2FF9" />
