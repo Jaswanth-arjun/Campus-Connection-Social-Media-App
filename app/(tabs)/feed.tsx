@@ -243,11 +243,8 @@ export default function FeedScreen() {
               className="flex-row items-center active:opacity-85"
             >
               <UserAvatar uri={currentUser.avatar} size={42} />
-              <View className="ml-3">
-                <Text className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider leading-3">
-                  Welcome back,
-                </Text>
-                <Text className="text-base font-extrabold text-slate-800 tracking-tight leading-4 mt-0.5">
+              <View className="ml-3.5">
+                <Text className="text-lg font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }}>
                   {currentUser.name}
                 </Text>
               </View>

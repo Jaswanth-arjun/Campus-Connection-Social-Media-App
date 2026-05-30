@@ -39,7 +39,39 @@ export default function ProfileScreen() {
   const [editDepartment, setEditDepartment] = useState(currentUser?.department || '');
   const [editYear, setEditYear] = useState(currentUser?.year || '');
   const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const [editCover, setEditCover] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handlePickCoverImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.3,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      if (result.assets[0].base64) {
+        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setEditCover(base64Uri);
+      } else {
+        // Fallback for Web
+        try {
+          const res = await fetch(result.assets[0].uri);
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setEditCover(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          console.error(e);
+          setEditCover(result.assets[0].uri);
+        }
+      }
+    }
+  };
 
   const handlePickCover = async () => {
     if (!currentUser) return;
@@ -124,6 +156,7 @@ export default function ProfileScreen() {
     try {
       setIsSaving(true);
       let avatarUrl = currentUser.avatar;
+      let coverUrl = currentUser.coverImage || '';
 
       if (editAvatar) {
         if (editAvatar.startsWith('data:')) {
@@ -140,12 +173,28 @@ export default function ProfileScreen() {
         }
       }
 
+      if (editCover) {
+        if (editCover.startsWith('data:')) {
+          coverUrl = editCover;
+        } else {
+          try {
+            coverUrl = await storageService.uploadImage(
+              editCover,
+              `covers/${currentUser.uid}/${Date.now()}`
+            );
+          } catch (e) {
+            coverUrl = editCover;
+          }
+        }
+      }
+
       await updateProfile({
         name: editName,
         bio: editBio,
         department: editDepartment,
         year: editYear,
         avatar: avatarUrl,
+        coverImage: coverUrl,
       });
 
       setShowEditModal(false);
@@ -249,6 +298,7 @@ export default function ProfileScreen() {
                 setEditDepartment(currentUser.department);
                 setEditYear(currentUser.year);
                 setEditAvatar(null);
+                setEditCover(null);
                 setShowEditModal(true);
               }}
               className="absolute bottom-1 right-1 bg-[#6A2FF9] w-7 h-7 rounded-full items-center justify-center border-2 border-white shadow-md active:opacity-90"
@@ -286,6 +336,7 @@ export default function ProfileScreen() {
                 setEditDepartment(currentUser.department);
                 setEditYear(currentUser.year);
                 setEditAvatar(null);
+                setEditCover(null);
                 setShowEditModal(true);
               }}
               className="flex-1 bg-[#6A2FF9] py-3 rounded-2xl items-center shadow-md shadow-purple-900/10 active:opacity-90"
@@ -394,13 +445,31 @@ export default function ProfileScreen() {
 
 
           <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
-            {/* Avatar Picker */}
-            <TouchableOpacity onPress={handlePickAvatar} className="items-center mb-8">
-              <UserAvatar uri={editAvatar || currentUser.avatar} size={100} />
-              <Text className="text-primary-600 dark:text-primary-400 mt-2 font-medium text-sm">
-                Change Photo
-              </Text>
-            </TouchableOpacity>
+            {/* Beautiful Side-by-Side Photo & Cover Pickers */}
+            <View className="flex-row justify-around items-center mb-8 bg-[#6A2FF9]/5 p-5 rounded-3xl border border-[#6A2FF9]/10">
+              {/* Avatar Picker */}
+              <TouchableOpacity onPress={handlePickAvatar} className="items-center flex-1">
+                <UserAvatar uri={editAvatar || currentUser.avatar} size={76} />
+                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider">
+                  Change Photo
+                </Text>
+              </TouchableOpacity>
+
+              {/* Divider line */}
+              <View className="w-[1px] h-14 bg-[#6A2FF9]/15" />
+
+              {/* Cover Picker */}
+              <TouchableOpacity onPress={handlePickCoverImage} className="items-center flex-1">
+                <Image
+                  source={{ uri: editCover || currentUser.coverImage || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800' }}
+                  className="w-24 h-15 rounded-xl border border-slate-200"
+                  resizeMode="cover"
+                />
+                <Text className="text-[#6A2FF9] mt-2.5 font-extrabold text-xs uppercase tracking-wider">
+                  Change Cover
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Form Fields */}
             <View className="space-y-5">
