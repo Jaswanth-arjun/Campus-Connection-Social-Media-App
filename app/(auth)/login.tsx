@@ -95,13 +95,13 @@ export default function LoginScreen() {
 
         {/* Top Decorative Blob/Header */}
         <View className="items-center mb-10 mt-12">
-          <View className="w-20 h-20 bg-white/30 rounded-3xl items-center justify-center border border-white/40 mb-5 shadow-lg shadow-purple-950/10 rotate-12">
-            <Ionicons name="school" size={40} color="#6A2FF9" className="-rotate-12" />
+          <View className="w-20 h-20 bg-white/20 rounded-3xl items-center justify-center border border-white/20 mb-5 shadow-lg shadow-black/5 rotate-12">
+            <Ionicons name="school" size={40} color="#FFFFFF" className="-rotate-12" />
           </View>
-          <Text className="text-4xl font-extrabold text-purple-950 tracking-tight text-center">
+          <Text className="text-4xl font-extrabold text-white tracking-tight text-center shadow-sm shadow-purple-900">
             Welcome Back
           </Text>
-          <Text className="text-[#4A1C9E] mt-2 text-center text-sm font-semibold px-6 leading-5">
+          <Text className="text-purple-100/90 mt-2 text-center text-sm font-semibold px-6 leading-5">
             Connect and collaborate with the exclusive NBKRIST student hub.
           </Text>
         </View>
@@ -110,7 +110,7 @@ export default function LoginScreen() {
         <View className="space-y-5 px-1">
           {/* Email Input */}
           <View>
-            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2.5 ml-1">
+            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2.5 ml-1">
               College Email
             </Text>
             <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
@@ -130,7 +130,7 @@ export default function LoginScreen() {
 
           {/* Password Input */}
           <View>
-            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2.5 ml-1">
+            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2.5 ml-1">
               Password
             </Text>
             <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
@@ -160,24 +160,23 @@ export default function LoginScreen() {
             onPress={() => router.push('/(auth)/forgot-password')}
             className="self-end pt-1"
           >
-            <Text className="text-[#6A2FF9] font-black text-sm hover:underline">
+            <Text className="text-white font-extrabold text-sm underline">
               Forgot Password?
             </Text>
           </TouchableOpacity>
 
-          {/* Login Button */}
+          {/* Login Button (Gorgeous thick white button with bold purple text) */}
           <TouchableOpacity
             onPress={handleLogin}
             disabled={isLoading}
-            className="bg-[#6A2FF9] rounded-full items-center flex-row justify-center mt-4 shadow-lg shadow-purple-950/20 active:opacity-90 border border-purple-800/10"
-            style={{ paddingVertical: 16 }}
+            className="bg-white rounded-3xl py-4.5 items-center flex-row justify-center mt-4 shadow-xl shadow-purple-900/10 active:bg-purple-50"
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#6A2FF9" />
             ) : (
               <>
-                <Text className="text-white font-black text-[17px] tracking-wide mr-2">Login</Text>
-                <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+                <Text className="text-[#6A2FF9] font-black text-lg mr-2">Login</Text>
+                <Ionicons name="arrow-forward" size={19} color="#6A2FF9" />
               </>
             )}
           </TouchableOpacity>
@@ -185,9 +184,9 @@ export default function LoginScreen() {
 
         {/* Footer */}
         <View className="flex-row items-center justify-center mt-12 mb-6">
-          <Text className="text-[#4A1C9E] font-bold text-[14px]">Don't have an account? </Text>
+          <Text className="text-purple-100 font-extrabold text-[14px]">Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-            <Text className="text-[#6A2FF9] font-black text-[14px] underline">Register</Text>
+            <Text className="text-white font-black text-[14px] underline">Register</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
