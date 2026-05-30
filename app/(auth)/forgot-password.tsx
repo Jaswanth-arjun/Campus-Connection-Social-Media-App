@@ -8,10 +8,12 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { authService } from '../../services/authService';
 import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -60,47 +62,88 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white dark:bg-gray-900"
+      className="flex-1 bg-themeBg"
     >
-      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
-        <View className="mb-8">
-          <Text className="text-4xl font-bold text-primary-600 mb-2">Reset Password</Text>
-          <Text className="text-gray-600 dark:text-gray-400">
-            Enter your email to receive a password reset link
+      <StatusBar barStyle="light-content" />
+
+      {/* Glowing background auras */}
+      <View 
+        className="absolute bg-[#5C24B3]/25 rounded-full" 
+        style={{ width: 300, height: 300, top: -50, left: -50, opacity: 0.8 }} 
+      />
+      <View 
+        className="absolute bg-white/20 rounded-full" 
+        style={{ width: 250, height: 250, bottom: -50, right: -50, opacity: 0.6 }} 
+      />
+
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Back navigation button */}
+        <View className="absolute top-12 left-6">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            className="w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/10"
+          >
+            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
+        <View className="items-center mb-10 mt-12">
+          <View className="w-20 h-20 bg-white/20 rounded-3xl items-center justify-center border border-white/20 mb-5 shadow-lg shadow-black/5 rotate-12">
+            <Ionicons name="lock-open-outline" size={40} color="#FFFFFF" className="-rotate-12" />
+          </View>
+          <Text className="text-4xl font-extrabold text-white tracking-tight text-center shadow-sm shadow-purple-900">
+            Reset Your Password
+          </Text>
+          <Text className="text-purple-100/90 mt-2 text-center text-sm font-medium px-4">
+            Enter your college email address and we'll send you instructions to reset your password.
           </Text>
         </View>
 
-        <View className="space-y-4">
+        <View className="space-y-6 px-1">
           <View>
-            <Text className="text-gray-700 dark:text-gray-300 mb-2 font-medium">Email</Text>
-            <TextInput
-              className="bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-              placeholder="rollnumber@nbkrist.org"
-              placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
+            <Text className="text-purple-100/95 text-xs font-bold uppercase tracking-widest mb-2.5 ml-1">
+              College Email Address
+            </Text>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
+              <Ionicons name="mail-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+              <TextInput
+                className="flex-1 text-white text-base py-0.5"
+                placeholder="rollnumber@nbkrist.org"
+                placeholderTextColor="#A78BFA"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
           </View>
 
           <TouchableOpacity
             onPress={handleResetPassword}
             disabled={isLoading}
-            className="bg-primary-600 rounded-xl py-4 items-center"
+            className="bg-white rounded-3xl py-4.5 items-center flex-row justify-center mt-4 shadow-xl shadow-purple-900/10 active:bg-purple-50"
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#6A2FF9" />
             ) : (
-              <Text className="text-white font-semibold text-lg">Send Reset Link</Text>
+              <>
+                <Text className="text-[#6A2FF9] font-extrabold text-base mr-2">Send Reset Link</Text>
+                <Ionicons name="paper-plane-outline" size={18} color="#6A2FF9" />
+              </>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.back()} className="self-center mt-4">
-            <Text className="text-primary-600 font-medium">Back to Login</Text>
+          <TouchableOpacity onPress={() => router.back()} className="self-center mt-6">
+            <Text className="text-white font-extrabold text-base underline">Back to Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+

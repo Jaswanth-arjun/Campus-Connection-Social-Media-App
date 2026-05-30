@@ -13,19 +13,24 @@ export default function TabLayout() {
     if (currentUser) {
       fetchNotifications(currentUser.uid);
     }
-  }, [currentUser]);
+  }, [currentUser, fetchNotifications]);
 
-  if (currentUser && auth.currentUser && !auth.currentUser.emailVerified) {
+  if (!currentUser) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (currentUser && auth?.currentUser && !auth.currentUser.emailVerified) {
     return <Redirect href="/(auth)/verify-email" />;
   }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#4F46E5',
+        tabBarActiveTintColor: '#6A2FF9',
         tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
+
           borderTopWidth: 0,
           elevation: 12,
           shadowColor: '#000',

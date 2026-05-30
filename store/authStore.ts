@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true });
       const userCredential = await authService.login(email, password);
       const userData = await authService.getUser(userCredential.uid);
-      
+
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true });
       const userCredential = await authService.register(email, password, name);
       const userData = await authService.getUser(userCredential.uid);
-      
+
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
@@ -73,13 +73,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { currentUser } = get();
       if (!currentUser) throw new Error('No user logged in');
-      
+
       await authService.updateUserProfile(currentUser.uid, updates);
       const updatedUser = { ...currentUser, ...updates };
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
       set({ currentUser: updatedUser });
-    } catch (error: any) {
-      throw error;
+    } catch {
+      throw new Error('Failed to update profile');
     }
   },
 
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         set({ isLoading: false });
       }
-    } catch (error) {
+    } catch {
       set({ isLoading: false });
     }
   },

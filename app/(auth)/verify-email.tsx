@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ export default function VerifyEmailScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const user = auth.currentUser;
+  const user = auth?.currentUser;
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -38,7 +39,7 @@ export default function VerifyEmailScreen() {
     try {
       setIsChecking(true);
       await user.reload();
-      const updatedUser = auth.currentUser;
+      const updatedUser = auth?.currentUser;
 
       if (updatedUser?.emailVerified) {
         Toast.show({
@@ -105,64 +106,85 @@ export default function VerifyEmailScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white dark:bg-gray-900"
+      className="flex-1 bg-themeBg"
     >
-      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, alignItems: 'center' }}>
-        <View className="w-20 h-20 bg-primary-50 dark:bg-primary-950 rounded-full items-center justify-center mb-6 shadow-sm">
-          <Ionicons name="mail-open" size={48} color="#4F46E5" />
+      <StatusBar barStyle="light-content" />
+
+      {/* Glowing background auras */}
+      <View
+        className="absolute bg-[#5C24B3]/25 rounded-full"
+        style={{ width: 300, height: 300, top: -50, left: -50, opacity: 0.8 }}
+      />
+      <View
+        className="absolute bg-white/20 rounded-full"
+        style={{ width: 250, height: 250, bottom: -50, right: -50, opacity: 0.6 }}
+      />
+
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, alignItems: 'center' }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="w-24 h-24 bg-white/20 border border-white/20 rounded-full items-center justify-center mb-6 shadow-lg shadow-black/5 rotate-6">
+          <Ionicons name="mail-open-outline" size={54} color="#FFFFFF" className="-rotate-6" />
         </View>
 
-        <Text className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-3">
+        <Text className="text-4xl font-extrabold text-white text-center mb-4 tracking-tight shadow-sm shadow-purple-900">
           Verify your Email
         </Text>
 
-        <Text className="text-gray-600 dark:text-gray-400 text-center mb-8 px-4 text-base leading-6">
+        <Text className="text-purple-100/90 text-center mb-8 px-4 text-base leading-6 font-medium">
           We have sent a verification link to your college email address:
           {'\n'}
-          <Text className="font-semibold text-primary-600 dark:text-primary-400">{user?.email}</Text>
+          <Text className="font-extrabold text-white underline">{user?.email}</Text>
           {'\n\n'}
           Please check your inbox and click the link to activate your account.
         </Text>
 
-        <View className="w-full space-y-4">
+        <View className="w-full space-y-4 px-1">
+          {/* Main Action: I've Verified */}
           <TouchableOpacity
             onPress={checkVerificationStatus}
             disabled={isChecking}
-            className="w-full bg-primary-600 rounded-xl py-4 items-center flex-row justify-center shadow-md shadow-primary-200 dark:shadow-none"
+            className="w-full bg-white rounded-3xl py-4.5 items-center flex-row justify-center shadow-xl shadow-purple-900/10 active:bg-purple-50"
           >
             {isChecking ? (
-              <ActivityIndicator color="#FFFFFF" className="mr-2" />
+              <ActivityIndicator color="#6A2FF9" className="mr-2" />
             ) : (
-              <Ionicons name="checkmark-circle-outline" size={22} color="#FFFFFF" className="mr-2" />
+              <Ionicons name="checkmark-circle" size={22} color="#6A2FF9" className="mr-2" />
             )}
-            <Text className="text-white font-semibold text-lg">I've Verified My Email</Text>
+            <Text className="text-[#6A2FF9] font-extrabold text-base">I've Verified My Email</Text>
           </TouchableOpacity>
 
+          {/* Secondary Action: Resend Link */}
           <TouchableOpacity
             onPress={handleResendEmail}
             disabled={isResending || cooldown > 0}
-            className={`w-full border border-gray-300 dark:border-gray-700 rounded-xl py-4 items-center flex-row justify-center ${
-              cooldown > 0 ? 'bg-gray-50 dark:bg-gray-800 border-none' : ''
-            }`}
+            className={`w-full bg-[#5C24B3] border border-white/10 rounded-3xl py-4.5 px-5 items-center flex-row justify-center ${cooldown > 0 ? 'opacity-60 bg-[#4C1A99]' : ''
+              }`}
           >
-            {isResending && <ActivityIndicator color="#4F46E5" className="mr-2" />}
-            <Ionicons
-              name="reload-outline"
-              size={20}
-              color={cooldown > 0 ? '#9CA3AF' : '#4F46E5'}
-              className="mr-2"
-            />
-            <Text className={`font-semibold text-base ${cooldown > 0 ? 'text-gray-400' : 'text-primary-600'}`}>
+            {isResending ? (
+              <ActivityIndicator color="#FFFFFF" className="mr-2" />
+            ) : (
+              <Ionicons
+                name="reload"
+                size={20}
+                color="#FFFFFF"
+                className="mr-2"
+              />
+            )}
+            <Text className="font-bold text-base text-white">
               {cooldown > 0 ? `Resend Link in ${cooldown}s` : 'Resend Verification Link'}
             </Text>
           </TouchableOpacity>
 
+          {/* Change email or Register again */}
           <TouchableOpacity
             onPress={handleLogout}
-            className="w-full items-center py-3 flex-row justify-center"
+            className="w-full items-center py-4 flex-row justify-center mt-2"
           >
-            <Ionicons name="arrow-back-outline" size={18} color="#9CA3AF" className="mr-1" />
-            <Text className="text-gray-500 dark:text-gray-400 font-medium text-base">
+            <Ionicons name="arrow-back" size={18} color="#D6C7FF" className="mr-1.5" />
+            <Text className="text-purple-100/90 font-extrabold text-sm underline">
               Change email / Register again
             </Text>
           </TouchableOpacity>
@@ -171,3 +193,4 @@ export default function VerifyEmailScreen() {
     </KeyboardAvoidingView>
   );
 }
+

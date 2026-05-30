@@ -88,156 +88,170 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-slate-50 dark:bg-slate-950"
+      className="flex-1 bg-themeBg"
     >
-      <StatusBar barStyle={Platform.OS === 'ios' ? 'dark-content' : 'default'} />
+      <StatusBar barStyle="light-content" />
+
+      {/* Glowing background auras */}
+      <View 
+        className="absolute bg-[#5C24B3]/25 rounded-full" 
+        style={{ width: 300, height: 300, top: -50, right: -50, opacity: 0.8 }} 
+      />
+      <View 
+        className="absolute bg-white/20 rounded-full" 
+        style={{ width: 250, height: 250, bottom: -50, left: -50, opacity: 0.6 }} 
+      />
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, paddingVertical: 40 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Back navigation button */}
+        <View className="absolute top-12 left-6">
+          <TouchableOpacity 
+            onPress={() => router.replace('/(auth)/login')} 
+            className="w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/10"
+          >
+            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         {/* Top Header */}
-        <View className="items-center mb-8">
-          <View className="w-16 h-16 bg-primary-600 rounded-2xl items-center justify-center shadow-lg shadow-primary-300 dark:shadow-none mb-4 rotate-12">
-            <Ionicons name="school" size={32} color="#FFFFFF" className="-rotate-12" />
+        <View className="items-center mb-8 mt-8">
+          <View className="w-20 h-20 bg-white/30 rounded-3xl items-center justify-center border border-white/40 mb-5 shadow-lg shadow-purple-950/10 rotate-12">
+            <Ionicons name="school" size={40} color="#6A2FF9" className="-rotate-12" />
           </View>
-          <Text className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Join Campus Connect
+          <Text className="text-4xl font-extrabold text-purple-950 tracking-tight text-center">
+            Create account
           </Text>
-          <Text className="text-slate-500 dark:text-slate-400 mt-2 text-center text-sm px-4">
-            Connect with your fellow classmates and get real-time university updates.
+          <Text className="text-[#4A1C9E] mt-2 text-center text-sm font-semibold px-6 leading-5">
+            Join your fellow students and stay updated on Campus Connect.
           </Text>
         </View>
 
-        {/* Registration Card */}
-        <View className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <Text className="text-xl font-bold text-slate-850 dark:text-white mb-6">
-            Create Account
-          </Text>
-
-          <View className="space-y-4">
-            {/* Full Name Input */}
-            <View>
-              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
-                Full Name
-              </Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
-                <Ionicons name="person" size={20} color="#94A3B8" className="mr-3" />
-                <TextInput
-                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
-                  placeholder="Enter your full name"
-                  placeholderTextColor="#94A3B8"
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
+        {/* Form Container (Direct Layout) */}
+        <View className="space-y-4 px-1">
+          {/* Full Name Input */}
+          <View>
+            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+              Full Name
+            </Text>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
+              <Ionicons name="person-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+              <TextInput
+                className="flex-1 text-white text-base py-0.5"
+                placeholder="Rolex Savage"
+                placeholderTextColor="#A78BFA"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
             </View>
-
-            {/* Email Input */}
-            <View>
-              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
-                College Email Address
-              </Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
-                <Ionicons name="mail" size={20} color="#94A3B8" className="mr-3" />
-                <TextInput
-                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
-                  placeholder="rollnumber@nbkrist.org"
-                  placeholderTextColor="#94A3B8"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              <Text className="text-slate-400 dark:text-slate-500 text-xs mt-1 ml-1">
-                A verification link will be sent to this ID.
-              </Text>
-            </View>
-
-            {/* Password Input */}
-            <View>
-              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
-                Password
-              </Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
-                <Ionicons name="lock-closed" size={20} color="#94A3B8" className="mr-3" />
-                <TextInput
-                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
-                  placeholder="••••••••"
-                  placeholderTextColor="#94A3B8"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color="#94A3B8"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Confirm Password Input */}
-            <View>
-              <Text className="text-slate-700 dark:text-slate-350 text-xs font-semibold uppercase tracking-wider mb-2">
-                Confirm Password
-              </Text>
-              <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3">
-                <Ionicons name="lock-closed" size={20} color="#94A3B8" className="mr-3" />
-                <TextInput
-                  className="flex-1 text-slate-900 dark:text-white text-base py-0.5"
-                  placeholder="••••••••"
-                  placeholderTextColor="#94A3B8"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color="#94A3B8"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Register Button */}
-            <TouchableOpacity
-              onPress={handleRegister}
-              disabled={isLoading}
-              className="bg-primary-600 rounded-2xl py-4 items-center flex-row justify-center mt-4 shadow-lg shadow-primary-200 dark:shadow-none"
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Text className="text-white font-semibold text-base mr-2">Create Account</Text>
-                  <Ionicons name="person-add" size={18} color="#FFFFFF" />
-                </>
-              )}
-            </TouchableOpacity>
           </View>
+
+          {/* Email Input */}
+          <View>
+            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+              College Email
+            </Text>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
+              <Ionicons name="mail-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+              <TextInput
+                className="flex-1 text-white text-base py-0.5"
+                placeholder="rollnumber@nbkrist.org"
+                placeholderTextColor="#A78BFA"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+
+          {/* Password Input */}
+          <View>
+            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+              Password
+            </Text>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
+              <Ionicons name="lock-closed-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+              <TextInput
+                className="flex-1 text-white text-base py-0.5"
+                placeholder="••••••••"
+                placeholderTextColor="#A78BFA"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="pl-2">
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#D6C7FF"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View>
+            <Text className="text-purple-950 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+              Confirm Password
+            </Text>
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
+              <Ionicons name="lock-closed-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+              <TextInput
+                className="flex-1 text-white text-base py-0.5"
+                placeholder="••••••••"
+                placeholderTextColor="#A78BFA"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} className="pl-2">
+                <Ionicons
+                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#D6C7FF"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Register Button */}
+          <TouchableOpacity
+            onPress={handleRegister}
+            disabled={isLoading}
+            className="bg-[#6A2FF9] rounded-full items-center flex-row justify-center mt-6 shadow-lg shadow-purple-950/20 active:opacity-90 border border-purple-800/10"
+            style={{ paddingVertical: 16 }}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text className="text-white font-black text-[17px] tracking-wide mr-2">Register</Text>
+                <Ionicons name="person-add" size={19} color="#FFFFFF" />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
-        <View className="flex-row items-center justify-center mt-8">
-          <Text className="text-slate-500 dark:text-slate-400">Already have an account? </Text>
+        <View className="flex-row items-center justify-center mt-10 mb-6">
+          <Text className="text-[#4A1C9E] font-bold text-[14px]">Already have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-            <Text className="text-primary-600 dark:text-primary-400 font-semibold">Login</Text>
+            <Text className="text-[#6A2FF9] font-black text-[14px] underline">Sign In</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+

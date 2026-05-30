@@ -7,20 +7,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        themeBg: '#D6C7FF', // Beautiful soft lavender backdrop from reference
+        themeBgLight: '#E8E3FF', // Lighter soft lavender for content pages
+        themeDeepPurple: '#6A2FF9', // Vibrant glowing deep purple for inputs and icons
+        themeDarkPurple: '#4A1C9E', // Deeper shade for high contrast texts
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4F46E5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C7D2FE',
+          400: '#A78BFA',
+          500: '#8B5CF6',
+          600: '#6A2FF9', // Map main primary-600 to the gorgeous theme deep purple!
+          700: '#5C24B3',
+          800: '#4C1D95',
+          900: '#2E1065',
         },
       },
     },
   },
   plugins: [],
 }
+

@@ -6,20 +6,26 @@ import { authService } from '../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAuth = () => {
-  const { 
-    currentUser, 
-    isLoading, 
-    isAuthenticated, 
-    login, 
-    register, 
-    logout, 
-    updateProfile, 
-    loadUser, 
+  const {
+    currentUser,
+    isLoading,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    updateProfile,
+    loadUser,
     setCurrentUser,
-    setLoading 
+    setLoading
   } = useAuthStore();
 
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth is not initialized');
+      setLoading(false);
+      return;
+    }
+
     // 1. Initial optimistic load from AsyncStorage (very fast, doesn't block Firebase check)
     const initApp = async () => {
       try {
@@ -79,7 +85,7 @@ export const useAuth = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [setCurrentUser, setLoading]);
 
   return {
     currentUser,

@@ -1,13 +1,18 @@
 export const Colors = {
-  primary: '#4F46E5',
-  primaryLight: '#818CF8',
-  primaryDark: '#3730A3',
+  primary: '#6A2FF9', // Beautiful glowing deep purple
+  primaryLight: '#8B5CF6',
+  primaryDark: '#4A1C9E',
   
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
   info: '#3B82F6',
   
+  themeBg: '#D6C7FF', // Beautiful soft lavender backdrop from reference
+  themeBgLight: '#E8E3FF', // Lighter soft lavender for content pages
+  themeDeepPurple: '#6A2FF9', // Vibrant glowing deep purple for inputs and icons
+  themeDarkPurple: '#4A1C9E', // Deeper shade for high contrast texts
+
   gray: {
     50: '#F9FAFB',
     100: '#F3F4F6',
@@ -24,3 +29,4 @@ export const Colors = {
   white: '#FFFFFF',
   black: '#000000',
 };
+

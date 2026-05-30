@@ -23,9 +23,13 @@ import { UserAvatar } from '../../components/UserAvatar';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 
 export default function FeedScreen() {
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
+
   const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore, deletePost } = usePosts();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -214,35 +218,38 @@ export default function FeedScreen() {
   };
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+    <View className="flex-1 bg-themeBgLight">
       <StatusBar barStyle="dark-content" />
 
       {/* Premium Header */}
-      <View className="bg-white dark:bg-slate-900 px-4 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-        <View className="flex-row items-center justify-between mb-3">
+      <View 
+        className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5"
+        style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
+      >
+        <View className="flex-row items-center justify-between mb-3.5">
           <View>
-            <Text className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">
               Feed
             </Text>
-            <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+            <Text className="text-xs font-extrabold text-purple-400 mt-0.5">
               Stay updated with your campus
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            className="bg-primary-600 w-10 h-10 rounded-xl items-center justify-center shadow-md shadow-primary-200 dark:shadow-none"
+            className="bg-[#6A2FF9] w-11 h-11 rounded-2xl items-center justify-center shadow-lg shadow-purple-900/10 active:opacity-90"
           >
-            <Ionicons name="add" size={22} color="#FFFFFF" />
+            <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         {/* Inline Search */}
-        <View className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-2.5">
-          <Ionicons name="search" size={18} color="#94A3B8" />
+        <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-3xl px-4 py-2.5 shadow-inner">
+          <Ionicons name="search" size={18} color="#6A2FF9" />
           <TextInput
-            className="flex-1 text-slate-900 dark:text-white text-sm ml-2.5 py-0"
+            className="flex-1 text-slate-800 font-semibold text-sm ml-2.5 py-0.5"
             placeholder="Search posts, topics..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#A78BFA"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -250,7 +257,7 @@ export default function FeedScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQuery(''); fetchPosts(true); }}>
-              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              <Ionicons name="close-circle" size={18} color="#A78BFA" />
             </TouchableOpacity>
           )}
         </View>
@@ -260,9 +267,10 @@ export default function FeedScreen() {
       <ScrollView
         ref={scrollViewRef}
         className="flex-1 px-4 pt-4"
+
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#6A2FF9" />
         }
         onScroll={({ nativeEvent }) => {
           if (isCloseToBottom(nativeEvent)) {
@@ -272,10 +280,7 @@ export default function FeedScreen() {
         scrollEventThrottle={400}
       >
         {isLoading && posts.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#4F46E5" />
-            <Text className="text-slate-400 mt-3 text-sm">Loading posts...</Text>
-          </View>
+          <SkeletonLoader type="post" count={3} />
         ) : posts.length === 0 ? (
           <EmptyState
             icon="newspaper-outline"
@@ -297,9 +302,10 @@ export default function FeedScreen() {
 
         {isLoading && posts.length > 0 && (
           <View className="py-4 items-center">
-            <ActivityIndicator size="small" color="#4F46E5" />
+            <ActivityIndicator size="small" color="#6A2FF9" />
           </View>
         )}
+
 
         {/* Bottom padding for tab bar */}
         <View className="h-6" />

@@ -6,8 +6,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { NotificationItem } from '../../components/NotificationItem';
 import { EmptyState } from '../../components/EmptyState';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SkeletonLoader } from '../../components/SkeletonLoader';
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
   const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
 
@@ -46,21 +49,26 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <View className="px-4 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</Text>
+    <View className="flex-1 bg-themeBgLight">
+      {/* Header */}
+      <View 
+        className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
+      >
+        <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">Notifications</Text>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllAsRead}>
-            <Text className="text-primary-600 font-medium">Mark all as read</Text>
+          <TouchableOpacity 
+            onPress={handleMarkAllAsRead}
+            className="bg-purple-50 border border-purple-100 px-3.5 py-1.5 rounded-full active:opacity-80"
+          >
+            <Text className="text-[#6A2FF9] font-extrabold text-[13px]">Mark all read</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
         {isLoading && notifications.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#4F46E5" />
-          </View>
+          <SkeletonLoader type="notification" count={5} />
         ) : notifications.length === 0 ? (
           <EmptyState
             icon="notifications-outline"
@@ -76,7 +84,9 @@ export default function NotificationsScreen() {
             />
           ))
         )}
+        <View className="h-6" />
       </ScrollView>
     </View>
   );
 }
+

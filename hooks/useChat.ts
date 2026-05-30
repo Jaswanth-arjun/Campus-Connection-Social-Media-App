@@ -44,9 +44,13 @@ export const useChat = (roomId?: string) => {
       if (existingRoom) {
         setActiveRoom(existingRoom);
       } else {
-        chatService.getRoom(roomId).then((room) => {
-          if (room) setActiveRoom(room);
-        });
+        chatService.getRoom(roomId)
+          .then((room) => {
+            if (room) setActiveRoom(room);
+          })
+          .catch((err) => {
+            console.warn('[Chat] Failed to fetch active room details:', err);
+          });
       }
 
       if (currentUser) {

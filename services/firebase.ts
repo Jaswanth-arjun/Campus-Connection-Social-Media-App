@@ -20,29 +20,32 @@ let db: Firestore;
 let storage: FirebaseStorage;
 let messaging: any = null;
 
-if (!getApps().length) {
+try {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+} catch (error) {
+  console.error('Firebase app initialization error:', error);
+}
+
+if (app) {
   try {
-    app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    // Only initialize messaging on native platforms (crashes on web without service worker)
-    if (Platform.OS !== 'web') {
-      try {
-        const { getMessaging } = require('firebase/messaging');
-        messaging = getMessaging(app);
-      } catch (e) {
-        console.warn('Firebase messaging not available:', e);
-      }
-    }
   } catch (error) {
-    console.error('Firebase initialization error:', error);
+    console.error('Firebase auth initialization error:', error);
   }
-} else {
-  app = getApps()[0];
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
+
+  try {
+    db = getFirestore(app);
+  } catch (error) {
+    console.error('Firebase Firestore initialization error:', error);
+  }
+
+  try {
+    storage = getStorage(app);
+  } catch (error) {
+    console.error('Firebase storage initialization error:', error);
+  }
+
+  // Only initialize messaging on native platforms (crashes on web without service worker)
   if (Platform.OS !== 'web') {
     try {
       const { getMessaging } = require('firebase/messaging');
