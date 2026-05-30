@@ -119,13 +119,13 @@ export default function RegisterScreen() {
 
         {/* Top Header */}
         <View className="items-center mb-8 mt-8">
-          <View className="w-20 h-20 bg-white/20 rounded-3xl items-center justify-center border border-white/20 mb-5 shadow-lg shadow-black/5 rotate-12">
-            <Ionicons name="school" size={40} color="#FFFFFF" className="-rotate-12" />
+          <View className="w-20 h-20 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12">
+            <Ionicons name="school" size={40} color="#6A2FF9" className="-rotate-12" />
           </View>
-          <Text className="text-4xl font-extrabold text-white tracking-tight text-center shadow-sm shadow-purple-900">
+          <Text className="text-4xl font-extrabold text-[#3B1480] tracking-tight text-center" style={{ fontWeight: '900' }}>
             Create Account
           </Text>
-          <Text className="text-purple-100/90 mt-2 text-center text-sm font-semibold px-6 leading-5">
+          <Text className="text-[#5C24B3] mt-2 text-center text-sm font-semibold px-6 leading-5" style={{ fontWeight: 'bold' }}>
             Join your fellow students and stay updated on Campus Connect.
           </Text>
         </View>
@@ -134,65 +134,68 @@ export default function RegisterScreen() {
         <View className="space-y-4 px-1">
           {/* Full Name Input */}
           <View>
-            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+            <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2 ml-1" style={{ fontWeight: '900' }}>
               Full Name
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
-              <Ionicons name="person-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+              <Ionicons name="person-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
-                className="flex-1 text-white text-base py-0.5"
+                className="flex-1 text-white text-base py-0.5 font-semibold"
                 placeholder="Rolex Savage"
-                placeholderTextColor="#A78BFA"
+                placeholderTextColor="#D6C7FF"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
                 autoCorrect={false}
+                style={{ fontWeight: '600' }}
               />
             </View>
           </View>
 
           {/* Email Input */}
           <View>
-            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+            <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2 ml-1" style={{ fontWeight: '900' }}>
               College Email
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
-              <Ionicons name="mail-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+              <Ionicons name="mail-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
                 className="flex-1 text-white text-base py-0.5"
                 placeholder="rollnumber@nbkrist.org"
-                placeholderTextColor="#A78BFA"
+                placeholderTextColor="#D6C7FF"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                style={{ fontWeight: '600' }}
               />
             </View>
           </View>
 
           {/* Password Input */}
           <View>
-            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+            <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2 ml-1" style={{ fontWeight: '900' }}>
               Password
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
-              <Ionicons name="lock-closed-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+              <Ionicons name="lock-closed-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
-                className="flex-1 text-white text-base py-0.5"
+                className="flex-1 text-white text-base py-0.5 font-semibold"
                 placeholder="••••••••"
-                placeholderTextColor="#A78BFA"
+                placeholderTextColor="#D6C7FF"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                style={{ fontWeight: '600' }}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="pl-2">
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#D6C7FF"
+                  color="#EBE5FF"
                 />
               </TouchableOpacity>
             </View>
@@ -200,42 +203,44 @@ export default function RegisterScreen() {
 
           {/* Confirm Password Input */}
           <View>
-            <Text className="text-purple-100/95 text-xs font-black uppercase tracking-widest mb-2 ml-1">
+            <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2 ml-1" style={{ fontWeight: '900' }}>
               Confirm Password
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4 shadow-inner">
-              <Ionicons name="lock-closed-outline" size={20} color="#D6C7FF" className="mr-3.5" />
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+              <Ionicons name="lock-closed-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
-                className="flex-1 text-white text-base py-0.5"
+                className="flex-1 text-white text-base py-0.5 font-semibold"
                 placeholder="••••••••"
-                placeholderTextColor="#A78BFA"
+                placeholderTextColor="#D6C7FF"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                style={{ fontWeight: '600' }}
               />
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} className="pl-2">
                 <Ionicons
                   name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#D6C7FF"
+                  color="#EBE5FF"
                 />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Register Button (Gorgeous thick white button with bold purple text) */}
+          {/* Register Button (Gorgeous guaranteed thick white button with bold purple text) */}
           <TouchableOpacity
             onPress={handleRegister}
             disabled={isLoading}
-            className="bg-white rounded-3xl py-4.5 items-center flex-row justify-center mt-6 shadow-xl shadow-purple-900/10 active:bg-purple-50"
+            className="bg-white items-center flex-row justify-center mt-6 shadow-xl shadow-purple-950/20 active:bg-purple-50"
+            style={{ paddingVertical: 18, borderRadius: 28 }}
           >
             {isLoading ? (
               <ActivityIndicator color="#6A2FF9" />
             ) : (
               <>
-                <Text className="text-[#6A2FF9] font-black text-lg mr-2">Register</Text>
+                <Text className="text-[#6A2FF9] font-black text-lg mr-2" style={{ fontWeight: '900', fontSize: 18 }}>Register</Text>
                 <Ionicons name="person-add" size={19} color="#6A2FF9" />
               </>
             )}
@@ -244,9 +249,9 @@ export default function RegisterScreen() {
 
         {/* Footer */}
         <View className="flex-row items-center justify-center mt-10 mb-6">
-          <Text className="text-purple-100 font-extrabold text-[14px]">Already have an account? </Text>
+          <Text className="text-[#4A1C9E] font-bold text-[14px]" style={{ fontWeight: 'bold' }}>Already have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-            <Text className="text-white font-black text-[14px] underline">Sign In</Text>
+            <Text className="text-[#6A2FF9] font-black text-[14px] underline" style={{ fontWeight: '900' }}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

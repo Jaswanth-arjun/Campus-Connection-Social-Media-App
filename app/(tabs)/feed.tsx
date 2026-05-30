@@ -78,10 +78,19 @@ export default function FeedScreen() {
   };
 
   const handleSearch = async () => {
-    if (searchQuery.trim()) {
-      await searchPosts(searchQuery);
-    } else {
-      await fetchPosts(true);
+    try {
+      if (searchQuery.trim()) {
+        await searchPosts(searchQuery);
+      } else {
+        await fetchPosts(true);
+      }
+    } catch (error: any) {
+      const errMsg = error?.message || 'Search failed';
+      if (Platform.OS === 'web') {
+        alert('Error: ' + errMsg);
+      } else {
+        Alert.alert('Error', errMsg);
+      }
     }
   };
 
@@ -149,7 +158,7 @@ export default function FeedScreen() {
           const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
-          
+
           let mimeType = 'application/octet-stream';
           if (result.assets[0].name.toLowerCase().endsWith('.pdf')) mimeType = 'application/pdf';
           else if (result.assets[0].name.toLowerCase().endsWith('.doc')) mimeType = 'application/msword';
@@ -223,13 +232,13 @@ export default function FeedScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Premium Header */}
-      <View 
+      <View
         className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5"
         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
       >
         <View className="flex-row items-center justify-between mb-3.5">
           {currentUser ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push('/profile')}
               className="flex-row items-center active:opacity-85"
             >
@@ -267,7 +276,14 @@ export default function FeedScreen() {
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearchQuery(''); fetchPosts(true); }}>
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                fetchPosts(true).catch((error: any) => {
+                  console.error('Failed to refresh posts after clear:', error);
+                });
+              }}
+            >
               <Ionicons name="close-circle" size={18} color="#A78BFA" />
             </TouchableOpacity>
           )}

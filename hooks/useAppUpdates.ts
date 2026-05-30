@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Alert, AppState, Platform } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import * as Updates from 'expo-updates';
 
 interface UpdateState {
@@ -151,7 +151,9 @@ export function useAppUpdates() {
   // Auto-check on mount (app launch)
   useEffect(() => {
     const timer = setTimeout(() => {
-      checkForUpdate(false);
+      checkForUpdate(false).catch((error) => {
+        console.error('[Updates] Auto-check rejected:', error);
+      });
     }, 3000); // Wait 3s after launch to avoid blocking UI
 
     return () => clearTimeout(timer);
@@ -161,7 +163,9 @@ export function useAppUpdates() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        checkForUpdate(false);
+        checkForUpdate(false).catch((error) => {
+          console.error('[Updates] Foreground check rejected:', error);
+        });
       }
     });
 

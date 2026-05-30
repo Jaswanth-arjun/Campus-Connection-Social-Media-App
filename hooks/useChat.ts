@@ -27,7 +27,9 @@ export const useChat = (roomId?: string) => {
       const unsubscribe = chatService.subscribeToRooms(currentUser.uid, (roomsList) => {
         setRooms(roomsList);
       });
-      fetchRooms(currentUser.uid);
+      fetchRooms(currentUser.uid).catch((err) => {
+        console.warn('[Chat] Failed to fetch rooms:', err);
+      });
       return () => unsubscribe();
     }
   }, [currentUser]);
@@ -54,7 +56,9 @@ export const useChat = (roomId?: string) => {
       }
 
       if (currentUser) {
-        markMessagesAsRead(roomId, currentUser.uid);
+        markMessagesAsRead(roomId, currentUser.uid).catch((err) => {
+          console.warn('[Chat] Failed to mark messages as read:', err);
+        });
       }
       return () => unsubscribe();
     }

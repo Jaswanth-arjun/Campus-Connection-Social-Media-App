@@ -150,12 +150,14 @@ export const chatService = {
         where('readBy', 'array-contains', userId)
       );
       const snapshot = await getDocs(messagesQuery);
-      
-      snapshot.docs.forEach(async (doc) => {
-        await updateDoc(doc.ref, {
-          readBy: arrayUnion(userId),
-        });
-      });
+
+      await Promise.all(
+        snapshot.docs.map((messageDoc) =>
+          updateDoc(messageDoc.ref, {
+            readBy: arrayUnion(userId),
+          })
+        )
+      );
     } catch (error: any) {
       throw new Error(error.message || 'Failed to mark messages as read');
     }
@@ -168,7 +170,7 @@ export const chatService = {
       collection(db, 'chatRooms', roomId, 'messages'),
       orderBy('createdAt', 'asc')
     );
-    
+
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
       const messages = snapshot.docs.map((doc) => {
         const data = doc.data() as any;
@@ -180,7 +182,7 @@ export const chatService = {
       }) as Message[];
       callback(messages);
     });
-    
+
     return unsubscribe;
   },
 
@@ -189,7 +191,7 @@ export const chatService = {
       collection(db, 'chatRooms'),
       where('members', 'array-contains', userId)
     );
-    
+
     const unsubscribe = onSnapshot(roomsQuery, (snapshot) => {
       const rooms = snapshot.docs.map((doc) => {
         const data = doc.data() as any;
@@ -203,10 +205,10 @@ export const chatService = {
 
       // Sort in memory to bypass composite index requirements
       rooms.sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
-      
+
       callback(rooms);
     });
-    
+
     return unsubscribe;
   },
 };

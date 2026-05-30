@@ -41,7 +41,10 @@ export const useAuth = () => {
         setLoading(false);
       }
     };
-    initApp();
+    initApp().catch((err) => {
+      console.error('[Auth] initApp rejected:', err);
+      setLoading(false);
+    });
 
     // 2. Main Firebase authentication listener (the source of truth)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {

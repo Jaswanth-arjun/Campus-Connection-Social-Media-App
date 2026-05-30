@@ -128,11 +128,15 @@ export const authService = {
         if (cacheDoc.exists()) {
           console.log('[Auth] Loaded user profile from offline cache');
           // Start a background server update without blocking the UI
-          getDoc(doc(db, 'users', userId)).then(serverDoc => {
+          getDoc(doc(db, 'users', userId)).then(async (serverDoc) => {
             if (serverDoc.exists()) {
               const freshData = serverDoc.data() as User;
               // Update AsyncStorage/store in the background
-              AsyncStorage.setItem('user', JSON.stringify(freshData));
+              try {
+                await AsyncStorage.setItem('user', JSON.stringify(freshData));
+              } catch (storageError) {
+                console.log('[Auth] Background cache write failed:', storageError);
+              }
             }
           }).catch(e => console.log('[Auth] Background cache refresh failed:', e));
 

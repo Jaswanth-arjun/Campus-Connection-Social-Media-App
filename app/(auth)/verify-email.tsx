@@ -125,18 +125,18 @@ export default function VerifyEmailScreen() {
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, alignItems: 'center' }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="w-24 h-24 bg-white/20 border border-white/20 rounded-full items-center justify-center mb-6 shadow-lg shadow-black/5 rotate-6">
-          <Ionicons name="mail-open-outline" size={54} color="#FFFFFF" className="-rotate-6" />
+        <View className="w-24 h-24 bg-white/40 border border-white/60 rounded-full items-center justify-center mb-6 shadow-lg shadow-purple-950/10 rotate-6">
+          <Ionicons name="mail-open-outline" size={54} color="#6A2FF9" className="-rotate-6" />
         </View>
 
-        <Text className="text-4xl font-extrabold text-white text-center mb-4 tracking-tight shadow-sm shadow-purple-900">
+        <Text className="text-4xl font-extrabold text-[#3B1480] text-center mb-4 tracking-tight" style={{ fontWeight: '900' }}>
           Verify your Email
         </Text>
 
-        <Text className="text-purple-100/90 text-center mb-8 px-4 text-base leading-6 font-medium">
+        <Text className="text-[#5C24B3] text-center mb-8 px-4 text-base leading-6 font-semibold" style={{ fontWeight: '600' }}>
           We have sent a verification link to your college email address:
           {'\n'}
-          <Text className="font-extrabold text-white underline">{user?.email}</Text>
+          <Text className="font-extrabold text-[#3B1480] underline" style={{ fontWeight: '900' }}>{user?.email}</Text>
           {'\n\n'}
           Please check your inbox and click the link to activate your account.
         </Text>
@@ -146,22 +146,24 @@ export default function VerifyEmailScreen() {
           <TouchableOpacity
             onPress={checkVerificationStatus}
             disabled={isChecking}
-            className="w-full bg-white rounded-3xl py-4.5 items-center flex-row justify-center shadow-xl shadow-purple-900/10 active:bg-purple-50"
+            className="w-full bg-white items-center flex-row justify-center shadow-xl shadow-purple-950/20 active:bg-purple-50"
+            style={{ paddingVertical: 18, borderRadius: 28 }}
           >
             {isChecking ? (
               <ActivityIndicator color="#6A2FF9" className="mr-2" />
             ) : (
               <Ionicons name="checkmark-circle" size={22} color="#6A2FF9" className="mr-2" />
             )}
-            <Text className="text-[#6A2FF9] font-extrabold text-base">I've Verified My Email</Text>
+            <Text className="text-[#6A2FF9] font-black text-lg" style={{ fontWeight: '900', fontSize: 18 }}>I've Verified My Email</Text>
           </TouchableOpacity>
 
           {/* Secondary Action: Resend Link */}
           <TouchableOpacity
             onPress={handleResendEmail}
             disabled={isResending || cooldown > 0}
-            className={`w-full bg-[#5C24B3] border border-white/10 rounded-3xl py-4.5 px-5 items-center flex-row justify-center ${cooldown > 0 ? 'opacity-60 bg-[#4C1A99]' : ''
+            className={`w-full bg-[#5C24B3] border border-white/10 items-center flex-row justify-center ${cooldown > 0 ? 'opacity-60 bg-[#4C1A99]' : ''
               }`}
+            style={{ paddingVertical: 18, borderRadius: 28 }}
           >
             {isResending ? (
               <ActivityIndicator color="#FFFFFF" className="mr-2" />
@@ -173,7 +175,7 @@ export default function VerifyEmailScreen() {
                 className="mr-2"
               />
             )}
-            <Text className="font-bold text-base text-white">
+            <Text className="font-black text-lg text-white" style={{ fontWeight: '900', fontSize: 18 }}>
               {cooldown > 0 ? `Resend Link in ${cooldown}s` : 'Resend Verification Link'}
             </Text>
           </TouchableOpacity>
@@ -183,8 +185,8 @@ export default function VerifyEmailScreen() {
             onPress={handleLogout}
             className="w-full items-center py-4 flex-row justify-center mt-2"
           >
-            <Ionicons name="arrow-back" size={18} color="#D6C7FF" className="mr-1.5" />
-            <Text className="text-purple-100/90 font-extrabold text-sm underline">
+            <Ionicons name="arrow-back" size={18} color="#6A2FF9" className="mr-1.5" />
+            <Text className="text-[#6A2FF9] font-black text-sm underline" style={{ fontWeight: '900' }}>
               Change email / Register again
             </Text>
           </TouchableOpacity>
