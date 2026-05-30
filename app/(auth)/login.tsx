@@ -113,7 +113,7 @@ export default function LoginScreen() {
             <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2.5 ml-1" style={{ fontWeight: '900' }}>
               College Email
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 rounded-3xl px-5 shadow-inner" style={{ paddingVertical: 16 }}>
               <Ionicons name="mail-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
                 className="flex-1 text-white text-base py-0.5 font-semibold"
@@ -134,7 +134,7 @@ export default function LoginScreen() {
             <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2.5 ml-1" style={{ fontWeight: '900' }}>
               Password
             </Text>
-            <View className="flex-row items-center bg-[#5C24B3] border border-white/10 rounded-3xl px-5 py-4.5 shadow-inner">
+            <View className="flex-row items-center bg-[#5C24B3] border border-white/20 rounded-3xl px-5 shadow-inner" style={{ paddingVertical: 16 }}>
               <Ionicons name="lock-closed-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput
                 className="flex-1 text-white text-base py-0.5 font-semibold"
