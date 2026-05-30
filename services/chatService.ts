@@ -89,20 +89,30 @@ export const chatService = {
     fileName?: string
   ): Promise<string> {
     try {
-      const messageRef = await addDoc(collection(db, 'chatRooms', roomId, 'messages'), {
+      const payload: Record<string, any> = {
         senderId,
         senderName,
         senderAvatar,
-        text,
         type,
-        fileUrl,
-        fileName,
         readBy: [senderId],
         createdAt: serverTimestamp(),
-      } as Omit<Message, 'id' | 'createdAt'> & { createdAt: any });
+      };
 
+      payload.text = text || '';
+
+      if (fileUrl) {
+        payload.fileUrl = fileUrl;
+      }
+
+      if (fileName) {
+        payload.fileName = fileName;
+      }
+
+      const messageRef = await addDoc(collection(db, 'chatRooms', roomId, 'messages'), payload as Omit<Message, 'id' | 'createdAt'> & { createdAt: any });
+
+      const lastMessage = text?.trim() || (type === 'image' ? '[Image]' : type === 'file' ? fileName || '[File]' : '');
       await updateDoc(doc(db, 'chatRooms', roomId), {
-        lastMessage: text,
+        lastMessage,
         lastMessageTime: serverTimestamp(),
       });
 
@@ -145,18 +155,20 @@ export const chatService = {
 
   async markMessagesAsRead(roomId: string, userId: string): Promise<void> {
     try {
-      const messagesQuery = query(
-        collection(db, 'chatRooms', roomId, 'messages'),
-        where('readBy', 'array-contains', userId)
-      );
-      const snapshot = await getDocs(messagesQuery);
+      const snapshot = await getDocs(collection(db, 'chatRooms', roomId, 'messages'));
 
       await Promise.all(
-        snapshot.docs.map((messageDoc) =>
-          updateDoc(messageDoc.ref, {
-            readBy: arrayUnion(userId),
+        snapshot.docs
+          .filter((messageDoc) => {
+            const data = messageDoc.data() as any;
+            const readBy = Array.isArray(data.readBy) ? data.readBy : [];
+            return data.senderId !== userId && !readBy.includes(userId);
           })
-        )
+          .map((messageDoc) =>
+            updateDoc(messageDoc.ref, {
+              readBy: arrayUnion(userId),
+            })
+          )
       );
     } catch (error: any) {
       throw new Error(error.message || 'Failed to mark messages as read');
@@ -181,6 +193,9 @@ export const chatService = {
         };
       }) as Message[];
       callback(messages);
+    }, (error) => {
+      console.warn('[Chat] Message listener error:', error);
+      callback([]);
     });
 
     return unsubscribe;
@@ -207,6 +222,9 @@ export const chatService = {
       rooms.sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
 
       callback(rooms);
+    }, (error) => {
+      console.warn('[Chat] Room listener error:', error);
+      callback([]);
     });
 
     return unsubscribe;

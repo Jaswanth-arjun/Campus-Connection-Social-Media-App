@@ -180,6 +180,9 @@ export const eventService = {
       } else {
         callback(null);
       }
+    }, (error) => {
+      console.warn('[Event] Event listener error:', error);
+      callback(null);
     });
     return unsubscribe;
   },

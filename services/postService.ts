@@ -232,6 +232,9 @@ export const postService = {
       } else {
         callback(null);
       }
+    }, (error) => {
+      console.warn('[Post] Post listener error:', error);
+      callback(null);
     });
     return unsubscribe;
   },
@@ -252,6 +255,9 @@ export const postService = {
         };
       }) as Post[];
       callback(posts);
+    }, (error) => {
+      console.warn('[Post] Posts listener error:', error);
+      callback([]);
     });
     return unsubscribe;
   },

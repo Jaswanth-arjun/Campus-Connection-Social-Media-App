@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, setLogLevel } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
@@ -27,6 +27,8 @@ try {
 }
 
 if (app) {
+  setLogLevel('error');
+
   try {
     auth = getAuth(app);
   } catch (error) {

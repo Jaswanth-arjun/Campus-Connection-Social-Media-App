@@ -89,7 +89,7 @@ export const notificationService = {
         where('isRead', '==', false)
       );
       const snapshot = await getDocs(notificationsQuery);
-      
+
       snapshot.docs.forEach(async (doc) => {
         await updateDoc(doc.ref, { isRead: true });
       });
@@ -103,7 +103,7 @@ export const notificationService = {
       collection(db, 'notifications'),
       where('userId', '==', userId)
     );
-    
+
     const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
       const notifications = snapshot.docs.map((doc) => {
         const data = doc.data() as any;
@@ -116,10 +116,13 @@ export const notificationService = {
 
       // Sort in memory to bypass composite index requirements
       notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
+
       callback(notifications);
+    }, (error) => {
+      console.warn('[Notification] Notification listener error:', error);
+      callback([]);
     });
-    
+
     return unsubscribe;
   },
 
@@ -127,12 +130,12 @@ export const notificationService = {
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-      
+
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-      
+
       return finalStatus === 'granted';
     } catch (error) {
       console.error('Failed to request notification permissions:', error);

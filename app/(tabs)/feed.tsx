@@ -231,59 +231,74 @@ export default function FeedScreen() {
     <View className="flex-1 bg-themeBgLight">
       <StatusBar barStyle="dark-content" />
 
-      {/* Premium Header */}
-      <View
-        className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5"
-        style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
+      {/* Premium LinkedIn-Style Header Banner */}
+      <View 
+        className="bg-white border-b border-purple-100/70 shadow-md shadow-purple-950/5 overflow-hidden"
+        style={{ paddingTop: insets.top > 0 ? insets.top : 0 }}
       >
-        <View className="flex-row items-center justify-between mb-3.5">
-          {currentUser ? (
-            <TouchableOpacity
-              onPress={() => router.push('/profile')}
-              className="flex-row items-center active:opacity-85"
-            >
-              <UserAvatar uri={currentUser.avatar} size={42} />
-              <View className="ml-3.5">
-                <Text className="text-lg font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }}>
-                  {currentUser.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <View />
-          )}
+        <View className="relative w-full h-32 bg-slate-200">
+          <Image 
+            source={{ uri: currentUser?.coverImage || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800' }} 
+            className="w-full h-full" 
+            resizeMode="cover" 
+          />
+          {/* Quick Create Post Button (Floating on Header Banner) */}
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            className="bg-[#6A2FF9] w-11 h-11 rounded-2xl items-center justify-center shadow-lg shadow-purple-900/10 active:opacity-90"
+            className="absolute top-3 right-3 bg-[#6A2FF9] w-10 h-10 rounded-full items-center justify-center shadow-lg active:opacity-90 border-2 border-white"
+            style={{ shadowColor: '#6A2FF9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 }}
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Ionicons name="add" size={22} color="#FFFFFF" />
           </TouchableOpacity>
+
+          {/* User Profile Info Overlapping */}
+          <View className="absolute -bottom-6 left-5 flex-row items-end">
+            <TouchableOpacity
+              onPress={() => router.push('/profile')}
+              className="flex-row items-end active:opacity-85"
+            >
+              <View className="rounded-full bg-slate-50 shadow-md overflow-hidden" style={{ borderWidth: 3, borderColor: '#FFFFFF', width: 64, height: 64 }}>
+                <UserAvatar uri={currentUser?.avatar} size={58} />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Inline Search */}
-        <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-3xl px-4 py-2.5 shadow-inner">
-          <Ionicons name="search" size={18} color="#6A2FF9" />
-          <TextInput
-            className="flex-1 text-slate-800 font-semibold text-sm ml-2.5 py-0.5"
-            placeholder="Search posts, topics..."
-            placeholderTextColor="#A78BFA"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => {
-                setSearchQuery('');
-                fetchPosts(true).catch((error: any) => {
-                  console.error('Failed to refresh posts after clear:', error);
-                });
-              }}
-            >
-              <Ionicons name="close-circle" size={18} color="#A78BFA" />
+        {/* Name and Search Bar Container */}
+        <View className="px-5 pt-8 pb-4">
+          <View className="flex-row items-center justify-between mb-3">
+            <TouchableOpacity onPress={() => router.push('/profile')}>
+              <Text className="text-xl font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }}>
+                {currentUser?.name}
+              </Text>
             </TouchableOpacity>
-          )}
+          </View>
+
+          {/* Inline Search */}
+          <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-3xl px-4 py-2.5 shadow-inner mt-1">
+            <Ionicons name="search" size={18} color="#6A2FF9" />
+            <TextInput
+              className="flex-1 text-slate-800 font-semibold text-sm ml-2.5 py-0.5"
+              placeholder="Search posts, topics..."
+              placeholderTextColor="#A78BFA"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery('');
+                  fetchPosts(true).catch((error: any) => {
+                    console.error('Failed to refresh posts after clear:', error);
+                  });
+                }}
+              >
+                <Ionicons name="close-circle" size={18} color="#A78BFA" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
 

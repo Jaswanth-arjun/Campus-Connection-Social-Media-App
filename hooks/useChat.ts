@@ -32,7 +32,7 @@ export const useChat = (roomId?: string) => {
       });
       return () => unsubscribe();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchRooms, setRooms]);
 
   useEffect(() => {
     if (roomId) {
@@ -62,7 +62,7 @@ export const useChat = (roomId?: string) => {
       }
       return () => unsubscribe();
     }
-  }, [roomId, currentUser, rooms]);
+  }, [roomId, currentUser, rooms, markMessagesAsRead, setActiveRoom, setMessages]);
 
   return {
     rooms,
