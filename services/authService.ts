@@ -31,6 +31,7 @@ const normalizeUser = (userId: string, data: any): User => ({
   createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt || new Date(),
   darkMode: Boolean(data?.darkMode),
   isAdmin: Boolean(data?.isAdmin),
+  coverImage: data?.coverImage || '',
 });
 
 export const createFallbackUser = (userId: string): User => {
@@ -50,6 +51,7 @@ export const createFallbackUser = (userId: string): User => {
     createdAt: new Date(),
     darkMode: false,
     isAdmin: false,
+    coverImage: '',
   };
 };
 
@@ -89,6 +91,7 @@ export const authService = {
         createdAt: serverTimestamp(),
         darkMode: false,
         isAdmin: false,
+        coverImage: '',
       } as Omit<User, 'createdAt'> & { createdAt: any });
 
       return user;
