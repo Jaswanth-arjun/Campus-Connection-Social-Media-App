@@ -18,7 +18,8 @@ export const storyService = {
     userId: string,
     userName: string,
     userAvatar: string,
-    imageUri: string
+    imageUri: string,
+    filter?: string
   ): Promise<string> {
     try {
       let imageUrl = imageUri;
@@ -30,6 +31,7 @@ export const storyService = {
         userAvatar: userAvatar || '',
         imageUrl,
         views: [],
+        filter: filter || 'none',
         createdAt: serverTimestamp(),
       });
 

@@ -48,6 +48,12 @@ export default function FeedScreen() {
   const [viewerStoriesGroups, setViewerStoriesGroups] = useState<Story[][]>([]);
   const [activeUserIndex, setActiveUserIndex] = useState<number | null>(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+
+  // Photo Filter States
+  const [tempStoryImage, setTempStoryImage] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string>('none');
+  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
+  const [isUploadingStory, setIsUploadingStory] = useState<boolean>(false);
   const storyScrollRef = useRef<ScrollView>(null);
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
   
@@ -359,22 +365,9 @@ export default function FeedScreen() {
         }
 
         if (base64Uri) {
-          Toast.show({
-            type: 'info',
-            text1: 'Uploading Pulse...',
-            text2: 'Sharing with the campus',
-          });
-          await createStory(
-            currentUser.uid,
-            currentUser.name,
-            currentUser.avatar || '',
-            base64Uri
-          );
-          Toast.show({
-            type: 'success',
-            text1: 'Pulse Shared! 📸',
-            text2: 'Your pulse is active for 24 hours',
-          });
+          setTempStoryImage(base64Uri);
+          setSelectedFilter('none');
+          setShowFilterModal(true);
         }
       }
     } catch (error: any) {
@@ -384,6 +377,51 @@ export default function FeedScreen() {
         text1: 'Upload Failed',
         text2: error.message || 'Could not post pulse',
       });
+    }
+  };
+
+  const CAMERA_FILTERS = [
+    { id: 'none', name: 'Normal', color: '#F1F5F9', overlay: 'transparent' },
+    { id: 'warm', name: 'Warm Gold', color: '#FEF08A', overlay: 'rgba(255, 140, 0, 0.18)' },
+    { id: 'cool', name: 'Ice Cool', color: '#E0F2FE', overlay: 'rgba(0, 191, 255, 0.18)' },
+    { id: 'vintage', name: 'Vintage', color: '#FED7AA', overlay: 'rgba(139, 69, 19, 0.22)' },
+    { id: 'neon', name: 'Neon Pink', color: '#FCE7F3', overlay: 'rgba(255, 20, 147, 0.18)' },
+    { id: 'emerald', name: 'Emerald', color: '#DCFCE7', overlay: 'rgba(50, 205, 50, 0.15)' },
+    { id: 'sunset', name: 'Sunset Orange', color: '#FFEDD5', overlay: 'rgba(255, 69, 0, 0.18)' },
+    { id: 'midnight', name: 'Midnight', color: '#E0E7FF', overlay: 'rgba(75, 0, 130, 0.22)' },
+  ];
+
+  const handleUploadStoryWithFilter = async () => {
+    if (!currentUser || !tempStoryImage) return;
+    try {
+      setIsUploadingStory(true);
+      Toast.show({
+        type: 'info',
+        text1: 'Uploading Pulse...',
+        text2: 'Applying filter and sharing',
+      });
+      await createStory(
+        currentUser.uid,
+        currentUser.name,
+        currentUser.avatar || '',
+        tempStoryImage,
+        selectedFilter
+      );
+      Toast.show({
+        type: 'success',
+        text1: 'Pulse Shared! 📸',
+        text2: 'Your pulse is active for 24 hours',
+      });
+      setShowFilterModal(false);
+      setTempStoryImage(null);
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed',
+        text2: err.message || 'Could not upload pulse',
+      });
+    } finally {
+      setIsUploadingStory(false);
     }
   };
 
@@ -841,6 +879,37 @@ export default function FeedScreen() {
                       resizeMode="contain"
                     />
 
+                    {/* Dynamic Story Filter Gel Overlay */}
+                    {activeStory.filter && activeStory.filter !== 'none' && (
+                      <View
+                        pointerEvents="none"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor:
+                            activeStory.filter === 'warm'
+                              ? 'rgba(255, 140, 0, 0.18)'
+                              : activeStory.filter === 'cool'
+                                ? 'rgba(0, 191, 255, 0.18)'
+                                : activeStory.filter === 'vintage'
+                                  ? 'rgba(139, 69, 19, 0.22)'
+                                  : activeStory.filter === 'neon'
+                                    ? 'rgba(255, 20, 147, 0.18)'
+                                    : activeStory.filter === 'emerald'
+                                      ? 'rgba(50, 205, 50, 0.15)'
+                                      : activeStory.filter === 'sunset'
+                                        ? 'rgba(255, 69, 0, 0.18)'
+                                        : activeStory.filter === 'midnight'
+                                          ? 'rgba(75, 0, 130, 0.22)'
+                                          : 'transparent',
+                          zIndex: 5,
+                        }}
+                      />
+                    )}
+
                     {/* Tap Gestures Overlay for Navigation (Placed AFTER the Image so it sits on top, and top: 100 so header remains clickable!) */}
                     <View 
                       style={{
@@ -960,6 +1029,171 @@ export default function FeedScreen() {
           </View>
         </Modal>
       )}
+
+      {/* 📸 Instagram/Snapchat Style Premium Photo Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => {
+          if (!isUploadingStory) {
+            setShowFilterModal(false);
+            setTempStoryImage(null);
+          }
+        }}
+      >
+        <View className="flex-1 bg-slate-950 relative">
+          <StatusBar barStyle="light-content" backgroundColor="#020617" />
+
+          {/* Top Bar */}
+          <View className="absolute top-12 left-0 right-0 px-5 flex-row justify-between items-center z-30">
+            <TouchableOpacity
+              disabled={isUploadingStory}
+              onPress={() => {
+                setShowFilterModal(false);
+                setTempStoryImage(null);
+              }}
+              className="bg-black/50 w-10 h-10 rounded-full items-center justify-center border border-white/10 active:opacity-85"
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </TouchableOpacity>
+
+            <Text className="text-white font-extrabold text-base tracking-tight shadow-md">
+              Apply Live Filter 📸
+            </Text>
+
+            <TouchableOpacity
+              disabled={isUploadingStory}
+              onPress={handleUploadStoryWithFilter}
+              className="bg-[#6A2FF9] px-5 py-2.5 rounded-full flex-row items-center justify-center shadow-lg active:opacity-90"
+            >
+              {isUploadingStory ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text className="text-white font-black text-xs uppercase tracking-wider mr-1.5">Share</Text>
+                  <Ionicons name="paper-plane-outline" size={13} color="#FFFFFF" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Captured Image Preview Area */}
+          <View className="flex-1 justify-center items-center relative">
+            {tempStoryImage && (
+              <Image
+                source={{ uri: tempStoryImage }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            )}
+
+            {/* Selected Color Gel Filter Overlay Preview */}
+            {selectedFilter !== 'none' && (
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor:
+                    selectedFilter === 'warm'
+                      ? 'rgba(255, 140, 0, 0.18)'
+                      : selectedFilter === 'cool'
+                        ? 'rgba(0, 191, 255, 0.18)'
+                        : selectedFilter === 'vintage'
+                          ? 'rgba(139, 69, 19, 0.22)'
+                          : selectedFilter === 'neon'
+                            ? 'rgba(255, 20, 147, 0.18)'
+                            : selectedFilter === 'emerald'
+                              ? 'rgba(50, 205, 50, 0.15)'
+                              : selectedFilter === 'sunset'
+                                ? 'rgba(255, 69, 0, 0.18)'
+                                : selectedFilter === 'midnight'
+                                  ? 'rgba(75, 0, 130, 0.22)'
+                                  : 'transparent',
+                  zIndex: 10,
+                }}
+              />
+            )}
+          </View>
+
+          {/* Horizontal Filters Picker Carousel */}
+          <View className="absolute bottom-10 left-0 right-0 z-30">
+            <Text className="text-center text-white/50 text-[10px] font-black uppercase tracking-widest mb-3.5">
+              Swipe to select a camera filter
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              <View className="flex-row space-x-3.5">
+                {CAMERA_FILTERS.map((item) => {
+                  const isSelected = selectedFilter === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedFilter(item.id)}
+                      className="items-center"
+                    >
+                      {/* Filter preview circle */}
+                      <View
+                        className="w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center relative shadow-md shadow-black/30"
+                        style={{
+                          borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.2)',
+                          backgroundColor: '#1E293B',
+                        }}
+                      >
+                        {/* Tiny photo mock */}
+                        {tempStoryImage && (
+                          <Image
+                            source={{ uri: tempStoryImage }}
+                            className="w-full h-full opacity-60 absolute"
+                            resizeMode="cover"
+                          />
+                        )}
+
+                        {/* Gel color overlay inside the circle */}
+                        {item.id !== 'none' && (
+                          <View
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundColor: item.overlay,
+                            }}
+                          />
+                        )}
+
+                        {/* Selected Indicator Checkmark */}
+                        {isSelected && (
+                          <View className="bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border border-white/90">
+                            <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                          </View>
+                        )}
+                      </View>
+                      
+                      {/* Filter Name */}
+                      <Text
+                        className="text-[11px] font-extrabold mt-2 text-center"
+                        style={{ color: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

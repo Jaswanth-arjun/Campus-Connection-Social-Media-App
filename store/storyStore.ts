@@ -12,7 +12,8 @@ interface StoryState {
     userId: string,
     userName: string,
     userAvatar: string,
-    imageUri: string
+    imageUri: string,
+    filter?: string
   ) => Promise<string>;
   viewStory: (storyId: string, userId: string) => Promise<void>;
 }
@@ -47,11 +48,12 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     userId: string,
     userName: string,
     userAvatar: string,
-    imageUri: string
+    imageUri: string,
+    filter?: string
   ) => {
     try {
       set({ isLoading: true });
-      const id = await storyService.createStory(userId, userName, userAvatar, imageUri);
+      const id = await storyService.createStory(userId, userName, userAvatar, imageUri, filter);
       set({ isLoading: false });
       return id;
     } catch (error) {

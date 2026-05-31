@@ -92,4 +92,5 @@ export interface Story {
   imageUrl: string;
   views: string[];
   createdAt: Date;
+  filter?: string;
 }
