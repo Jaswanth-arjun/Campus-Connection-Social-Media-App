@@ -50,28 +50,21 @@ export const useAuth = () => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       void (async () => {
         if (firebaseUser) {
-          // If we already have the matching user in memory, don't re-fetch (avoids stale closures)
-          const currentStoredUser = useAuthStore.getState().currentUser;
-          if (currentStoredUser && currentStoredUser.uid === firebaseUser.uid) {
-            setLoading(false);
-            return;
-          }
-
           try {
-            // Check if user exists in AsyncStorage (fastest)
+            // Check if user exists in AsyncStorage (fastest, load optimistically first)
             const userJson = await AsyncStorage.getItem('user');
             if (userJson) {
               const userData = JSON.parse(userJson);
               if (userData.uid === firebaseUser.uid) {
                 setCurrentUser(userData);
-                return;
               }
+            } else {
+              // Show a local fallback immediately if no cache exists, then refresh in background
+              const fallbackUser = createFallbackUser(firebaseUser.uid);
+              setCurrentUser(fallbackUser);
             }
 
-            // Show a local fallback immediately, then refresh Firestore in the background.
-            const fallbackUser = createFallbackUser(firebaseUser.uid);
-            setCurrentUser(fallbackUser);
-
+            // Always fetch the source of truth from Firestore database in the background!
             void authService.getUser(firebaseUser.uid)
               .then(async (dbUser) => {
                 if (dbUser) {
