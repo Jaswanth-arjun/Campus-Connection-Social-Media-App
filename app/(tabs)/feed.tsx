@@ -14,6 +14,7 @@ import {
   RefreshControl,
   StatusBar,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -47,6 +48,9 @@ export default function FeedScreen() {
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const storyScrollRef = useRef<ScrollView>(null);
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+  
+  // Progress animation value for moving timeline
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     subscribeToStories();
@@ -86,6 +90,37 @@ export default function FeedScreen() {
       });
     }
   }, [activeUserIndex]);
+
+  // OTA progress timeline animation & auto-advance (5 seconds per snap)
+  React.useEffect(() => {
+    if (activeUserIndex !== null && viewerStoriesGroups[activeUserIndex]) {
+      progressAnim.setValue(0);
+      
+      const anim = Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 5000, // 5000ms (5 seconds)
+        useNativeDriver: false,
+      });
+
+      anim.start(({ finished }) => {
+        if (finished) {
+          const currentGroup = viewerStoriesGroups[activeUserIndex];
+          if (activeStoryIndex < currentGroup.length - 1) {
+            setActiveStoryIndex(prev => prev + 1);
+          } else if (activeUserIndex < viewerStoriesGroups.length - 1) {
+            setActiveUserIndex(prev => prev + 1);
+            setActiveStoryIndex(0);
+          } else {
+            setActiveUserIndex(null);
+          }
+        }
+      });
+
+      return () => {
+        anim.stop();
+      };
+    }
+  }, [activeUserIndex, activeStoryIndex, viewerStoriesGroups]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [content, setContent] = useState('');
@@ -364,6 +399,14 @@ export default function FeedScreen() {
     }
   }, [compose]);
 
+  // The current user's own active, unviewed snaps
+  const myStories = React.useMemo(() => {
+    if (!currentUser) return [];
+    return stories.filter((story) => story.userId === currentUser.uid && !story.views.includes(currentUser.uid));
+  }, [stories, currentUser]);
+
+  const hasMyStories = myStories.length > 0;
+
   // Group active stories by userId for feed display, filtering out already viewed stories (View-Once!)
   const feedStoriesGroups = React.useMemo(() => {
     const groups: { [userId: string]: Story[] } = {};
@@ -371,6 +414,10 @@ export default function FeedScreen() {
       // Filter out if current user has viewed it
       if (currentUser && story.views.includes(currentUser.uid)) {
         return; // View-Once!
+      }
+      // EXCLUDE current user's own snaps from general other users list
+      if (currentUser && story.userId === currentUser.uid) {
+        return;
       }
       if (!groups[story.userId]) {
         groups[story.userId] = [];
@@ -465,22 +512,60 @@ export default function FeedScreen() {
             className="py-4 px-3.5"
             contentContainerStyle={{ alignItems: 'center' }}
           >
-            {/* Add story button (Current User) */}
+            {/* Add story button (Current User / My Pulse) */}
             <View className="items-center mr-4">
-              <TouchableOpacity
-                onPress={handleAddStory}
-                className="relative active:opacity-90"
-              >
-                <View className="rounded-full bg-slate-50 border-2 border-dashed border-purple-300 p-0.5" style={{ width: 68, height: 68 }}>
-                  <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
-                    <UserAvatar uri={currentUser?.avatar} size={60} />
+              {hasMyStories ? (
+                // Solid purple border for active snaps
+                <TouchableOpacity
+                  onPress={() => {
+                    setViewerStoriesGroups([myStories, ...feedStoriesGroups]);
+                    setActiveUserIndex(0);
+                    setActiveStoryIndex(0);
+                  }}
+                  className="relative active:opacity-90"
+                >
+                  <View
+                    className="rounded-full p-[2.5px]"
+                    style={{
+                      backgroundColor: '#6A2FF9',
+                      width: 68,
+                      height: 68,
+                    }}
+                  >
+                    <View className="rounded-full bg-white p-[2px] w-full h-full">
+                      <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
+                        <UserAvatar uri={currentUser?.avatar} size={56} />
+                      </View>
+                    </View>
                   </View>
-                </View>
-                {/* Plus Badge */}
-                <View className="absolute bottom-0 right-0 bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border-2 border-white shadow-sm">
-                  <Ionicons name="add" size={14} color="#FFFFFF" />
-                </View>
-              </TouchableOpacity>
+                  {/* Plus Badge specifically for adding new snap */}
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleAddStory();
+                    }}
+                    className="absolute bottom-0 right-0 bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border-2 border-white shadow-sm z-10"
+                  >
+                    <Ionicons name="add" size={14} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ) : (
+                // Dashed border when there are no snaps
+                <TouchableOpacity
+                  onPress={handleAddStory}
+                  className="relative active:opacity-90"
+                >
+                  <View className="rounded-full bg-slate-50 border-2 border-dashed border-purple-300 p-0.5" style={{ width: 68, height: 68 }}>
+                    <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
+                      <UserAvatar uri={currentUser?.avatar} size={60} />
+                    </View>
+                  </View>
+                  {/* Plus Badge */}
+                  <View className="absolute bottom-0 right-0 bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border-2 border-white shadow-sm">
+                    <Ionicons name="add" size={14} color="#FFFFFF" />
+                  </View>
+                </TouchableOpacity>
+              )}
               <Text className="text-[11px] font-bold text-slate-500 mt-1.5">
                 My Pulse
               </Text>
@@ -739,19 +824,30 @@ export default function FeedScreen() {
                     <View className="absolute top-12 left-0 right-0 px-4 z-20">
                       {/* Progress Indicators */}
                       <View className="flex-row space-x-1 mb-4">
-                        {storyGroup.map((story, index) => (
-                          <View
-                            key={story.id}
-                            className="h-1 flex-1 rounded-full bg-white/30 overflow-hidden"
-                          >
+                        {storyGroup.map((story, index) => {
+                          const widthStyle = index < storyIndex 
+                            ? '100%' 
+                            : index === storyIndex 
+                              ? progressAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: ['0%', '100%'],
+                                })
+                              : '0%';
+
+                          return (
                             <View
-                              className="h-full bg-white"
-                              style={{
-                                width: index < storyIndex ? '100%' : index === storyIndex ? '100%' : '0%',
-                              }}
-                            />
-                          </View>
-                        ))}
+                              key={story.id}
+                              className="h-1 flex-1 rounded-full bg-white/30 overflow-hidden"
+                            >
+                              <Animated.View
+                                className="h-full bg-white"
+                                style={{
+                                  width: widthStyle,
+                                }}
+                              />
+                            </View>
+                          );
+                        })}
                       </View>
 
                       {/* Author & Info Bar */}
