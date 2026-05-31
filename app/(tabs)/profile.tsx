@@ -343,6 +343,13 @@ export default function ProfileScreen() {
             >
               <Text className="text-white font-extrabold text-sm">Edit Profile</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleLogout}
+              className="flex-1 bg-red-500 py-3 rounded-2xl items-center shadow-md shadow-red-900/10 active:opacity-90"
+            >
+              <Text className="text-white font-extrabold text-sm">Logout</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
