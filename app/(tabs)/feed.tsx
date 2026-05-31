@@ -33,6 +33,8 @@ import { useStoryStore } from '../../store/storyStore';
 import { Story } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import * as ScreenCapture from 'expo-screen-capture';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
@@ -329,8 +331,7 @@ export default function FeedScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [9, 16],
+        allowsEditing: false,
         quality: 0.25,
         base64: true,
       });
@@ -386,6 +387,61 @@ export default function FeedScreen() {
     }
   };
 
+  const handleSaveToGallery = async (imageUrl: string) => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        if (Platform.OS === 'web') {
+          alert('Gallery permission is required to save photos.');
+        } else {
+          Alert.alert('Permission Denied', 'Gallery permission is required to save photos.');
+        }
+        return;
+      }
+
+      Toast.show({
+        type: 'info',
+        text1: 'Saving snap...',
+        text2: 'Writing to gallery',
+      });
+
+      let localUri = imageUrl;
+      if (imageUrl.startsWith('data:')) {
+        // Base64 image
+        const parts = imageUrl.split(';base64,');
+        const base64Data = parts[1];
+        const filename = `pulse_${Date.now()}.jpg`;
+        const tempUri = `${FileSystem.documentDirectory}${filename}`;
+        await FileSystem.writeAsStringAsync(tempUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        localUri = tempUri;
+      } else {
+        // Remote image URL
+        const filename = `pulse_${Date.now()}.jpg`;
+        const downloadResult = await FileSystem.downloadAsync(
+          imageUrl,
+          `${FileSystem.documentDirectory}${filename}`
+        );
+        localUri = downloadResult.uri;
+      }
+
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      Toast.show({
+        type: 'success',
+        text1: 'Saved to Gallery! 💾',
+        text2: 'Your snap is saved successfully.',
+      });
+    } catch (e: any) {
+      console.error('Failed to save snap to gallery:', e);
+      if (Platform.OS === 'web') {
+        alert('Save Failed: ' + e.message);
+      } else {
+        Alert.alert('Save Failed', e.message || 'Could not save snap to gallery.');
+      }
+    }
+  };
+
   const handleLoadMore = () => {
     if (hasMore && !isLoading) {
       loadMore();
@@ -399,10 +455,10 @@ export default function FeedScreen() {
     }
   }, [compose]);
 
-  // The current user's own active, unviewed snaps
+  // The current user's own active snaps (owner can view them infinitely for 24 hours!)
   const myStories = React.useMemo(() => {
     if (!currentUser) return [];
-    return stories.filter((story) => story.userId === currentUser.uid && !story.views.includes(currentUser.uid));
+    return stories.filter((story) => story.userId === currentUser.uid);
   }, [stories, currentUser]);
 
   const hasMyStories = myStories.length > 0;
@@ -866,13 +922,25 @@ export default function FeedScreen() {
                           </View>
                         </View>
 
-                        {/* Close Button */}
-                        <TouchableOpacity
-                          onPress={() => setActiveUserIndex(null)}
-                          className="bg-black/40 rounded-full p-2 active:opacity-80"
-                        >
-                          <Ionicons name="close" size={24} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        <View className="flex-row items-center">
+                          {/* Save to Gallery Button (Only for owner's own snaps) */}
+                          {activeStory.userId === currentUser?.uid && (
+                            <TouchableOpacity
+                              onPress={() => handleSaveToGallery(activeStory.imageUrl)}
+                              className="bg-black/40 rounded-full p-2 mr-2 active:opacity-80"
+                            >
+                              <Ionicons name="download-outline" size={22} color="#FFFFFF" />
+                            </TouchableOpacity>
+                          )}
+
+                          {/* Close Button */}
+                          <TouchableOpacity
+                            onPress={() => setActiveUserIndex(null)}
+                            className="bg-black/40 rounded-full p-2 active:opacity-80"
+                          >
+                            <Ionicons name="close" size={24} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   </View>
