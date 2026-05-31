@@ -21,6 +21,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { onOpenComposer } from '../../utils/composeBus';
 import { usePosts } from '../../hooks/usePosts';
 import { useAuth } from '../../hooks/useAuth';
+import { authService } from '../../services/authService';
 import { PostCard } from '../../components/PostCard';
 import { EmptyState } from '../../components/EmptyState';
 import { UserAvatar } from '../../components/UserAvatar';
@@ -60,12 +61,49 @@ export default function FeedScreen() {
   // Progress animation value for moving timeline
   const progressAnim = useRef(new Animated.Value(0)).current;
 
+  // Cache for resolving latest live user profile details (avatar/name)
+  const [usersCache, setUsersCache] = useState<{ [userId: string]: { name: string; avatar: string } }>({});
+
   React.useEffect(() => {
     subscribeToStories();
     return () => {
       unsubscribe();
     };
   }, []);
+
+  React.useEffect(() => {
+    const fetchLatestProfiles = async () => {
+      const uniqueUserIds = Array.from(new Set(stories.map(story => story.userId)));
+      
+      const newCache = { ...usersCache };
+      let updated = false;
+
+      for (const uid of uniqueUserIds) {
+        if (!newCache[uid]) {
+          try {
+            const profile = await authService.getUser(uid);
+            if (profile) {
+              newCache[uid] = {
+                name: profile.name,
+                avatar: profile.avatar || '',
+              };
+              updated = true;
+            }
+          } catch (e) {
+            console.warn(`Failed to fetch live profile for story author ${uid}:`, e);
+          }
+        }
+      }
+
+      if (updated) {
+        setUsersCache(newCache);
+      }
+    };
+
+    if (stories.length > 0) {
+      fetchLatestProfiles();
+    }
+  }, [stories]);
 
   // Screen capture prevention when viewing stories
   React.useEffect(() => {
@@ -693,13 +731,13 @@ export default function FeedScreen() {
                     >
                       <View className="rounded-full bg-white p-[2px] w-full h-full">
                         <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
-                          <UserAvatar uri={lastStory.userAvatar} size={56} />
+                          <UserAvatar uri={usersCache[lastStory.userId]?.avatar || lastStory.userAvatar} size={56} />
                         </View>
                       </View>
                     </View>
                   </TouchableOpacity>
                   <Text className="text-[11px] font-extrabold text-slate-700 mt-1.5 w-16 text-center" numberOfLines={1}>
-                    {lastStory.userId === currentUser?.uid ? 'You' : lastStory.userName.split(' ')[0]}
+                    {lastStory.userId === currentUser?.uid ? 'You' : (usersCache[lastStory.userId]?.name || lastStory.userName).split(' ')[0]}
                   </Text>
                 </View>
               );
@@ -989,11 +1027,11 @@ export default function FeedScreen() {
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center">
                           <View className="rounded-full bg-slate-800 border border-white/20 overflow-hidden" style={{ width: 40, height: 40 }}>
-                            <UserAvatar uri={activeStory.userAvatar} size={38} />
+                            <UserAvatar uri={usersCache[activeStory.userId]?.avatar || activeStory.userAvatar} size={38} />
                           </View>
                           <View className="ml-2.5">
                             <Text className="text-white font-extrabold text-sm shadow-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}>
-                              {activeStory.userName}
+                              {usersCache[activeStory.userId]?.name || activeStory.userName}
                             </Text>
                             <Text className="text-slate-300/80 font-bold text-[10px] shadow-sm mt-0.5" style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}>
                               {formatDistanceToNow(new Date(activeStory.createdAt), { addSuffix: true })}
