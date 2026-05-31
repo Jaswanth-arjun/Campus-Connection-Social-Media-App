@@ -834,12 +834,29 @@ export default function FeedScreen() {
                     key={storyGroup[0].userId}
                     style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, position: 'relative', justifyContent: 'center' }}
                   >
-                    {/* Tap Gestures Overlay for Navigation */}
-                    <View className="absolute inset-0 flex-row z-10">
+                    {/* Story Content Image */}
+                    <Image
+                      source={{ uri: activeStory.imageUrl }}
+                      className="w-full h-full"
+                      resizeMode="contain"
+                    />
+
+                    {/* Tap Gestures Overlay for Navigation (Placed AFTER the Image so it sits on top, and top: 100 so header remains clickable!) */}
+                    <View 
+                      style={{
+                        position: 'absolute',
+                        top: 100,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        flexDirection: 'row',
+                        zIndex: 10,
+                      }}
+                    >
                       {/* Left Side (Tap to go back) */}
                       <TouchableOpacity
                         activeOpacity={1}
-                        className="flex-1 h-full"
+                        style={{ flex: 1, height: '100%' }}
                         onPress={() => {
                           if (activeStoryIndex > 0) {
                             setActiveStoryIndex(activeStoryIndex - 1);
@@ -855,7 +872,7 @@ export default function FeedScreen() {
                       {/* Right Side (Tap to go forward) */}
                       <TouchableOpacity
                         activeOpacity={1}
-                        className="flex-1 h-full"
+                        style={{ flex: 1, height: '100%' }}
                         onPress={() => {
                           if (activeStoryIndex < storyGroup.length - 1) {
                             setActiveStoryIndex(activeStoryIndex + 1);
@@ -868,13 +885,6 @@ export default function FeedScreen() {
                         }}
                       />
                     </View>
-
-                    {/* Story Content Image */}
-                    <Image
-                      source={{ uri: activeStory.imageUrl }}
-                      className="w-full h-full"
-                      resizeMode="contain"
-                    />
 
                     {/* Top Header Controls (Above tap layer) */}
                     <View className="absolute top-12 left-0 right-0 px-4 z-20">
