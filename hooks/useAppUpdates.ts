@@ -85,7 +85,7 @@ export function useAppUpdates() {
                 onPress: () => console.log('[Updates] User deferred restart'),
               },
               {
-                text: 'Restart Now',
+                text: 'Update',
                 style: 'default',
                 onPress: async () => {
                   try {
