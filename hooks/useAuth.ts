@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { auth } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { authService } from '../services/authService';
+import { authService, createFallbackUser } from '../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAuth = () => {
@@ -68,16 +68,20 @@ export const useAuth = () => {
               }
             }
 
-            // Otherwise, fetch fresh user data from Firestore
-            const dbUser = await authService.getUser(firebaseUser.uid);
-            if (dbUser) {
-              await AsyncStorage.setItem('user', JSON.stringify(dbUser));
-              setCurrentUser(dbUser);
-            } else {
-              // No profile in Firestore: clean up auth state
-              await authService.logout();
-              setCurrentUser(null);
-            }
+            // Show a local fallback immediately, then refresh Firestore in the background.
+            const fallbackUser = createFallbackUser(firebaseUser.uid);
+            setCurrentUser(fallbackUser);
+
+            void authService.getUser(firebaseUser.uid)
+              .then(async (dbUser) => {
+                if (dbUser) {
+                  await AsyncStorage.setItem('user', JSON.stringify(dbUser));
+                  setCurrentUser(dbUser);
+                }
+              })
+              .catch((err) => {
+                console.log('[Auth] Background user refresh failed:', err?.message || err);
+              });
           } catch (err) {
             console.error('Error synchronizing auth state:', err);
             setLoading(false);

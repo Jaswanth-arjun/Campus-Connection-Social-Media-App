@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -119,8 +120,12 @@ export default function RegisterScreen() {
 
         {/* Top Header */}
         <View className="items-center mb-8 mt-8">
-          <View className="w-20 h-20 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12">
-            <Ionicons name="school" size={40} color="#6A2FF9" className="-rotate-12" />
+          <View className="w-24 h-24 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12 overflow-hidden">
+            <Image 
+              source={require('../../assets/images/logo.png')} 
+              className="w-full h-full -rotate-12"
+              resizeMode="cover"
+            />
           </View>
           <Text className="text-4xl font-extrabold text-[#3B1480] tracking-tight text-center" style={{ fontWeight: '900' }}>
             Create Account

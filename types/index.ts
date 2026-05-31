@@ -83,3 +83,13 @@ export interface Notification {
   isRead: boolean;
   createdAt: Date;
 }
+
+export interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  imageUrl: string;
+  views: string[];
+  createdAt: Date;
+}

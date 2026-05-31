@@ -1,5 +1,7 @@
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity, View } from 'react-native';
+import { emitOpenComposer } from '../../utils/composeBus';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useEffect } from 'react';
@@ -63,6 +65,23 @@ export default function TabLayout() {
           title: 'Events',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="compose"
+        options={{
+          title: '',
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              onPress={() => emitOpenComposer()}
+              style={{ alignItems: 'center', justifyContent: 'center' }}
+            >
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#6A2FF9', alignItems: 'center', justifyContent: 'center', marginTop: -28, borderWidth: 4, borderColor: '#FFFFFF', elevation: 6 }}>
+                <Ionicons name="add" size={28} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
           ),
         }}
       />

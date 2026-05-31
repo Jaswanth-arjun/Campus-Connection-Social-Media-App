@@ -19,7 +19,21 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 
-const createFallbackUser = (userId: string): User => {
+const normalizeUser = (userId: string, data: any): User => ({
+  uid: userId,
+  name: data?.name || data?.displayName || data?.email?.split?.('@')?.[0] || 'Campus User',
+  email: data?.email || '',
+  avatar: data?.avatar || data?.photoURL || '',
+  department: data?.department || '',
+  year: data?.year || '',
+  bio: data?.bio || '',
+  fcmToken: data?.fcmToken || '',
+  createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt || new Date(),
+  darkMode: Boolean(data?.darkMode),
+  isAdmin: Boolean(data?.isAdmin),
+});
+
+export const createFallbackUser = (userId: string): User => {
   const firebaseUser = auth.currentUser;
   const email = firebaseUser?.email || '';
   const name = firebaseUser?.displayName || email.split('@')[0] || 'Campus User';
@@ -38,20 +52,6 @@ const createFallbackUser = (userId: string): User => {
     isAdmin: false,
   };
 };
-
-const normalizeUser = (userId: string, data: any): User => ({
-  uid: userId,
-  name: data?.name || data?.displayName || data?.email?.split?.('@')?.[0] || 'Campus User',
-  email: data?.email || '',
-  avatar: data?.avatar || data?.photoURL || '',
-  department: data?.department || '',
-  year: data?.year || '',
-  bio: data?.bio || '',
-  fcmToken: data?.fcmToken || '',
-  createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt || new Date(),
-  darkMode: Boolean(data?.darkMode),
-  isAdmin: Boolean(data?.isAdmin),
-});
 
 export const authService = {
   async login(email: string, password: string): Promise<FirebaseUser> {
@@ -164,7 +164,7 @@ export const authService = {
       return fallbackUser;
     } catch (error: any) {
       clearTimeout(timeoutId);
-      console.warn('[Auth] getUser failed or timed out:', error.message);
+      console.log('[Auth] getUser failed or timed out:', error.message);
 
       // Fallback: see if we have AsyncStorage user or Firebase Auth state as a last resort.
       try {

@@ -9,10 +9,12 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../services/firebase';
 import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
@@ -50,6 +52,12 @@ export default function LoginScreen() {
         text1: 'Success',
         text2: 'Logged in successfully',
       });
+
+      if (auth?.currentUser && !auth.currentUser.emailVerified) {
+        router.replace('/(auth)/verify-email');
+      } else {
+        router.replace('/(tabs)/feed');
+      }
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -67,15 +75,15 @@ export default function LoginScreen() {
       className="flex-1 bg-themeBg"
     >
       <StatusBar barStyle="light-content" />
-      
+
       {/* Glowing background auras */}
-      <View 
-        className="absolute bg-[#5C24B3]/25 rounded-full" 
-        style={{ width: 300, height: 300, top: -50, left: -50, opacity: 0.8 }} 
+      <View
+        className="absolute bg-[#5C24B3]/25 rounded-full"
+        style={{ width: 300, height: 300, top: -50, left: -50, opacity: 0.8 }}
       />
-      <View 
-        className="absolute bg-white/20 rounded-full" 
-        style={{ width: 250, height: 250, bottom: -50, right: -50, opacity: 0.6 }} 
+      <View
+        className="absolute bg-white/20 rounded-full"
+        style={{ width: 250, height: 250, bottom: -50, right: -50, opacity: 0.6 }}
       />
 
       <ScrollView
@@ -85,8 +93,8 @@ export default function LoginScreen() {
       >
         {/* Back navigation button if needed, styled premium */}
         <View className="absolute top-12 left-6">
-          <TouchableOpacity 
-            onPress={() => router.replace('/')} 
+          <TouchableOpacity
+            onPress={() => router.replace('/')}
             className="w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/10"
           >
             <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
@@ -95,8 +103,12 @@ export default function LoginScreen() {
 
         {/* Top Decorative Blob/Header */}
         <View className="items-center mb-10 mt-12">
-          <View className="w-20 h-20 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12">
-            <Ionicons name="school" size={40} color="#6A2FF9" className="-rotate-12" />
+          <View className="w-24 h-24 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12 overflow-hidden">
+            <Image
+              source={require('../../assets/images/logo.png')}
+              className="w-full h-full -rotate-12"
+              resizeMode="cover"
+            />
           </View>
           <Text className="text-4xl font-extrabold text-[#3B1480] tracking-tight text-center" style={{ fontWeight: '900' }}>
             Welcome Back

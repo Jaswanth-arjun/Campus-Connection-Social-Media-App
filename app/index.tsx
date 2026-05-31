@@ -1,30 +1,76 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { Redirect } from 'expo-router';
-import { useAuth } from '../hooks/useAuth';
-import { ActivityIndicator, View, Text } from 'react-native';
-import { auth } from '../services/firebase';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, View, StyleSheet, Dimensions } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+
+const { width, height } = Dimensions.get('window');
+
+const ENABLE_VIDEO_SPLASH = true;
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const [isVideoFinished, setIsVideoFinished] = useState(!ENABLE_VIDEO_SPLASH);
+  const [hasVideoError, setHasVideoError] = useState(!ENABLE_VIDEO_SPLASH);
+  const videoRef = useRef<Video>(null);
 
-  if (isLoading) {
+  // Fallback timeout in case the video fails to load, play, or is 0-bytes
+  useEffect(() => {
+    if (!ENABLE_VIDEO_SPLASH) return;
+    const timer = setTimeout(() => {
+      setIsVideoFinished(true);
+    }, 30000); // generous fallback so the intro is not cut off early
+    return () => clearTimeout(timer);
+  }, []);
+
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (status.didJustFinish) {
+      setIsVideoFinished(true);
+    }
+  };
+
+  const handleVideoError = () => {
+    setHasVideoError(true);
+    setIsVideoFinished(true);
+  };
+
+  // Wait until either the video finishes playing or it fails.
+  const isSplashDone = isVideoFinished;
+
+  if (!isSplashDone) {
     return (
-      <View className="flex-1 items-center justify-center bg-themeBg">
-        <View className="w-24 h-24 bg-white/30 rounded-3xl items-center justify-center border border-white/40 mb-6 shadow-2xl shadow-purple-950/10 rotate-12">
-          <Ionicons name="school" size={48} color="#6A2FF9" className="-rotate-12" />
-        </View>
-        <Text className="text-purple-950 font-black text-xl mb-4 tracking-tight">Campus Connect</Text>
-        <ActivityIndicator size="large" color="#6A2FF9" />
+      <View style={styles.container}>
+        {ENABLE_VIDEO_SPLASH && !hasVideoError ? (
+          <Video
+            ref={videoRef}
+            source={require('../assets/videos/splash.mp4')}
+            style={styles.video}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay
+            isLooping={false}
+            onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+            onError={handleVideoError}
+          />
+        ) : (
+          <ActivityIndicator size="large" color="#6A2FF9" />
+        )}
       </View>
     );
   }
 
-  if (isAuthenticated) {
-    if (auth?.currentUser && !auth.currentUser.emailVerified) {
-      return <Redirect href="/(auth)/verify-email" />;
-    }
-    return <Redirect href="/(tabs)/feed" />;
-  }
-
   return <Redirect href="/(auth)/login" />;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#D6C7FF', // Beautiful soft lavender theme background
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  video: {
+    width: width,
+    height: height,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+});

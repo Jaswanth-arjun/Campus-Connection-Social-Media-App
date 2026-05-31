@@ -13,9 +13,11 @@ import {
   Image,
   RefreshControl,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { onOpenComposer } from '../../utils/composeBus';
 import { usePosts } from '../../hooks/usePosts';
 import { useAuth } from '../../hooks/useAuth';
 import { PostCard } from '../../components/PostCard';
@@ -26,15 +28,72 @@ import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { useStoryStore } from '../../store/storyStore';
+import { Story } from '../../types';
+import { formatDistanceToNow } from 'date-fns';
+import * as ScreenCapture from 'expo-screen-capture';
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
+  const { compose } = useLocalSearchParams();
 
   const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore, deletePost } = usePosts();
+
+  // Story/Snap Store & State
+  const { stories, subscribeToStories, createStory, viewStory, unsubscribe } = useStoryStore();
+  const [viewerStoriesGroups, setViewerStoriesGroups] = useState<Story[][]>([]);
+  const [activeUserIndex, setActiveUserIndex] = useState<number | null>(null);
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+  const storyScrollRef = useRef<ScrollView>(null);
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+  React.useEffect(() => {
+    subscribeToStories();
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Screen capture prevention when viewing stories
+  React.useEffect(() => {
+    if (activeUserIndex !== null) {
+      ScreenCapture.preventScreenCaptureAsync().catch((err) => {
+        console.warn('Failed to prevent screen capture:', err);
+      });
+    } else {
+      ScreenCapture.allowScreenCaptureAsync().catch((err) => {
+        console.warn('Failed to allow screen capture:', err);
+      });
+    }
+  }, [activeUserIndex]);
+
+  // Mark current story as viewed
+  React.useEffect(() => {
+    if (activeUserIndex !== null && viewerStoriesGroups[activeUserIndex] && viewerStoriesGroups[activeUserIndex][activeStoryIndex] && currentUser) {
+      const currentStory = viewerStoriesGroups[activeUserIndex][activeStoryIndex];
+      viewStory(currentStory.id, currentUser.uid);
+    }
+  }, [activeUserIndex, activeStoryIndex, viewerStoriesGroups, currentUser]);
+
+  // Programmatic scroll of outer ScrollView on activeUserIndex change
+  React.useEffect(() => {
+    if (activeUserIndex !== null && storyScrollRef.current) {
+      const { width: W } = Dimensions.get('window');
+      storyScrollRef.current.scrollTo({
+        x: activeUserIndex * W,
+        animated: true,
+      });
+    }
+  }, [activeUserIndex]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [content, setContent] = useState('');
+
+  React.useEffect(() => {
+    const unsub = onOpenComposer(() => setShowCreateModal(true));
+    return unsub;
+  }, []);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ uri: string; name: string } | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -221,84 +280,164 @@ export default function FeedScreen() {
     }
   };
 
+  const handleAddStory = async () => {
+    if (!currentUser) return;
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        if (Platform.OS === 'web') {
+          alert('Camera permission is required to take snaps.');
+        } else {
+          Alert.alert('Permission Denied', 'Camera permission is required to take snaps.');
+        }
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [9, 16],
+        quality: 0.25,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        let base64Uri = '';
+        if (result.assets[0].base64) {
+          base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        } else {
+          try {
+            const res = await fetch(result.assets[0].uri);
+            const blob = await res.blob();
+            const reader = new FileReader();
+            await new Promise<void>((resolve) => {
+              reader.onloadend = () => {
+                base64Uri = reader.result as string;
+                resolve();
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) {
+            console.error('Error fallback reading camera base64:', e);
+            base64Uri = result.assets[0].uri;
+          }
+        }
+
+        if (base64Uri) {
+          Toast.show({
+            type: 'info',
+            text1: 'Uploading Pulse...',
+            text2: 'Sharing with the campus',
+          });
+          await createStory(
+            currentUser.uid,
+            currentUser.name,
+            currentUser.avatar || '',
+            base64Uri
+          );
+          Toast.show({
+            type: 'success',
+            text1: 'Pulse Shared! 📸',
+            text2: 'Your pulse is active for 24 hours',
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error adding story:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Upload Failed',
+        text2: error.message || 'Could not post pulse',
+      });
+    }
+  };
+
   const handleLoadMore = () => {
     if (hasMore && !isLoading) {
       loadMore();
     }
   };
 
+  // If route contains ?compose=1, open the create modal immediately
+  React.useEffect(() => {
+    if (compose === '1') {
+      setShowCreateModal(true);
+    }
+  }, [compose]);
+
+  // Group active stories by userId for feed display, filtering out already viewed stories (View-Once!)
+  const feedStoriesGroups = React.useMemo(() => {
+    const groups: { [userId: string]: Story[] } = {};
+    stories.forEach((story) => {
+      // Filter out if current user has viewed it
+      if (currentUser && story.views.includes(currentUser.uid)) {
+        return; // View-Once!
+      }
+      if (!groups[story.userId]) {
+        groups[story.userId] = [];
+      }
+      groups[story.userId].push(story);
+    });
+    return Object.values(groups)
+      .filter((group) => group.length > 0)
+      .sort((a, b) => b[0].createdAt.getTime() - a[0].createdAt.getTime());
+  }, [stories, currentUser]);
+
   return (
     <View className="flex-1 bg-themeBgLight">
       <StatusBar barStyle="dark-content" />
 
-      {/* Premium LinkedIn-Style Header Banner */}
-      <View 
-        className="bg-white border-b border-purple-100/70 shadow-md shadow-purple-950/5 overflow-hidden"
-        style={{ paddingTop: insets.top > 0 ? insets.top : 0 }}
+      {/* Sleek Row Header (Profile + Name + Compact Search) */}
+      <View
+        className="bg-white border-b border-purple-100/70 shadow-md shadow-purple-950/5 px-4 pb-3 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 12 }}
       >
-        <View className="relative w-full h-32 bg-slate-200">
-          <Image 
-            source={{ uri: currentUser?.coverImage || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800' }} 
-            className="w-full h-full" 
-            resizeMode="cover" 
-          />
-          {/* Quick Create Post Button (Floating on Header Banner) */}
+        {/* Left Part: Profile Photo & User Name */}
+        <View className="flex-row items-center flex-1 mr-3">
           <TouchableOpacity
-            onPress={() => setShowCreateModal(true)}
-            className="absolute top-3 right-3 bg-[#6A2FF9] w-10 h-10 rounded-full items-center justify-center shadow-lg active:opacity-90 border-2 border-white"
-            style={{ shadowColor: '#6A2FF9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 }}
+            onPress={() => router.push('/profile')}
+            className="active:opacity-85"
           >
-            <Ionicons name="add" size={22} color="#FFFFFF" />
+            {/* Increased width & height from 42 to 52, and avatar size from 38 to 48 */}
+            <View className="rounded-full bg-slate-50 border-2 border-purple-200 overflow-hidden shadow-sm" style={{ width: 52, height: 52 }}>
+              <UserAvatar uri={currentUser?.avatar} size={48} />
+            </View>
           </TouchableOpacity>
-
-          {/* User Profile Info Overlapping */}
-          <View className="absolute -bottom-6 left-5 flex-row items-end">
-            <TouchableOpacity
-              onPress={() => router.push('/profile')}
-              className="flex-row items-end active:opacity-85"
-            >
-              <View className="rounded-full bg-slate-50 shadow-md overflow-hidden" style={{ borderWidth: 3, borderColor: '#FFFFFF', width: 64, height: 64 }}>
-                <UserAvatar uri={currentUser?.avatar} size={58} />
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/profile')}
+            className="ml-3 flex-1"
+          >
+            {/* Increased font size from text-base to text-lg */}
+            <Text className="text-lg font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }} numberOfLines={1}>
+              {currentUser?.name}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Name and Search Bar Container */}
-        <View className="px-5 pt-8 pb-4">
-          <View className="flex-row items-center justify-between mb-3">
-            <TouchableOpacity onPress={() => router.push('/profile')}>
-              <Text className="text-xl font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }}>
-                {currentUser?.name}
-              </Text>
+        {/* Right Part: Search Input */}
+        {/* Slightly increased flex to 0.95, and maxWidth to 140 */}
+        <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-full px-3 py-1.5 shadow-inner" style={{ flex: 0.95, maxWidth: 140 }}>
+          <Ionicons name="search" size={15} color="#6A2FF9" />
+          <TextInput
+            className="flex-1 text-slate-800 font-semibold text-xs ml-1.5 py-0.5"
+            placeholder="Search..."
+            placeholderTextColor="#A78BFA"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                fetchPosts(true).catch((error: any) => {
+                  console.error('Failed to refresh posts after clear:', error);
+                });
+              }}
+            >
+              <Ionicons name="close-circle" size={14} color="#A78BFA" />
             </TouchableOpacity>
-          </View>
-
-          {/* Inline Search */}
-          <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-3xl px-4 py-2.5 shadow-inner mt-1">
-            <Ionicons name="search" size={18} color="#6A2FF9" />
-            <TextInput
-              className="flex-1 text-slate-800 font-semibold text-sm ml-2.5 py-0.5"
-              placeholder="Search posts, topics..."
-              placeholderTextColor="#A78BFA"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchQuery('');
-                  fetchPosts(true).catch((error: any) => {
-                    console.error('Failed to refresh posts after clear:', error);
-                  });
-                }}
-              >
-                <Ionicons name="close-circle" size={18} color="#A78BFA" />
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
         </View>
       </View>
 
@@ -318,6 +457,77 @@ export default function FeedScreen() {
         }}
         scrollEventThrottle={400}
       >
+        {/* Horizontal Stories Bar */}
+        <View className="mb-4 bg-white/40 rounded-[28px] overflow-hidden border border-purple-100/10 shadow-sm">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="py-4 px-3.5"
+            contentContainerStyle={{ alignItems: 'center' }}
+          >
+            {/* Add story button (Current User) */}
+            <View className="items-center mr-4">
+              <TouchableOpacity
+                onPress={handleAddStory}
+                className="relative active:opacity-90"
+              >
+                <View className="rounded-full bg-slate-50 border-2 border-dashed border-purple-300 p-0.5" style={{ width: 68, height: 68 }}>
+                  <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
+                    <UserAvatar uri={currentUser?.avatar} size={60} />
+                  </View>
+                </View>
+                {/* Plus Badge */}
+                <View className="absolute bottom-0 right-0 bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border-2 border-white shadow-sm">
+                  <Ionicons name="add" size={14} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+              <Text className="text-[11px] font-bold text-slate-500 mt-1.5">
+                My Pulse
+              </Text>
+            </View>
+
+            {/* Grouped Stories */}
+            {feedStoriesGroups.map((storyGroup) => {
+              const lastStory = storyGroup[storyGroup.length - 1];
+              const hasUnviewed = currentUser
+                ? storyGroup.some((s) => !s.views.includes(currentUser.uid))
+                : false;
+
+              return (
+                <View key={lastStory.userId} className="items-center mr-4">
+                  <TouchableOpacity
+                    onPress={async () => {
+                      setViewerStoriesGroups(feedStoriesGroups);
+                      const idx = feedStoriesGroups.findIndex((g) => g[0].userId === storyGroup[0].userId);
+                      setActiveUserIndex(idx >= 0 ? idx : 0);
+                      setActiveStoryIndex(0);
+                    }}
+                    className="active:opacity-85"
+                  >
+                    <View
+                      className="rounded-full p-[2.5px]"
+                      style={{
+                        backgroundColor: hasUnviewed ? '#6A2FF9' : '#CBD5E1',
+                        width: 68,
+                        height: 68,
+                      }}
+                    >
+                      <View className="rounded-full bg-white p-[2px] w-full h-full">
+                        <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
+                          <UserAvatar uri={lastStory.userAvatar} size={56} />
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                  <Text className="text-[11px] font-extrabold text-slate-700 mt-1.5 w-16 text-center" numberOfLines={1}>
+                    {lastStory.userId === currentUser?.uid ? 'You' : lastStory.userName.split(' ')[0]}
+                  </Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+
         {isLoading && posts.length === 0 ? (
           <SkeletonLoader type="post" count={3} />
         ) : posts.length === 0 ? (
@@ -444,6 +654,138 @@ export default function FeedScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Story Viewer Fullscreen Modal (Paging & Swipeable across different users) */}
+      {activeUserIndex !== null && viewerStoriesGroups[activeUserIndex] && (
+        <Modal
+          visible={activeUserIndex !== null}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setActiveUserIndex(null)}
+        >
+          <View className="flex-1 bg-slate-950 justify-center relative">
+            <StatusBar barStyle="light-content" backgroundColor="#020617" />
+
+            <ScrollView
+              ref={storyScrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ width: viewerStoriesGroups.length * SCREEN_WIDTH }}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                if (newIndex !== activeUserIndex && newIndex >= 0 && newIndex < viewerStoriesGroups.length) {
+                  setActiveUserIndex(newIndex);
+                  setActiveStoryIndex(0);
+                }
+              }}
+              style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+            >
+              {viewerStoriesGroups.map((storyGroup, userIdx) => {
+                const isCurrentUser = userIdx === activeUserIndex;
+                const storyIndex = isCurrentUser ? activeStoryIndex : 0;
+                const activeStory = storyGroup[storyIndex];
+
+                if (!activeStory) return null;
+
+                return (
+                  <View
+                    key={storyGroup[0].userId}
+                    style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, position: 'relative', justifyContent: 'center' }}
+                  >
+                    {/* Tap Gestures Overlay for Navigation */}
+                    <View className="absolute inset-0 flex-row z-10">
+                      {/* Left Side (Tap to go back) */}
+                      <TouchableOpacity
+                        activeOpacity={1}
+                        className="flex-1 h-full"
+                        onPress={() => {
+                          if (activeStoryIndex > 0) {
+                            setActiveStoryIndex(activeStoryIndex - 1);
+                          } else if (activeUserIndex > 0) {
+                            const prevUserIdx = activeUserIndex - 1;
+                            setActiveUserIndex(prevUserIdx);
+                            setActiveStoryIndex(viewerStoriesGroups[prevUserIdx].length - 1);
+                          } else {
+                            setActiveUserIndex(null);
+                          }
+                        }}
+                      />
+                      {/* Right Side (Tap to go forward) */}
+                      <TouchableOpacity
+                        activeOpacity={1}
+                        className="flex-1 h-full"
+                        onPress={() => {
+                          if (activeStoryIndex < storyGroup.length - 1) {
+                            setActiveStoryIndex(activeStoryIndex + 1);
+                          } else if (activeUserIndex < viewerStoriesGroups.length - 1) {
+                            setActiveUserIndex(activeUserIndex + 1);
+                            setActiveStoryIndex(0);
+                          } else {
+                            setActiveUserIndex(null);
+                          }
+                        }}
+                      />
+                    </View>
+
+                    {/* Story Content Image */}
+                    <Image
+                      source={{ uri: activeStory.imageUrl }}
+                      className="w-full h-full"
+                      resizeMode="contain"
+                    />
+
+                    {/* Top Header Controls (Above tap layer) */}
+                    <View className="absolute top-12 left-0 right-0 px-4 z-20">
+                      {/* Progress Indicators */}
+                      <View className="flex-row space-x-1 mb-4">
+                        {storyGroup.map((story, index) => (
+                          <View
+                            key={story.id}
+                            className="h-1 flex-1 rounded-full bg-white/30 overflow-hidden"
+                          >
+                            <View
+                              className="h-full bg-white"
+                              style={{
+                                width: index < storyIndex ? '100%' : index === storyIndex ? '100%' : '0%',
+                              }}
+                            />
+                          </View>
+                        ))}
+                      </View>
+
+                      {/* Author & Info Bar */}
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <View className="rounded-full bg-slate-800 border border-white/20 overflow-hidden" style={{ width: 40, height: 40 }}>
+                            <UserAvatar uri={activeStory.userAvatar} size={38} />
+                          </View>
+                          <View className="ml-2.5">
+                            <Text className="text-white font-extrabold text-sm shadow-sm" style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}>
+                              {activeStory.userName}
+                            </Text>
+                            <Text className="text-slate-300/80 font-bold text-[10px] shadow-sm mt-0.5" style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}>
+                              {formatDistanceToNow(new Date(activeStory.createdAt), { addSuffix: true })}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Close Button */}
+                        <TouchableOpacity
+                          onPress={() => setActiveUserIndex(null)}
+                          className="bg-black/40 rounded-full p-2 active:opacity-80"
+                        >
+                          <Ionicons name="close" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

@@ -4,8 +4,14 @@
     "slug": "campus-connect",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "campusconnect",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -20,6 +26,10 @@
     },
     "android": {
       "package": "com.campusconnect.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#ffffff"
+      },
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
@@ -27,8 +37,7 @@
         "INTERNET",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "POST_NOTIFICATIONS",
-        "android.permission.DETECT_SCREEN_CAPTURE"
+        "POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
