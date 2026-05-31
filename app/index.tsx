@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View, StyleSheet, Dimensions } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
+import { useAuth } from '../hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
 const ENABLE_VIDEO_SPLASH = true;
 
 export default function Index() {
+  const { currentUser, isLoading } = useAuth();
   const [isVideoFinished, setIsVideoFinished] = useState(!ENABLE_VIDEO_SPLASH);
   const [hasVideoError, setHasVideoError] = useState(!ENABLE_VIDEO_SPLASH);
   const videoRef = useRef<Video>(null);
@@ -54,6 +56,20 @@ export default function Index() {
         )}
       </View>
     );
+  }
+
+  // If splash video is finished but auth is still loading, keep showing the loading state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#6A2FF9" />
+      </View>
+    );
+  }
+
+  // Once splash is finished and session is loaded:
+  if (currentUser) {
+    return <Redirect href="/(tabs)/feed" />;
   }
 
   return <Redirect href="/(auth)/login" />;
