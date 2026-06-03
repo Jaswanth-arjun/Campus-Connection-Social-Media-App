@@ -33,6 +33,8 @@ import {
   ADVENTURER_OPTIONS,
   AVATAAARS_OPTIONS,
   LORELEI_OPTIONS,
+  OPEN_PEEPS_OPTIONS,
+  MICAH_OPTIONS,
 } from '../../utils/avatarGenerator';
 
 export default function ProfileScreen() {
@@ -654,6 +656,10 @@ export default function ProfileScreen() {
                 ? 'Snapchat Adventurer Style ⚡'
                 : avatarConfig.style === 'avataaars'
                 ? 'Instagram Minimal Flat Style 🎨'
+                : avatarConfig.style === 'open-peeps'
+                ? 'Open Peeps Hand-Drawn Style 🧑‍🎨'
+                : avatarConfig.style === 'micah'
+                ? 'Micah Abstract Geometric Style 💎'
                 : 'Lorelei Aesthetic Anime Style 💖'}
             </Text>
           </View>
@@ -708,19 +714,26 @@ export default function ProfileScreen() {
                     id: 'adventurer',
                     title: '🌟 Adventurer Cartoon',
                     desc: 'Snapchat Bitmoji-inspired Disney 3D style character illustration. Premium depth and stunning detailing.',
-                    defaultHair: 'short01',
                   },
                   {
                     id: 'avataaars',
                     title: '🎨 Modern Minimalist Flat',
                     desc: 'Instagram-inspired aesthetic flat graphics with custom round frames and trendy geometric designs.',
-                    defaultHair: 'ShortHairShortRound',
+                  },
+                  {
+                    id: 'open-peeps',
+                    title: '🧑‍🎨 Open Peeps Hand-Drawn',
+                    desc: 'Aesthetic, hand-drawn comic character illustrations (Notion sketch style). Highly artistic and custom.',
+                  },
+                  {
+                    id: 'micah',
+                    title: '💎 Micah Abstract Art',
+                    desc: 'Modern, flat geometric fashion faces. Distinctly stylish and premium artistic vector profiles.',
                   },
                   {
                     id: 'lorelei',
                     title: '💖 Kawaii Anime / Aesthetic',
                     desc: 'Super cute anime chibi artwork with gorgeous pastel hair dyes and elegant aesthetic details.',
-                    defaultHair: 'hair01',
                   },
                 ].map((style) => {
                   const isSelected = avatarConfig.style === style.id;
@@ -835,6 +848,10 @@ export default function ProfileScreen() {
                       ? ADVENTURER_OPTIONS.skinColors
                       : avatarConfig.style === 'avataaars'
                       ? AVATAAARS_OPTIONS.skinColors
+                      : avatarConfig.style === 'open-peeps'
+                      ? OPEN_PEEPS_OPTIONS.skinColors
+                      : avatarConfig.style === 'micah'
+                      ? MICAH_OPTIONS.skinColors
                       : LORELEI_OPTIONS.skinColors
                     ).map((skin) => {
                       const isSelected = avatarConfig.skinColor === skin.value;
@@ -871,6 +888,10 @@ export default function ProfileScreen() {
                       ? (avatarConfig.gender === 'male' ? ADVENTURER_OPTIONS.maleHair : ADVENTURER_OPTIONS.femaleHair)
                       : avatarConfig.style === 'avataaars'
                       ? (avatarConfig.gender === 'male' ? AVATAAARS_OPTIONS.maleHair : AVATAAARS_OPTIONS.femaleHair)
+                      : avatarConfig.style === 'open-peeps'
+                      ? (avatarConfig.gender === 'male' ? OPEN_PEEPS_OPTIONS.maleHair : OPEN_PEEPS_OPTIONS.femaleHair)
+                      : avatarConfig.style === 'micah'
+                      ? MICAH_OPTIONS.hair
                       : LORELEI_OPTIONS.hair
                     ).map((hair) => {
                       const isSelected = avatarConfig.hair === hair.id;
@@ -906,6 +927,10 @@ export default function ProfileScreen() {
                       ? ADVENTURER_OPTIONS.hairColors
                       : avatarConfig.style === 'avataaars'
                       ? AVATAAARS_OPTIONS.hairColors
+                      : avatarConfig.style === 'open-peeps'
+                      ? OPEN_PEEPS_OPTIONS.hairColors
+                      : avatarConfig.style === 'micah'
+                      ? MICAH_OPTIONS.hairColors
                       : LORELEI_OPTIONS.hairColors
                     ).map((color) => {
                       const isSelected = avatarConfig.hairColor === color.value;
@@ -932,17 +957,21 @@ export default function ProfileScreen() {
                   </View>
                 </View>
 
-                {/* Facial Eyes & Mouth Expressions (Adventurer / Avataaars styles) */}
+                {/* Facial Eyes & Mouth Expressions */}
                 {avatarConfig.style !== 'lorelei' && (
                   <>
                     <View>
                       <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
-                        Eyes Shape & Expression
+                        {avatarConfig.style === 'open-peeps' ? 'Facial Expression' : 'Eyes Shape & Expression'}
                       </Text>
                       <View className="flex-row flex-wrap">
                         {(avatarConfig.style === 'adventurer'
                           ? ADVENTURER_OPTIONS.eyes
-                          : AVATAAARS_OPTIONS.eyes
+                          : avatarConfig.style === 'avataaars'
+                          ? AVATAAARS_OPTIONS.eyes
+                          : avatarConfig.style === 'open-peeps'
+                          ? OPEN_PEEPS_OPTIONS.eyes
+                          : MICAH_OPTIONS.eyes
                         ).map((eye) => {
                           const isSelected = avatarConfig.eyes === eye.id;
                           return (
@@ -967,37 +996,41 @@ export default function ProfileScreen() {
                       </View>
                     </View>
 
-                    <View>
-                      <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
-                        Happy Mouth Shape
-                      </Text>
-                      <View className="flex-row flex-wrap">
-                        {(avatarConfig.style === 'adventurer'
-                          ? ADVENTURER_OPTIONS.mouths
-                          : AVATAAARS_OPTIONS.mouths
-                        ).map((m) => {
-                          const isSelected = avatarConfig.mouth === m.id;
-                          return (
-                            <TouchableOpacity
-                              key={m.id}
-                              onPress={() => setAvatarConfig((prev) => ({ ...prev, mouth: m.id }))}
-                              className="px-4 py-2.5 rounded-2xl m-1.5 border"
-                              style={{
-                                borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
-                                backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
-                              }}
-                            >
-                              <Text
-                                className="text-xs font-extrabold"
-                                style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
+                    {avatarConfig.style !== 'open-peeps' && (
+                      <View>
+                        <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                          Happy Mouth Shape
+                        </Text>
+                        <View className="flex-row flex-wrap">
+                          {(avatarConfig.style === 'adventurer'
+                            ? ADVENTURER_OPTIONS.mouths
+                            : avatarConfig.style === 'avataaars'
+                            ? AVATAAARS_OPTIONS.mouths
+                            : MICAH_OPTIONS.mouths
+                          ).map((m) => {
+                            const isSelected = avatarConfig.mouth === m.id;
+                            return (
+                              <TouchableOpacity
+                                key={m.id}
+                                onPress={() => setAvatarConfig((prev) => ({ ...prev, mouth: m.id }))}
+                                className="px-4 py-2.5 rounded-2xl m-1.5 border"
+                                style={{
+                                  borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                                  backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
+                                }}
                               >
-                                {m.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
+                                <Text
+                                  className="text-xs font-extrabold"
+                                  style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
+                                >
+                                  {m.name}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
                       </View>
-                    </View>
+                    )}
                   </>
                 )}
               </View>
@@ -1016,7 +1049,11 @@ export default function ProfileScreen() {
                     <View className="flex-row flex-wrap">
                       {(avatarConfig.style === 'adventurer'
                         ? ADVENTURER_OPTIONS.glasses
-                        : AVATAAARS_OPTIONS.glasses
+                        : avatarConfig.style === 'avataaars'
+                        ? AVATAAARS_OPTIONS.glasses
+                        : avatarConfig.style === 'open-peeps'
+                        ? OPEN_PEEPS_OPTIONS.glasses
+                        : MICAH_OPTIONS.glasses
                       ).map((glass) => {
                         const isSelected = avatarConfig.glasses === glass.id;
                         return (
@@ -1042,8 +1079,8 @@ export default function ProfileScreen() {
                   </View>
                 )}
 
-                {/* Clothing Dress Tshirts (Adventurer style) */}
-                {avatarConfig.style === 'adventurer' && (
+                {/* Clothing Dress Tshirts (Adventurer/Open Peeps/Micah styles) */}
+                {(avatarConfig.style === 'adventurer' || avatarConfig.style === 'open-peeps' || avatarConfig.style === 'micah') && (
                   <View>
                     <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
                       T-Shirt Outerwear Color

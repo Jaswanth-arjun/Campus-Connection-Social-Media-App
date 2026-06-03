@@ -1,10 +1,10 @@
 /**
  * Professional DiceBear Cartoon Avatar Engine for Campus Connect.
- * Generates stunning, high-fidelity Disney/Snapchat/Instagram style character avatars.
+ * Generates stunning, high-fidelity character avatars in multiple styles.
  */
 
 export interface DiceBearConfig {
-  style: 'adventurer' | 'avataaars' | 'lorelei';
+  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah';
   gender: 'male' | 'female';
   hair: string;
   hairColor: string;
@@ -175,13 +175,118 @@ export const LORELEI_OPTIONS = {
   ],
 };
 
+// 4. Open Peeps Curated Options (Notion / Hand-Drawn Indie Cartoon Style)
+export const OPEN_PEEPS_OPTIONS = {
+  skinColors: [
+    { name: 'Pale', value: 'ffdbb4' },
+    { name: 'Light', value: 'edb98a' },
+    { name: 'Tan', value: 'd08b5b' },
+    { name: 'Brown', value: 'ae5d29' },
+    { name: 'Espresso', value: '694d3d' },
+  ],
+  hairColors: [
+    { name: 'Black', value: '2c1b18' },
+    { name: 'Auburn', value: 'a55728' },
+    { name: 'Blonde', value: 'd6b370' },
+    { name: 'Brown', value: '724133' },
+    { name: 'Red', value: 'c93305' },
+    { name: 'Silver Gray', value: 'e8e1e1' },
+  ],
+  maleHair: [
+    { id: 'short1', name: 'Messy Crop' },
+    { id: 'short3', name: 'Curved Part' },
+    { id: 'flatTop', name: 'Modern Flat Top' },
+    { id: 'mohawk', name: 'Punk Mohawk' },
+    { id: 'shaved1', name: 'Sides Shaved' },
+    { id: 'hatBeanie', name: 'Cool Beanie' },
+  ],
+  femaleHair: [
+    { id: 'long', name: 'Classic Long' },
+    { id: 'longBangs', name: 'Long with Bangs' },
+    { id: 'longCurly', name: 'Curly Waves' },
+    { id: 'mediumBangs', name: 'Shoulder Bob' },
+    { id: 'bun', name: 'Messy Top Bun' },
+    { id: 'buns', name: 'Cute Double Buns' },
+  ],
+  eyes: [
+    { id: 'smile', name: 'Content Smile' },
+    { id: 'smileBig', name: 'Big Joy' },
+    { id: 'smileTeethGap', name: 'Playful Teeth' },
+    { id: 'cheeky', name: 'Sassy Cheeky' },
+    { id: 'calm', name: 'Calm Relaxed' },
+    { id: 'serious', name: 'Serious Calm' },
+    { id: 'concerned', name: 'Curious Concerned' },
+    { id: 'lovingGrin1', name: 'Heart Eyes' },
+  ],
+  glasses: [
+    { id: 'none', name: 'No Glasses' },
+    { id: 'glasses', name: 'Round Glasses' },
+    { id: 'glasses2', name: 'Retro Frame' },
+    { id: 'glasses3', name: 'Cat-eye Style' },
+    { id: 'glasses4', name: 'Thick Circular' },
+    { id: 'sunglasses', name: 'Classic Sunglasses' },
+    { id: 'sunglasses2', name: 'Cool Aviators' },
+    { id: 'eyepatch', name: 'Pirate Eyepatch' },
+  ]
+};
+
+// 5. Micah Curated Options (Aesthetic Hand-Drawn Geometric Face Art)
+export const MICAH_OPTIONS = {
+  skinColors: [
+    { name: 'Peach', value: 'f9c9b6' },
+    { name: 'Clay', value: 'ac6651' },
+    { name: 'Terracotta', value: '77311d' },
+  ],
+  hair: [
+    { id: 'fonze', name: 'The Pompadour' },
+    { id: 'mrT', name: 'Stylish Mohawk' },
+    { id: 'dougFunny', name: 'Classic Part' },
+    { id: 'mrClean', name: 'Bald/Clean' },
+    { id: 'dannyPhantom', name: 'Anime Shag' },
+    { id: 'full', name: 'Voluminous Curly' },
+    { id: 'turban', name: 'Elegant Turban' },
+    { id: 'pixie', name: 'Chic Pixie' },
+  ],
+  hairColors: [
+    { name: 'Jet Black', value: '000000' },
+    { name: 'Clay Brown', value: 'ac6651' },
+    { name: 'Golden Apricot', value: 'f4d150' },
+    { name: 'Lavender Blush', value: 'e0ddff' },
+    { name: 'Sky Mint', value: 'd2eff3' },
+    { name: 'Cosmic Violet', value: '9287ff' },
+  ],
+  eyes: [
+    { id: 'eyes', name: 'Default Look' },
+    { id: 'round', name: 'Intense Round' },
+    { id: 'eyesShadow', name: 'Muted Shadow' },
+    { id: 'smiling', name: 'Sweet Smile' },
+    { id: 'smilingShadow', name: 'Charming Wink' },
+  ],
+  mouths: [
+    { id: 'smile', name: 'Warm Smile' },
+    { id: 'laughing', name: 'Loud Laugh' },
+    { id: 'nervous', name: 'Nervous Sweat' },
+    { id: 'sad', name: 'Melancholy' },
+    { id: 'smirk', name: 'Cocky Smirk' },
+    { id: 'surprised', name: 'Gasping Shock' },
+  ],
+  glasses: [
+    { id: 'none', name: 'No Glasses' },
+    { id: 'round', name: 'Retro Circle' },
+    { id: 'square', name: 'Bold Square' },
+  ]
+};
+
 /**
  * Returns a valid starting configuration matching the required schema values for a specific style.
  */
-export function getDefaultConfigForStyle(style: 'adventurer' | 'avataaars' | 'lorelei', gender: 'male' | 'female'): DiceBearConfig {
+export function getDefaultConfigForStyle(
+  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah',
+  gender: 'male' | 'female'
+): DiceBearConfig {
   if (style === 'adventurer') {
     return {
-      style: 'adventurer',
+      style,
       gender,
       hair: gender === 'male' ? 'short01' : 'long01',
       hairColor: '0e0e0e',
@@ -195,7 +300,7 @@ export function getDefaultConfigForStyle(style: 'adventurer' | 'avataaars' | 'lo
     };
   } else if (style === 'avataaars') {
     return {
-      style: 'avataaars',
+      style,
       gender,
       hair: gender === 'male' ? 'shortRound' : 'bob',
       hairColor: '2c1b18',
@@ -205,7 +310,35 @@ export function getDefaultConfigForStyle(style: 'adventurer' | 'avataaars' | 'lo
       mouth: 'default',
       glasses: 'none',
       bgColor: 'c0aede',
-      shirtColor: '4f46e5', // not used by avataaars in URL, but kept for interface consistency
+      shirtColor: '4f46e5',
+    };
+  } else if (style === 'open-peeps') {
+    return {
+      style,
+      gender,
+      hair: gender === 'male' ? 'short1' : 'long',
+      hairColor: '2c1b18',
+      skinColor: 'ffdbb4',
+      eyes: 'smile',
+      eyebrows: 'variant01',
+      mouth: 'smile',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: 'ea580c',
+    };
+  } else if (style === 'micah') {
+    return {
+      style,
+      gender,
+      hair: 'fonze',
+      hairColor: '000000',
+      skinColor: 'f9c9b6',
+      eyes: 'eyes',
+      eyebrows: 'variant01',
+      mouth: 'smile',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '4f46e5',
     };
   } else {
     // lorelei
@@ -268,13 +401,40 @@ export function getDiceBearUrl(config: DiceBearConfig): string {
     params.push(`hair=${config.hair}`);
     params.push(`hairColor=${config.hairColor}`);
     params.push(`backgroundColor=${config.bgColor}`);
+  } else if (config.style === 'open-peeps') {
+    params.push(`skinColor=${config.skinColor}`);
+    params.push(`head=${config.hair}`);
+    params.push(`headContrastColor=${config.hairColor}`);
+    params.push(`face=${config.eyes}`);
+    if (config.glasses !== 'none') {
+      params.push(`accessories=${config.glasses}`);
+      params.push(`accessoriesProbability=100`);
+    } else {
+      params.push(`accessoriesProbability=0`);
+    }
+    params.push(`backgroundColor=${config.bgColor}`);
+    params.push(`clothingColor=${config.shirtColor}`);
+  } else if (config.style === 'micah') {
+    params.push(`baseColor=${config.skinColor}`);
+    params.push(`hair=${config.hair}`);
+    params.push(`hairColor=${config.hairColor}`);
+    params.push(`eyes=${config.eyes}`);
+    params.push(`mouth=${config.mouth}`);
+    if (config.glasses !== 'none') {
+      params.push(`glasses=${config.glasses}`);
+      params.push(`glassesProbability=100`);
+    } else {
+      params.push(`glassesProbability=0`);
+    }
+    params.push(`backgroundColor=${config.bgColor}`);
+    params.push(`shirtColor=${config.shirtColor}`);
   }
 
   return `${base}?${params.join('&')}`;
 }
 
 /**
- * Fetches the PNG binary from DiceBear and returns it compiled as a high-performance offline base64 Data URI.
+ * Fetches the PNG binary from DiceBear and returns it compiled as a base64 Data URI.
  */
 export async function compileDiceBearAvatar(config: DiceBearConfig): Promise<string> {
   const url = getDiceBearUrl(config);
