@@ -389,7 +389,7 @@ export default function FeedScreen() {
       await createStory(
         currentUser.uid,
         currentUser.name,
-        currentUser.avatar || '',
+        currentUser.pulseAvatar || currentUser.avatar || '',
         tempStoryImage,
         selectedFilter
       );
@@ -614,7 +614,7 @@ export default function FeedScreen() {
                   >
                     <View className="rounded-full bg-white p-[2px] w-full h-full">
                       <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
-                        <UserAvatar uri={currentUser?.avatar} size={56} />
+                        <UserAvatar uri={currentUser?.pulseAvatar || currentUser?.avatar} size={56} />
                       </View>
                     </View>
                   </View>
@@ -636,8 +636,8 @@ export default function FeedScreen() {
                   className="relative active:opacity-90"
                 >
                   <View className="rounded-full bg-slate-50 border-2 border-dashed border-purple-300 p-0.5" style={{ width: 68, height: 68 }}>
-                    <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
-                      <UserAvatar uri={currentUser?.avatar} size={60} />
+                     <View className="rounded-full overflow-hidden w-full h-full bg-slate-100">
+                      <UserAvatar uri={currentUser?.pulseAvatar || currentUser?.avatar} size={60} />
                     </View>
                   </View>
                   {/* Plus Badge */}

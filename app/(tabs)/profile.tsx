@@ -52,6 +52,7 @@ export default function ProfileScreen() {
   const [editDepartment, setEditDepartment] = useState(currentUser?.department || '');
   const [editYear, setEditYear] = useState(currentUser?.year || '');
   const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const [editPulseAvatar, setEditPulseAvatar] = useState<string | null>(null);
   const [editCover, setEditCover] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -211,6 +212,7 @@ export default function ProfileScreen() {
     try {
       setIsSaving(true);
       let avatarUrl = currentUser.avatar;
+      let pulseAvatarUrl = currentUser.pulseAvatar || '';
       let coverUrl = currentUser.coverImage || '';
 
       if (editAvatar) {
@@ -224,6 +226,21 @@ export default function ProfileScreen() {
             );
           } catch (e) {
             avatarUrl = editAvatar;
+          }
+        }
+      }
+
+      if (editPulseAvatar) {
+        if (editPulseAvatar.startsWith('data:')) {
+          pulseAvatarUrl = editPulseAvatar;
+        } else {
+          try {
+            pulseAvatarUrl = await storageService.uploadImage(
+              editPulseAvatar,
+              `pulse_avatars/${currentUser.uid}/${Date.now()}`
+            );
+          } catch (e) {
+            pulseAvatarUrl = editPulseAvatar;
           }
         }
       }
@@ -250,6 +267,7 @@ export default function ProfileScreen() {
         year: editYear,
         avatar: avatarUrl,
         coverImage: coverUrl,
+        pulseAvatar: pulseAvatarUrl,
       });
 
       setShowEditModal(false);
@@ -353,6 +371,7 @@ export default function ProfileScreen() {
                 setEditDepartment(currentUser.department);
                 setEditYear(currentUser.year);
                 setEditAvatar(null);
+                setEditPulseAvatar(null);
                 setEditCover(null);
                 setShowEditModal(true);
               }}
@@ -391,6 +410,7 @@ export default function ProfileScreen() {
                 setEditDepartment(currentUser.department);
                 setEditYear(currentUser.year);
                 setEditAvatar(null);
+                setEditPulseAvatar(null);
                 setEditCover(null);
                 setShowEditModal(true);
               }}
@@ -507,10 +527,10 @@ export default function ProfileScreen() {
 
 
           <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
-            {/* Beautiful Side-by-Side Photo & Cover Pickers */}
+             {/* Beautiful Side-by-Side Photo & Avatar Studio Pickers */}
             <View className="flex-row justify-around items-center mb-8 bg-[#6A2FF9]/5 p-5 rounded-3xl border border-[#6A2FF9]/10">
               {/* Avatar Picker */}
-              <TouchableOpacity onPress={handlePickAvatarOption} className="items-center flex-1">
+              <TouchableOpacity onPress={handlePickAvatar} className="items-center flex-1">
                 <UserAvatar uri={editAvatar || currentUser.avatar} size={76} />
                 <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider">
                   Change Photo
@@ -520,15 +540,27 @@ export default function ProfileScreen() {
               {/* Divider line */}
               <View className="w-[1px] h-14 bg-[#6A2FF9]/15" />
 
-              {/* Cover Picker */}
-              <TouchableOpacity onPress={handlePickCoverImage} className="items-center flex-1">
-                <Image
-                  source={{ uri: editCover || currentUser.coverImage || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800' }}
-                  className="w-24 h-15 rounded-xl border border-slate-200"
-                  resizeMode="cover"
-                />
-                <Text className="text-[#6A2FF9] mt-2.5 font-extrabold text-xs uppercase tracking-wider">
-                  Change Cover
+              {/* Avatar Builder */}
+              <TouchableOpacity
+                onPress={() => {
+                  setAvatarConfig(getDefaultConfigForStyle('adventurer', 'male'));
+                  setShowAvatarModal(true);
+                }}
+                className="items-center flex-1"
+              >
+                <View className="w-18 h-18 rounded-2xl bg-purple-100 items-center justify-center border border-purple-200 shadow-sm overflow-hidden">
+                  {editPulseAvatar || currentUser.pulseAvatar ? (
+                    <Image
+                      source={{ uri: editPulseAvatar || currentUser.pulseAvatar }}
+                      className="w-full h-full"
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Ionicons name="body" size={32} color="#6A2FF9" />
+                  )}
+                </View>
+                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider">
+                  Edit Avatar
                 </Text>
               </TouchableOpacity>
             </View>
@@ -611,21 +643,79 @@ export default function ProfileScreen() {
                 try {
                   setIsCompilingAvatar(true);
                   const compiledBase64 = await compileDiceBearAvatar(avatarConfig);
-                  setEditAvatar(compiledBase64);
-                  setShowAvatarModal(false);
-                  Toast.show({
-                    type: 'success',
-                    text1: 'Avatar Assembled! 🎨🌟',
-                    text2: 'Tap Save Profile to finalize your live DP',
-                  });
+                  setIsCompilingAvatar(false);
+
+                  Alert.alert(
+                    'Set as Profile Photo?',
+                    'Would you like to set this new avatar as your main profile picture (DP), or use it only for your campus stories/pulse?',
+                    [
+                      {
+                        text: 'Only for Stories/Pulse',
+                        onPress: () => {
+                          setEditPulseAvatar(compiledBase64);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Set for Stories! 📸✨',
+                            text2: 'Saved for campus pulses. Tap Save Profile to apply.',
+                          });
+                        }
+                      },
+                      {
+                        text: 'Set as Profile Picture',
+                        style: 'default',
+                        onPress: () => {
+                          setEditAvatar(compiledBase64);
+                          setEditPulseAvatar(compiledBase64);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Set as DP! 🎨🌟',
+                            text2: 'Saved as profile photo. Tap Save Profile to apply.',
+                          });
+                        }
+                      }
+                    ],
+                    { cancelable: true }
+                  );
                 } catch (e) {
                   console.error(e);
-                  // Fallback to direct URL if compilation fails
-                  const directUrl = getDiceBearUrl(avatarConfig);
-                  setEditAvatar(directUrl);
-                  setShowAvatarModal(false);
-                } finally {
                   setIsCompilingAvatar(false);
+                  const directUrl = getDiceBearUrl(avatarConfig);
+
+                  Alert.alert(
+                    'Set as Profile Photo?',
+                    'Would you like to set this new avatar as your main profile picture (DP), or use it only for your campus stories/pulse?',
+                    [
+                      {
+                        text: 'Only for Stories/Pulse',
+                        onPress: () => {
+                          setEditPulseAvatar(directUrl);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Set for Stories! 📸✨',
+                            text2: 'Saved for campus pulses. Tap Save Profile to apply.',
+                          });
+                        }
+                      },
+                      {
+                        text: 'Set as Profile Picture',
+                        style: 'default',
+                        onPress: () => {
+                          setEditAvatar(directUrl);
+                          setEditPulseAvatar(directUrl);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Set as DP! 🎨🌟',
+                            text2: 'Saved as profile photo. Tap Save Profile to apply.',
+                          });
+                        }
+                      }
+                    ],
+                    { cancelable: true }
+                  );
                 }
               }}
               disabled={isCompilingAvatar}

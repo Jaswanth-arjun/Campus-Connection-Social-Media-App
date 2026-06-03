@@ -11,6 +11,7 @@ export interface User {
   darkMode: boolean;
   isAdmin?: boolean;
   coverImage?: string;
+  pulseAvatar?: string;
 }
 
 export interface Post {
