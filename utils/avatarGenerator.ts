@@ -459,9 +459,9 @@ export function getDefaultConfigForStyle(
       eyes: 'happy',
       eyebrows: 'neutral',
       mouth: 'smile',
-      glasses: 'none',
+      glasses: 'tShirt', // Toon Head uses glasses to store the clothes style parameter
       bgColor: 'c0aede',
-      shirtColor: '0b3286',
+      shirtColor: '0b3286', // Toon Head uses shirtColor to store clothes color hex parameter
     };
   } else if (style === 'big-ears') {
     return {
@@ -573,7 +573,8 @@ export function getDiceBearUrl(config: DiceBearConfig): string {
     params.push(`eyes=${config.eyes}`);
     params.push(`eyebrows=${config.eyebrows}`);
     params.push(`mouth=${config.mouth}`);
-    params.push(`clothes=${config.shirtColor}`); // map shirtColor field to the clothes style
+    params.push(`clothes=${config.glasses}`); // map glasses property (stores clothes style e.g. tShirt)
+    params.push(`clothesColor=${config.shirtColor}`); // map shirtColor property (stores clothesColor hex)
     params.push(`backgroundColor=${config.bgColor}`);
     params.push(`rearHairProbability=${config.gender === 'female' ? '100' : '0'}`);
   } else if (config.style === 'big-ears') {

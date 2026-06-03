@@ -1115,7 +1115,7 @@ export default function ProfileScreen() {
                   </View>
                 )}
 
-                {/* Clothes Style Selector (Toon Head style) */}
+                 {/* Clothes Style Selector (Toon Head style) */}
                 {avatarConfig.style === 'toon-head' && (
                   <View className="mb-6">
                     <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
@@ -1123,11 +1123,11 @@ export default function ProfileScreen() {
                     </Text>
                     <View className="flex-row flex-wrap">
                       {TOON_HEAD_OPTIONS.clothes.map((cloth) => {
-                        const isSelected = avatarConfig.shirtColor === cloth.id;
+                        const isSelected = avatarConfig.glasses === cloth.id;
                         return (
                           <TouchableOpacity
                             key={cloth.id}
-                            onPress={() => setAvatarConfig((prev) => ({ ...prev, shirtColor: cloth.id }))}
+                            onPress={() => setAvatarConfig((prev) => ({ ...prev, glasses: cloth.id }))}
                             className="px-4 py-2.5 rounded-2xl m-1.5 border"
                             style={{
                               borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
@@ -1147,14 +1147,17 @@ export default function ProfileScreen() {
                   </View>
                 )}
 
-                {/* Clothing Dress Tshirts (Adventurer/Open Peeps/Micah styles) */}
-                {(avatarConfig.style === 'adventurer' || avatarConfig.style === 'open-peeps' || avatarConfig.style === 'micah') && (
+                {/* Clothing Dress Tshirts (Adventurer/Open Peeps/Micah/Toon Head styles) */}
+                {(avatarConfig.style === 'adventurer' || avatarConfig.style === 'open-peeps' || avatarConfig.style === 'micah' || avatarConfig.style === 'toon-head') && (
                   <View>
                     <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
                       T-Shirt Outerwear Color
                     </Text>
                     <View className="flex-row flex-wrap">
-                      {ADVENTURER_OPTIONS.shirtColors.map((color) => {
+                      {(avatarConfig.style === 'toon-head'
+                        ? TOON_HEAD_OPTIONS.clothesColors
+                        : ADVENTURER_OPTIONS.shirtColors
+                      ).map((color) => {
                         const isSelected = avatarConfig.shirtColor === color.value;
                         return (
                           <TouchableOpacity
