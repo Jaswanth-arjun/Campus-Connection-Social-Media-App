@@ -48,6 +48,14 @@ export const getAcademicInfo = (rollNumber: string): AcademicInfo => {
     branchName = 'EEE';
   } else if (branchCode === '03' || seed.includes('ME') || seed.includes('A3')) {
     branchName = 'MECH';
+  } else if (branchCode === '12' || seed.includes('IT') || seed.includes('A12')) {
+    branchName = 'IT';
+  } else if (branchCode === '33' || seed.includes('AIDS') || seed.includes('A33')) {
+    branchName = 'AIDS';
+  } else if (branchCode === '35' || seed.includes('AIML') || seed.includes('A35')) {
+    branchName = 'AIML';
+  } else if (branchCode === '37' || seed.includes('DS') || seed.includes('A37')) {
+    branchName = 'DS';
   }
 
   // Determine semester text (Assuming June is end of even semester, i.e., Sem II / IV / VI / VIII)
@@ -167,7 +175,7 @@ export const getAcademicInfo = (rollNumber: string): AcademicInfo => {
         'Major Project Work'
       ];
     }
-  } else { // MECH
+  } else if (branchName === 'MECH') {
     if (yearOfStudy === 1) {
       subjects = [
         'Applied Physics',
@@ -201,6 +209,154 @@ export const getAcademicInfo = (rollNumber: string): AcademicInfo => {
         'Production & Operations Management',
         'Automobile Engineering',
         'Additive Manufacturing',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'AIDS') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Engineering Chemistry',
+        'Differential Equations & Vector Calculus',
+        'Basic Electrical & Electronics Eng.',
+        'Engineering Drawing',
+        'Python Programming',
+        'IT Workshop Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Discrete Mathematics',
+        'Operating Systems',
+        'Database Management Systems',
+        'R Programming for Data Science',
+        'Object Oriented Programming (Java)',
+        'DBMS & Java Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Artificial Intelligence',
+        'Data Mining & Warehousing',
+        'Deep Learning',
+        'Natural Language Processing',
+        'Big Data Technologies',
+        'AI & NLP Lab'
+      ];
+    } else {
+      subjects = [
+        'Reinforcement Learning',
+        'Business Intelligence & Analytics',
+        'Data Science Case Studies',
+        'Professional Ethics',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'AIML') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Applied Physics',
+        'Linear Algebra & Calculus',
+        'Engineering Graphics',
+        'Problem Solving using Python',
+        'Data Structures',
+        'Python & DS Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Design & Analysis of Algorithms',
+        'Database Management Systems',
+        'Theory of Computation',
+        'Foundations of Machine Learning',
+        'Computer Organization & Architecture',
+        'Machine Learning Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Deep Learning & Neural Networks',
+        'Computer Vision',
+        'Natural Language Processing',
+        'Software Engineering & Agile',
+        'Reinforcement Learning',
+        'Deep Learning & Computer Vision Lab'
+      ];
+    } else {
+      subjects = [
+        'Generative AI & Large Language Models',
+        'AI in Healthcare & IoT',
+        'Robotics & Intelligent Systems',
+        'Cloud Computing & MLOps',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'IT') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Engineering Chemistry',
+        'Linear Algebra & Vector Calculus',
+        'Basic Electrical Engineering',
+        'Computer Programming (C)',
+        'Engineering Graphics',
+        'Programming Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Discrete Mathematics',
+        'Object Oriented Programming',
+        'Database Management Systems',
+        'Computer Networks',
+        'Software Engineering',
+        'Java & DBMS Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Web Technologies',
+        'Cryptography & Network Security',
+        'Mobile Application Development',
+        'Cloud Computing',
+        'Data Warehousing & Data Mining',
+        'Web & Mobile App Lab'
+      ];
+    } else {
+      subjects = [
+        'Internet of Things (IoT)',
+        'Information Security',
+        'Enterprise Resource Planning',
+        'Cloud Security & Privacy',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'DS') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Applied Physics',
+        'Mathematical Foundations of Data Science',
+        'Python Programming',
+        'Engineering Drawing',
+        'Data Structures & Algorithms',
+        'Python & DS Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Linear Algebra & Optimization',
+        'Probability & Statistics for Data Science',
+        'Database Management Systems',
+        'Exploratory Data Analysis',
+        'Java Programming',
+        'Data Analytics Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Machine Learning',
+        'Business Analytics & Visualization',
+        'Big Data Analytics',
+        'Predictive Modeling',
+        'Cloud Computing for Data Science',
+        'Data Visualization Lab'
+      ];
+    } else {
+      subjects = [
+        'Deep Learning for Data Science',
+        'Cognitive Computing',
+        'Social Media Analytics',
+        'Professional Ethics & Data Privacy',
         'Major Project Work'
       ];
     }
