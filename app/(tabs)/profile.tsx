@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+WebBrowser.maybeCompleteAuthSession();
 import {
   View,
   Text,
@@ -15,11 +17,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuth as useClerkAuth, useOAuth as useClerkOAuth } from '@clerk/clerk-expo';
+import * as Linking from 'expo-linking';
 import { useTheme } from '../../hooks/useTheme';
 import { UserAvatar } from '../../components/UserAvatar';
 import { Config } from '../../constants/config';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storageService } from '../../services/storageService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
@@ -47,6 +52,9 @@ export default function ProfileScreen() {
   const { posts } = usePosts();
   const userPosts = currentUser ? posts.filter((p) => p.authorId === currentUser.uid) : [];
 
+  const { isSignedIn: isClerkSignedIn, getToken: getClerkToken } = useClerkAuth();
+  const { startOAuthFlow } = useClerkOAuth({ strategy: 'oauth_google' });
+
   const { isDark, toggleDarkMode } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || '');
@@ -66,6 +74,12 @@ export default function ProfileScreen() {
   const [showMidmarksModal, setShowMidmarksModal] = useState(false);
   const [academicRollNumber, setAcademicRollNumber] = useState('');
   const [academicIsMock, setAcademicIsMock] = useState(false);
+
+  // Custom Overrides States
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [customSubjects, setCustomSubjects] = useState<Array<{ subject: string; attended: number; conducted: number }>>([]);
+  const [showCustomizeMarksModal, setShowCustomizeMarksModal] = useState(false);
+  const [customMarks, setCustomMarks] = useState<Array<{ subject: string; M1: number | null; M2: number | null; type: string }>>([]);
 
   // Avatar Builder States
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -160,6 +174,58 @@ export default function ProfileScreen() {
     return `${yearText} - ${semText} (${branchName})`;
   };
 
+  const handleEnsureClerkAuth = async (): Promise<string | null> => {
+    if (isClerkSignedIn) {
+      try {
+        const token = await getClerkToken();
+        if (token) return token;
+      } catch (err) {
+        console.warn('[Clerk] Token retrieval error:', err);
+      }
+    }
+
+    return new Promise((resolve) => {
+      Alert.alert(
+        'Sync Live Academic Data',
+        'To fetch live, accurate attendance and marks from the college website, please sign in with your college Google account via Clerk.',
+        [
+          {
+            text: 'Skip & View Simulated',
+            onPress: () => resolve(null),
+            style: 'cancel',
+          },
+          {
+            text: 'Sign In',
+            onPress: async () => {
+              try {
+                const { createdSessionId, setActive } = await startOAuthFlow({
+                  redirectUrl: Linking.createURL('oauth-redirect', { scheme: 'campusconnect' }),
+                });
+
+                if (createdSessionId && setActive) {
+                  await setActive({ session: createdSessionId });
+                  setTimeout(async () => {
+                    try {
+                      const token = await getClerkToken();
+                      resolve(token);
+                    } catch {
+                      resolve(null);
+                    }
+                  }, 1000);
+                } else {
+                  resolve(null);
+                }
+              } catch (err: any) {
+                Alert.alert('Sign In Failed', err.message || 'OAuth authentication failed.');
+                resolve(null);
+              }
+            },
+          },
+        ]
+      );
+    });
+  };
+
   const handleCheckAttendance = async () => {
     const rollNo = getRollNumber();
     if (!rollNo) {
@@ -171,8 +237,16 @@ export default function ProfileScreen() {
       setLoadingAcademic(true);
       setAcademicRollNumber(rollNo);
       
-      const result = await fetchAttendance(rollNo);
-      setAttendanceData(result.data);
+      const token = await handleEnsureClerkAuth();
+      const result = await fetchAttendance(rollNo, token);
+      // Retrieve local override if exists
+      const overrideKey = `mock_attendance_override_${rollNo}`;
+      const savedOverride = await AsyncStorage.getItem(overrideKey);
+      if (savedOverride) {
+        setAttendanceData(JSON.parse(savedOverride));
+      } else {
+        setAttendanceData(result.data);
+      }
       setAcademicIsMock(result.isMock);
       setShowAttendanceModal(true);
     } catch (e: any) {
@@ -193,14 +267,165 @@ export default function ProfileScreen() {
       setLoadingAcademic(true);
       setAcademicRollNumber(rollNo);
       
-      const result = await fetchMidmarks(rollNo);
-      setMidmarksData(result.data);
+      const token = await handleEnsureClerkAuth();
+      const result = await fetchMidmarks(rollNo, token);
+      // Retrieve local override if exists
+      const overrideKey = `mock_midmarks_override_${rollNo}`;
+      const savedOverride = await AsyncStorage.getItem(overrideKey);
+      if (savedOverride) {
+        setMidmarksData(JSON.parse(savedOverride));
+      } else {
+        setMidmarksData(result.data);
+      }
       setAcademicIsMock(result.isMock);
       setShowMidmarksModal(true);
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to fetch mid marks data.');
     } finally {
       setLoadingAcademic(false);
+    }
+  };
+
+  const handleOpenCustomizeSimulatedData = () => {
+    if (attendanceData) {
+      setCustomSubjects(
+        attendanceData.subjects.map((s) => ({
+          subject: s.subject,
+          attended: s.attended,
+          conducted: s.conducted,
+        }))
+      );
+      setShowCustomizeModal(true);
+    }
+  };
+
+  const handleUpdateCustomSubject = (index: number, field: 'attended' | 'conducted', valStr: string) => {
+    const num = parseInt(valStr) || 0;
+    const updated = [...customSubjects];
+    updated[index] = {
+      ...updated[index],
+      [field]: num,
+    };
+    setCustomSubjects(updated);
+  };
+
+  const handleSaveCustomStats = async () => {
+    for (const sub of customSubjects) {
+      if (sub.attended > sub.conducted) {
+        Alert.alert('Invalid Entry', `${sub.subject}: Attended classes cannot exceed conducted classes.`);
+        return;
+      }
+      if (sub.conducted <= 0) {
+        Alert.alert('Invalid Entry', `${sub.subject}: Conducted classes must be greater than zero.`);
+        return;
+      }
+    }
+
+    const totalAttended = customSubjects.reduce((acc, s) => acc + s.attended, 0);
+    const totalConducted = customSubjects.reduce((acc, s) => acc + s.conducted, 0);
+    const overallPercent = parseFloat(((totalAttended / totalConducted) * 100).toFixed(1));
+
+    const newAttendanceData: Attendance = {
+      rollno: academicRollNumber,
+      year_branch_section: attendanceData?.year_branch_section || '',
+      percentage: overallPercent,
+      totalClasses: {
+        attended: totalAttended,
+        conducted: totalConducted,
+      },
+      subjects: customSubjects.map((s) => ({
+        subject: s.subject,
+        attended: s.attended,
+        conducted: s.conducted,
+        lastUpdated: new Date().toISOString().split('T')[0],
+      })),
+    };
+
+    try {
+      const overrideKey = `mock_attendance_override_${academicRollNumber}`;
+      await AsyncStorage.setItem(overrideKey, JSON.stringify(newAttendanceData));
+      setAttendanceData(newAttendanceData);
+      setShowCustomizeModal(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Academic Stats Synchronized',
+        text2: 'Offline simulated data updated successfully!',
+      });
+    } catch (err) {
+      Alert.alert('Error', 'Failed to save custom stats.');
+    }
+  };
+
+  const handleOpenCustomizeMarks = () => {
+    if (midmarksData) {
+      setCustomMarks(
+        midmarksData.subjects.map((s) => ({
+          subject: s.subject,
+          M1: s.M1,
+          M2: s.M2,
+          type: s.type,
+        }))
+      );
+      setShowCustomizeMarksModal(true);
+    }
+  };
+
+  const handleUpdateCustomMark = (index: number, field: 'M1' | 'M2', valStr: string) => {
+    const num = valStr === '' ? null : parseInt(valStr);
+    const updated = [...customMarks];
+    updated[index] = {
+      ...updated[index],
+      [field]: num,
+    };
+    setCustomMarks(updated);
+  };
+
+  const handleSaveCustomMarks = async () => {
+    for (const sub of customMarks) {
+      if (sub.M1 !== null && (sub.M1 < 0 || sub.M1 > 30)) {
+        Alert.alert('Invalid Entry', `${sub.subject}: Mid-1 marks must be between 0 and 30.`);
+        return;
+      }
+      if (sub.M2 !== null && (sub.M2 < 0 || sub.M2 > 30)) {
+        Alert.alert('Invalid Entry', `${sub.subject}: Mid-2 marks must be between 0 and 30.`);
+        return;
+      }
+    }
+
+    const newMidmarksData: Midmarks = {
+      rollno: academicRollNumber,
+      year_branch_section: midmarksData?.year_branch_section || '',
+      subjects: customMarks.map((s) => {
+        let avg: number | null = null;
+        if (s.M1 !== null && s.M2 !== null) {
+          avg = (s.M1 + s.M2) / 2;
+        } else if (s.M1 !== null) {
+          avg = s.M1;
+        } else if (s.M2 !== null) {
+          avg = s.M2;
+        }
+        return {
+          subject: s.subject,
+          M1: s.M1,
+          M2: s.M2,
+          average: avg !== null ? parseFloat(avg.toFixed(1)) : null,
+          type: s.type,
+        };
+      }),
+    };
+
+    try {
+      const overrideKey = `mock_midmarks_override_${academicRollNumber}`;
+      await AsyncStorage.setItem(overrideKey, JSON.stringify(newMidmarksData));
+      setMidmarksData(newMidmarksData);
+      setShowCustomizeMarksModal(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Mid Marks Synchronized',
+        text2: 'Offline simulated data updated successfully!',
+      });
+    } catch (err) {
+      Alert.alert('Error', 'Failed to save custom marks.');
     }
   };
 
@@ -1341,17 +1566,25 @@ export default function ProfileScreen() {
             </View>
 
             {academicIsMock && (
-              <View className="mb-4 bg-purple-50 border border-purple-100 p-3 rounded-2xl flex-row items-center">
-                <Ionicons name="information-circle" size={18} color="#6A2FF9" />
-                <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
-                  Connected via Offline Mode. Showing simulated profile stats for college.
-                </Text>
+              <View className="mb-4 bg-purple-50 border border-purple-100 p-3.5 rounded-2xl">
+                <View className="flex-row items-center">
+                  <Ionicons name="information-circle" size={18} color="#6A2FF9" />
+                  <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
+                    Connected via Offline Mode. Showing simulated profile stats for college.
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={handleOpenCustomizeSimulatedData}
+                  activeOpacity={0.7}
+                  className="mt-2.5 bg-[#6A2FF9]/10 py-2 rounded-xl flex-row items-center justify-center border border-[#6A2FF9]/20"
+                >
+                  <Ionicons name="create-outline" size={14} color="#6A2FF9" />
+                  <Text className="text-[#6A2FF9] text-xs font-black ml-1.5">Customize Simulated Data</Text>
+                </TouchableOpacity>
               </View>
             )}
 
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-              {/* Vibrant Top Circular Summary */}
-              {/* Circular Gauge Card resembling QIK but Premium */}
               <View className="bg-slate-900 p-6 rounded-3xl mb-6 items-center shadow-xl shadow-slate-950/20">
                 {/* Top status indicator row */}
                 <View className="w-full flex-row justify-between items-center mb-5">
@@ -1484,11 +1717,21 @@ export default function ProfileScreen() {
             </View>
 
             {academicIsMock && (
-              <View className="mb-4 bg-purple-50 border border-purple-100 p-3 rounded-2xl flex-row items-center">
-                <Ionicons name="information-circle" size={18} color="#6A2FF9" />
-                <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
-                  Connected via Offline Mode. Showing simulated profile stats for college.
-                </Text>
+              <View className="mb-4 bg-purple-50 border border-purple-100 p-3.5 rounded-2xl">
+                <View className="flex-row items-center">
+                  <Ionicons name="information-circle" size={18} color="#6A2FF9" />
+                  <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
+                    Connected via Offline Mode. Showing simulated profile stats for college.
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={handleOpenCustomizeMarks}
+                  activeOpacity={0.7}
+                  className="mt-2.5 bg-[#6A2FF9]/10 py-2 rounded-xl flex-row items-center justify-center border border-[#6A2FF9]/20"
+                >
+                  <Ionicons name="create-outline" size={14} color="#6A2FF9" />
+                  <Text className="text-[#6A2FF9] text-xs font-black ml-1.5">Customize Mid Marks</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -1589,6 +1832,179 @@ export default function ProfileScreen() {
             </ScrollView>
           </View>
         </View>
+      </Modal>
+
+      {/* Customize Simulated Attendance Modal */}
+      <Modal
+        visible={showCustomizeModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCustomizeModal(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 bg-black/60 justify-end"
+        >
+          <View className="bg-white rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
+            {/* Handle Bar */}
+            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+            
+            {/* Header */}
+            <View className="flex-row justify-between items-center mb-6">
+              <View>
+                <Text className="text-xl font-black text-slate-900 tracking-tight">Customize Attendance</Text>
+                <Text className="text-slate-400 text-xs font-semibold">Set actual values for your subjects</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowCustomizeModal(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
+              >
+                <Ionicons name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+              <View className="pb-8">
+                {customSubjects.map((sub, idx) => (
+                  <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl mb-4">
+                    <Text className="text-slate-800 font-extrabold text-sm mb-3">{sub.subject}</Text>
+                    
+                    <View className="flex-row justify-between items-center">
+                      {/* Attended classes input */}
+                      <View className="flex-1 mr-2">
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attended</Text>
+                        <TextInput
+                          keyboardType="number-pad"
+                          value={String(sub.attended)}
+                          onChangeText={(val) => handleUpdateCustomSubject(idx, 'attended', val)}
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
+                          placeholder="0"
+                        />
+                      </View>
+
+                      {/* Slash / spacer */}
+                      <Text className="text-slate-300 font-black text-lg mt-4 mx-1">/</Text>
+
+                      {/* Conducted classes input */}
+                      <View className="flex-1 ml-2">
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Conducted</Text>
+                        <TextInput
+                          keyboardType="number-pad"
+                          value={String(sub.conducted)}
+                          onChangeText={(val) => handleUpdateCustomSubject(idx, 'conducted', val)}
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
+                          placeholder="0"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Bottom Actions */}
+            <View className="flex-row gap-3 pt-4 border-t border-slate-100">
+              <TouchableOpacity
+                onPress={() => setShowCustomizeModal(false)}
+                className="flex-1 bg-slate-100 py-3.5 rounded-2xl items-center justify-center"
+              >
+                <Text className="text-slate-500 font-bold text-sm">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveCustomStats}
+                className="flex-1 bg-[#6A2FF9] py-3.5 rounded-2xl items-center justify-center shadow-lg shadow-[#6A2FF9]/15"
+              >
+                <Text className="text-white font-extrabold text-sm">Save Stats</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Customize Simulated Mid Marks Modal */}
+      <Modal
+        visible={showCustomizeMarksModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCustomizeMarksModal(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 bg-black/60 justify-end"
+        >
+          <View className="bg-white rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
+            {/* Handle Bar */}
+            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+            
+            {/* Header */}
+            <View className="flex-row justify-between items-center mb-6">
+              <View>
+                <Text className="text-xl font-black text-slate-900 tracking-tight">Customize Mid Marks</Text>
+                <Text className="text-slate-400 text-xs font-semibold">Set actual marks out of 30</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowCustomizeMarksModal(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
+              >
+                <Ionicons name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+              <View className="pb-8">
+                {customMarks.map((sub, idx) => (
+                  <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl mb-4">
+                    <Text className="text-slate-800 font-extrabold text-sm mb-3">{sub.subject}</Text>
+                    
+                    <View className="flex-row justify-between items-center">
+                      {/* Mid 1 Input */}
+                      <View className="flex-1 mr-2">
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mid 1 Marks</Text>
+                        <TextInput
+                          keyboardType="number-pad"
+                          value={sub.M1 !== null ? String(sub.M1) : ''}
+                          onChangeText={(val) => handleUpdateCustomMark(idx, 'M1', val)}
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
+                          placeholder="0-30"
+                          maxLength={2}
+                        />
+                      </View>
+
+                      {/* Mid 2 Input */}
+                      <View className="flex-1 ml-2">
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mid 2 Marks</Text>
+                        <TextInput
+                          keyboardType="number-pad"
+                          value={sub.M2 !== null ? String(sub.M2) : ''}
+                          onChangeText={(val) => handleUpdateCustomMark(idx, 'M2', val)}
+                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
+                          placeholder="0-30"
+                          maxLength={2}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Bottom Actions */}
+            <View className="flex-row gap-3 pt-4 border-t border-slate-100">
+              <TouchableOpacity
+                onPress={() => setShowCustomizeMarksModal(false)}
+                className="flex-1 bg-slate-100 py-3.5 rounded-2xl items-center justify-center"
+              >
+                <Text className="text-slate-500 font-bold text-sm">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveCustomMarks}
+                className="flex-1 bg-[#6A2FF9] py-3.5 rounded-2xl items-center justify-center shadow-lg shadow-[#6A2FF9]/15"
+              >
+                <Text className="text-white font-extrabold text-sm">Save Marks</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

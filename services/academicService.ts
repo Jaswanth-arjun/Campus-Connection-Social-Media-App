@@ -444,13 +444,17 @@ export const getMockMidmarks = (rollNumber: string): Midmarks => {
   };
 };
 
-export async function fetchAttendance(rollNumber: string): Promise<{ data: Attendance; isMock: boolean }> {
+export async function fetchAttendance(rollNumber: string, token?: string | null): Promise<{ data: Attendance; isMock: boolean }> {
   const formattedRoll = rollNumber.toUpperCase();
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${API_BASE_URL}/acadamic/attendace/${formattedRoll}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers
     });
     if (response.ok) {
       const json = await response.json();
@@ -466,13 +470,17 @@ export async function fetchAttendance(rollNumber: string): Promise<{ data: Atten
   return { data: getMockAttendance(formattedRoll), isMock: true };
 }
 
-export async function fetchMidmarks(rollNumber: string): Promise<{ data: Midmarks; isMock: boolean }> {
+export async function fetchMidmarks(rollNumber: string, token?: string | null): Promise<{ data: Midmarks; isMock: boolean }> {
   const formattedRoll = rollNumber.toUpperCase();
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${API_BASE_URL}/acadamic/marks/${formattedRoll}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers
     });
     if (response.ok) {
       const json = await response.json();

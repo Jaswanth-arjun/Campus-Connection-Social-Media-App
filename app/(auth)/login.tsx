@@ -17,12 +17,15 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../services/firebase';
 import Toast from 'react-native-toast-message';
 
+import { useSignIn } from '@clerk/clerk-expo';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { signIn, setActive, isLoaded: isClerkLoaded } = useSignIn();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -47,6 +50,23 @@ export default function LoginScreen() {
     try {
       setIsLoading(true);
       await login(email, password);
+
+      // Attempt background sign in to Clerk for academic records
+      if (isClerkLoaded && signIn) {
+        try {
+          const signInAttempt = await signIn.create({
+            identifier: email,
+            password,
+          });
+          if (signInAttempt.status === 'complete') {
+            await setActive({ session: signInAttempt.createdSessionId });
+            console.log('[Clerk] Logged in successfully in the background');
+          }
+        } catch (clerkErr) {
+          console.warn('[Clerk] Background sign-in skipped/failed:', clerkErr);
+        }
+      }
+
       Toast.show({
         type: 'success',
         text1: 'Success',

@@ -24,6 +24,7 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^2.19.31",
     "@expo/vector-icons": "^14.0.3",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@types/react": "~18.2.79",
@@ -44,6 +45,7 @@
     "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~1.12.1",
     "expo-updates": "~0.25.28",
+    "expo-web-browser": "^56.0.5",
     "firebase": "^10.8.0",
     "nativewind": "^2.0.11",
     "react": "^18.2.0",
