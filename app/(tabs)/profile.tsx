@@ -14,7 +14,6 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { UserAvatar } from '../../components/UserAvatar';
@@ -1368,53 +1367,45 @@ export default function ProfileScreen() {
                   </View>
                 </View>
 
-                {/* Circular Svg Indicator */}
-                <View className="relative items-center justify-center my-2">
+                {/* Circular View Indicator (Pure CSS/Borders) */}
+                <View className="relative items-center justify-center my-4">
                   {(() => {
-                    const size = 160;
-                    const strokeWidth = 12;
-                    const radius = (size - strokeWidth) / 2;
-                    const circumference = radius * 2 * Math.PI;
                     const pct = attendanceData?.percentage || 0;
-                    const strokeDashoffset = circumference - (pct / 100) * circumference;
                     const strokeColor = pct >= 75 ? '#10B981' : '#F59E0B'; // green or orange
+                    const trackColor = '#1E293B'; // slate-800
+
+                    // Map percentage to specific border segment colors
+                    const borderTopColor = pct > 0 ? strokeColor : trackColor;
+                    const borderRightColor = pct > 25 ? strokeColor : trackColor;
+                    const borderBottomColor = pct > 50 ? strokeColor : trackColor;
+                    const borderLeftColor = pct > 75 ? strokeColor : trackColor;
 
                     return (
-                      <>
-                        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                          {/* Track Circle */}
-                          <Circle
-                            cx={size / 2}
-                            cy={size / 2}
-                            r={radius}
-                            stroke="#1E293B" // Slate 800 track
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                          />
-                          {/* Progress Circle */}
-                          <Circle
-                            cx={size / 2}
-                            cy={size / 2}
-                            r={radius}
-                            stroke={strokeColor}
-                            strokeWidth={strokeWidth}
-                            strokeDasharray={`${circumference} ${circumference}`}
-                            strokeDashoffset={strokeDashoffset}
-                            strokeLinecap="round"
-                            fill="transparent"
-                            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                          />
-                        </Svg>
-                        {/* Middle Text */}
-                        <View className="absolute items-center justify-center">
+                      <View 
+                        style={{
+                          width: 150,
+                          height: 150,
+                          borderRadius: 75,
+                          borderWidth: 12,
+                          borderTopColor,
+                          borderRightColor,
+                          borderBottomColor,
+                          borderLeftColor,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transform: [{ rotate: '45deg' }]
+                        }}
+                      >
+                        {/* Inner text needs to be counter-rotated back so it's upright */}
+                        <View style={{ transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center' }}>
                           <Text className="text-white text-3xl font-black tracking-tight">
                             {pct}
                           </Text>
-                          <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-0.5">
+                          <Text className="text-slate-400 text-[10px] font-extrabold uppercase tracking-wider mt-0.5">
                             percent
                           </Text>
                         </View>
-                      </>
+                      </View>
                     );
                   })()}
                 </View>
