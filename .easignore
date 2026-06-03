@@ -1,0 +1,16 @@
+# Ignore QIK subdirectory (separate app)
+QIK/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore local Expo directory
+.expo/
+
+# Ignore APKs
+*.apk
+*.aab
+
+# Ignore native builds
+android/
+ios/
