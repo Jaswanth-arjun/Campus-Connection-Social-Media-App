@@ -26,12 +26,12 @@ import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { router } from 'expo-router';
 import { usePosts } from '../../hooks/usePosts';
 import {
-  AvatarConfig,
-  generateAvatarDataUri,
-  SKIN_COLORS,
-  HAIR_COLORS,
-  THEME_COLORS,
-  BG_GRADIENTS,
+  DiceBearConfig,
+  getDiceBearUrl,
+  compileDiceBearAvatar,
+  ADVENTURER_OPTIONS,
+  AVATAAARS_OPTIONS,
+  LORELEI_OPTIONS,
 } from '../../utils/avatarGenerator';
 
 export default function ProfileScreen() {
@@ -52,18 +52,20 @@ export default function ProfileScreen() {
 
   // Avatar Builder States
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [activeAvatarTab, setActiveAvatarTab] = useState<'gender' | 'base' | 'hair' | 'accessories'>('gender');
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>({
+  const [activeAvatarTab, setActiveAvatarTab] = useState<'artStyle' | 'gender' | 'features' | 'accessories'>('artStyle');
+  const [isCompilingAvatar, setIsCompilingAvatar] = useState(false);
+  const [avatarConfig, setAvatarConfig] = useState<DiceBearConfig>({
+    style: 'adventurer',
     gender: 'male',
-    faceShape: 'oval',
-    hairStyle: 'classic',
+    hair: 'short01',
+    hairColor: '09090b',
+    skinColor: 'f5c0b1',
+    eyes: 'default',
+    eyebrows: 'default',
+    mouth: 'smile',
     glasses: 'none',
-    hat: 'none',
-    skinColor: SKIN_COLORS[0].value,
-    hairColor: HAIR_COLORS[0].value,
-    hatColor: THEME_COLORS[0].value,
-    shirtColor: THEME_COLORS[1].value,
-    bgColor: BG_GRADIENTS[0].id,
+    bgColor: 'c0aede',
+    shirtColor: '4f46e5',
   });
 
   const handlePickCoverImage = async () => {
@@ -153,8 +155,9 @@ export default function ProfileScreen() {
           onPress: () => {
             setAvatarConfig((prev) => ({
               ...prev,
+              style: 'adventurer',
               gender: 'male',
-              hairStyle: 'classic',
+              hair: 'short01',
             }));
             setShowAvatarModal(true);
           },
@@ -594,7 +597,7 @@ export default function ProfileScreen() {
       {/* 2D Vector Avatar Builder Modal */}
       <Modal visible={showAvatarModal} animationType="slide">
         <View 
-          className="flex-1 bg-slate-900"
+          className="flex-1 bg-slate-950"
           style={{ paddingTop: insets.top > 0 ? insets.top : 20 }}
         >
           {/* Header Controls */}
@@ -602,47 +605,71 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => setShowAvatarModal(false)}>
               <Text className="text-white/60 font-bold text-base">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-extrabold text-white">Create Custom Avatar</Text>
+            <Text className="text-lg font-extrabold text-white">Cartoon Avatar Studio</Text>
             <TouchableOpacity
-              onPress={() => {
-                const finalUri = generateAvatarDataUri(avatarConfig);
-                setEditAvatar(finalUri);
-                setShowAvatarModal(false);
-                Toast.show({
-                  type: 'success',
-                  text1: 'Avatar Ready! 🎨',
-                  text2: 'Save profile to update your avatar',
-                });
+              onPress={async () => {
+                try {
+                  setIsCompilingAvatar(true);
+                  const compiledBase64 = await compileDiceBearAvatar(avatarConfig);
+                  setEditAvatar(compiledBase64);
+                  setShowAvatarModal(false);
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Avatar Assembled! 🎨🌟',
+                    text2: 'Tap Save Profile to finalize your live DP',
+                  });
+                } catch (e) {
+                  console.error(e);
+                  // Fallback to direct URL if compilation fails
+                  const directUrl = getDiceBearUrl(avatarConfig);
+                  setEditAvatar(directUrl);
+                  setShowAvatarModal(false);
+                } finally {
+                  setIsCompilingAvatar(false);
+                }
               }}
+              disabled={isCompilingAvatar}
               className="bg-[#6A2FF9] px-5 py-2.5 rounded-full"
             >
-              <Text className="text-white font-extrabold text-sm">Done</Text>
+              {isCompilingAvatar ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-extrabold text-sm">Save Avatar</Text>
+              )}
             </TouchableOpacity>
           </View>
 
-          {/* Large Live Preview Screen */}
-          <View className="items-center justify-center py-8 bg-slate-950 border-b border-white/5 relative">
-            {/* Live Assembled SVG Preview */}
-            <View className="w-36 h-36 rounded-full border-4 border-purple-500/30 overflow-hidden bg-slate-800 shadow-xl shadow-black/40">
-              <Image
-                source={{ uri: generateAvatarDataUri(avatarConfig) }}
-                className="w-full h-full"
-                resizeMode="contain"
-              />
+          {/* Premium Canvas Live Viewfinder */}
+          <View className="items-center justify-center py-10 bg-slate-900 border-b border-white/5 relative">
+            <View className="w-36 h-36 rounded-full border-4 border-[#6A2FF9]/50 overflow-hidden bg-slate-800 shadow-2xl shadow-black/80 items-center justify-center">
+              {isCompilingAvatar ? (
+                <ActivityIndicator size="large" color="#6A2FF9" />
+              ) : (
+                <Image
+                  source={{ uri: getDiceBearUrl(avatarConfig) }}
+                  className="w-full h-full"
+                  style={{ width: 140, height: 140 }}
+                  resizeMode="contain"
+                />
+              )}
             </View>
-            <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest mt-3">
-              Live Character Canvas
+            <Text className="text-white/40 text-[10px] uppercase font-black tracking-widest mt-4">
+              {avatarConfig.style === 'adventurer'
+                ? 'Snapchat Adventurer Style ⚡'
+                : avatarConfig.style === 'avataaars'
+                ? 'Instagram Minimal Flat Style 🎨'
+                : 'Lorelei Aesthetic Anime Style 💖'}
             </Text>
           </View>
 
-          {/* Horizontal Category Navigation Tabs */}
-          <View className="border-b border-white/5 bg-slate-900">
+          {/* Premium Category Navigation Tabs */}
+          <View className="border-b border-white/5 bg-slate-950">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-3 px-4">
               <View className="flex-row space-x-3">
                 {[
-                  { id: 'gender', name: '1. Gender', icon: 'people-outline' },
-                  { id: 'base', name: '2. Skin & Face', icon: 'happy-outline' },
-                  { id: 'hair', name: '3. Hairstyle', icon: 'cut-outline' },
+                  { id: 'artStyle', name: '1. Art Style', icon: 'color-palette-outline' },
+                  { id: 'gender', name: '2. Gender & BG', icon: 'people-outline' },
+                  { id: 'features', name: '3. Face & Hair', icon: 'happy-outline' },
                   { id: 'accessories', name: '4. Accessories', icon: 'glasses-outline' },
                 ].map((tab) => {
                   const isSelected = activeAvatarTab === tab.id;
@@ -653,7 +680,7 @@ export default function ProfileScreen() {
                       className="flex-row items-center px-4 py-2 rounded-2xl border"
                       style={{
                         backgroundColor: isSelected ? '#6A2FF9' : 'transparent',
-                        borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
+                        borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
                       }}
                     >
                       <Ionicons name={tab.icon as any} size={15} color={isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.6)'} />
@@ -670,38 +697,108 @@ export default function ProfileScreen() {
             </ScrollView>
           </View>
 
-          {/* Interactive Styling Workspace */}
+          {/* Studio Workspace panels */}
           <ScrollView className="flex-1 p-5 bg-slate-900" showsVerticalScrollIndicator={false}>
+            
+            {/* Panel 1: Art Style Selection */}
+            {activeAvatarTab === 'artStyle' && (
+              <View className="space-y-6">
+                <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-1">
+                  Choose Design Theme
+                </Text>
+                
+                {[
+                  {
+                    id: 'adventurer',
+                    title: '🌟 Adventurer Cartoon',
+                    desc: 'Snapchat Bitmoji-inspired Disney 3D style character illustration. Premium depth and stunning detailing.',
+                    defaultHair: 'short01',
+                  },
+                  {
+                    id: 'avataaars',
+                    title: '🎨 Modern Minimalist Flat',
+                    desc: 'Instagram-inspired aesthetic flat graphics with custom round frames and trendy geometric designs.',
+                    defaultHair: 'ShortHairShortRound',
+                  },
+                  {
+                    id: 'lorelei',
+                    title: '💖 Kawaii Anime / Aesthetic',
+                    desc: 'Super cute anime chibi artwork with gorgeous pastel hair dyes and elegant aesthetic details.',
+                    defaultHair: 'hair01',
+                  },
+                ].map((style) => {
+                  const isSelected = avatarConfig.style === style.id;
+                  return (
+                    <TouchableOpacity
+                      key={style.id}
+                      onPress={() => {
+                        setAvatarConfig((prev) => ({
+                          ...prev,
+                          style: style.id as any,
+                          hair: style.defaultHair,
+                          glasses: 'none',
+                        }));
+                      }}
+                      className="p-5 rounded-3xl border-2 mb-3 relative"
+                      style={{
+                        borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.05)',
+                        backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.12)' : 'rgba(255,255,255,0.02)',
+                      }}
+                    >
+                      <Text className="text-white font-extrabold text-base mb-1.5">{style.title}</Text>
+                      <Text className="text-white/60 text-xs leading-relaxed">{style.desc}</Text>
+                      {isSelected && (
+                        <View className="absolute top-4 right-4 bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center shadow-md">
+                          <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Panel 2: Gender & Background Setup */}
             {activeAvatarTab === 'gender' && (
               <View className="space-y-6">
+                
+                {/* Gender Toggle */}
                 <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Select Identity Base
+                  <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                    Select Gender Base
                   </Text>
                   <View className="flex-row space-x-4">
                     {[
-                      { id: 'male', name: 'Male Base', icon: 'male', defaultHair: 'classic' },
-                      { id: 'female', name: 'Female Base', icon: 'female', defaultHair: 'bangs' },
+                      { id: 'male', name: 'Male Base', icon: 'male' },
+                      { id: 'female', name: 'Female Base', icon: 'female' },
                     ].map((g) => {
                       const isSelected = avatarConfig.gender === g.id;
                       return (
                         <TouchableOpacity
                           key={g.id}
                           onPress={() => {
-                            setAvatarConfig((prev) => ({
-                              ...prev,
-                              gender: g.id as any,
-                              hairStyle: g.defaultHair,
-                            }));
+                            setAvatarConfig((prev) => {
+                              const defaultHair =
+                                prev.style === 'adventurer'
+                                  ? (g.id === 'male' ? 'short01' : 'long01')
+                                  : prev.style === 'avataaars'
+                                  ? (g.id === 'male' ? 'ShortHairShortRound' : 'LongHairBob')
+                                  : 'hair01';
+                              return {
+                                ...prev,
+                                gender: g.id as any,
+                                hair: defaultHair,
+                              };
+                            });
                           }}
                           className="flex-1 p-5 rounded-3xl border-2 items-center relative"
                           style={{
-                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.06)',
+                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.05)',
                             backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.1)' : 'rgba(255,255,255,0.02)',
                           }}
                         >
-                          <Ionicons name={g.icon as any} size={36} color={isSelected ? '#A78BFA' : 'rgba(255,255,255,0.4)'} />
-                          <Text className="text-white font-extrabold text-sm mt-3">{g.name}</Text>
+                          <Ionicons name={g.icon as any} size={32} color={isSelected ? '#A78BFA' : 'rgba(255,255,255,0.4)'} />
+                          <Text className="text-white font-extrabold text-sm mt-3.5">{g.name}</Text>
                           {isSelected && (
                             <View className="absolute top-2 right-2 bg-[#6A2FF9] w-5 h-5 rounded-full items-center justify-center">
                               <Ionicons name="checkmark" size={12} color="#FFFFFF" />
@@ -713,30 +810,30 @@ export default function ProfileScreen() {
                   </View>
                 </View>
 
-                {/* Background Gradient Picker */}
+                {/* Customizer Solid / Gradient Background */}
                 <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Vibrant Background Gradient
+                  <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                    Solid Portrait Background
                   </Text>
                   <View className="flex-row flex-wrap">
-                    {BG_GRADIENTS.map((g) => {
-                      const isSelected = avatarConfig.bgColor === g.id;
+                    {ADVENTURER_OPTIONS.bgColors.map((color) => {
+                      const isSelected = avatarConfig.bgColor === color.id;
                       return (
                         <TouchableOpacity
-                          key={g.id}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, bgColor: g.id }))}
+                          key={color.id}
+                          onPress={() => setAvatarConfig((prev) => ({ ...prev, bgColor: color.id }))}
                           className="items-center m-2"
                         >
                           <View
-                            className="w-12 h-12 rounded-full border-2 items-center justify-center"
+                            className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-lg"
                             style={{
                               borderColor: isSelected ? '#FFFFFF' : 'transparent',
-                              backgroundColor: g.start,
+                              backgroundColor: `#${color.id}`,
                             }}
                           >
-                            {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                            {isSelected && <Ionicons name="checkmark" size={18} color={color.id === '0f172a' ? '#FFFFFF' : '#000000'} />}
                           </View>
-                          <Text className="text-white/40 text-[9px] font-bold mt-1">{g.name}</Text>
+                          <Text className="text-white/40 text-[9px] font-bold mt-1.5">{color.name}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -745,16 +842,27 @@ export default function ProfileScreen() {
               </View>
             )}
 
-            {activeAvatarTab === 'base' && (
+            {/* Panel 3: Face & Hair Styling */}
+            {activeAvatarTab === 'features' && (
               <View className="space-y-6">
-                {/* Skin Color Palette */}
+                
+                {/* Skin Complexion Pickers */}
                 <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
+                  <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
                     Skin Complexion
                   </Text>
                   <View className="flex-row flex-wrap">
-                    {SKIN_COLORS.map((skin) => {
+                    {(avatarConfig.style === 'adventurer'
+                      ? ADVENTURER_OPTIONS.skinColors
+                      : avatarConfig.style === 'avataaars'
+                      ? AVATAAARS_OPTIONS.skinColors
+                      : LORELEI_OPTIONS.skinColors
+                    ).map((skin) => {
                       const isSelected = avatarConfig.skinColor === skin.value;
+                      const displayBg =
+                        avatarConfig.style === 'avataaars'
+                          ? (skin.value === 'Pale' ? '#FDD7E4' : skin.value === 'Light' ? '#F6D1B1' : skin.value === 'Tanned' ? '#F4B083' : skin.value === 'Brown' ? '#9F6845' : skin.value === 'DarkBrown' ? '#6C3F24' : '#2D1B11')
+                          : `#${skin.value}`;
                       return (
                         <TouchableOpacity
                           key={skin.value}
@@ -765,116 +873,39 @@ export default function ProfileScreen() {
                             className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-md"
                             style={{
                               borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
-                              backgroundColor: skin.value,
+                              backgroundColor: displayBg,
                             }}
                           >
-                            {isSelected && <Ionicons name="checkmark" size={20} color="#0F172A" />}
+                            {isSelected && <Ionicons name="checkmark" size={20} color="#FFFFFF" />}
                           </View>
-                          <Text className="text-white/40 text-[9px] font-bold mt-1">{skin.name}</Text>
+                          <Text className="text-white/40 text-[9px] font-bold mt-1.5">{skin.name}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
                 </View>
 
-                {/* Face Shape Picker */}
+                {/* Dynamic Hairstyles List */}
                 <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Jawline & Face Shape
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {[
-                      { id: 'oval', name: 'Oval' },
-                      { id: 'round', name: 'Round' },
-                      { id: 'square', name: 'Square' },
-                      { id: 'heart', name: 'Heart' },
-                    ].map((shape) => {
-                      const isSelected = avatarConfig.faceShape === shape.id;
-                      return (
-                        <TouchableOpacity
-                          key={shape.id}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, faceShape: shape.id as any }))}
-                          className="px-4 py-2.5 rounded-2xl m-1.5 border"
-                          style={{
-                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
-                            backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.15)' : 'rgba(255,255,255,0.03)',
-                          }}
-                        >
-                          <Text
-                            className="text-xs font-extrabold"
-                            style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
-                          >
-                            {shape.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Shirt Color Picker */}
-                <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Shirt Color Theme
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {THEME_COLORS.map((color) => {
-                      const isSelected = avatarConfig.shirtColor === color.value;
-                      return (
-                        <TouchableOpacity
-                          key={color.value}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, shirtColor: color.value }))}
-                          className="items-center m-2"
-                        >
-                          <View
-                            className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-md"
-                            style={{
-                              borderColor: isSelected ? '#FFFFFF' : 'transparent',
-                              backgroundColor: color.value,
-                            }}
-                          >
-                            {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                          </View>
-                          <Text className="text-white/40 text-[9px] font-bold mt-1">{color.name}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {activeAvatarTab === 'hair' && (
-              <View className="space-y-6">
-                {/* Hair Style Picker (Gender-aware!) */}
-                <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
+                  <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
                     Hairstyle Style ({avatarConfig.gender === 'male' ? 'Male' : 'Female'})
                   </Text>
                   <View className="flex-row flex-wrap">
-                    {(avatarConfig.gender === 'male'
-                      ? [
-                          { id: 'classic', name: 'Classic part' },
-                          { id: 'spiky', name: 'Cyber Spikes' },
-                          { id: 'dreads', name: 'Hip Dreadlocks' },
-                          { id: 'bald', name: 'Clean Shaved' },
-                        ]
-                      : [
-                          { id: 'bangs', name: 'Straight Bangs' },
-                          { id: 'bob', name: 'Sleek Bob' },
-                          { id: 'curly', name: 'Curly Volume' },
-                          { id: 'ponytail', name: 'High Ponytail' },
-                        ]
+                    {(avatarConfig.style === 'adventurer'
+                      ? (avatarConfig.gender === 'male' ? ADVENTURER_OPTIONS.maleHair : ADVENTURER_OPTIONS.femaleHair)
+                      : avatarConfig.style === 'avataaars'
+                      ? (avatarConfig.gender === 'male' ? AVATAAARS_OPTIONS.maleHair : AVATAAARS_OPTIONS.femaleHair)
+                      : LORELEI_OPTIONS.hair
                     ).map((hair) => {
-                      const isSelected = avatarConfig.hairStyle === hair.id;
+                      const isSelected = avatarConfig.hair === hair.id;
                       return (
                         <TouchableOpacity
                           key={hair.id}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, hairStyle: hair.id }))}
+                          onPress={() => setAvatarConfig((prev) => ({ ...prev, hair: hair.id }))}
                           className="px-4 py-2.5 rounded-2xl m-1.5 border"
                           style={{
-                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
-                            backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.15)' : 'rgba(255,255,255,0.03)',
+                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                            backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
                           }}
                         >
                           <Text
@@ -889,143 +920,192 @@ export default function ProfileScreen() {
                   </View>
                 </View>
 
-                {/* Hair Color Palette */}
-                {avatarConfig.hairStyle !== 'bald' && (
-                  <View>
-                    <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                      Hair Dye Color
-                    </Text>
-                    <View className="flex-row flex-wrap">
-                      {HAIR_COLORS.map((color) => {
-                        const isSelected = avatarConfig.hairColor === color.value;
-                        return (
-                          <TouchableOpacity
-                            key={color.value}
-                            onPress={() => setAvatarConfig((prev) => ({ ...prev, hairColor: color.value }))}
-                            className="items-center m-2"
+                {/* Hair Coloring Dyebox */}
+                <View>
+                  <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                    Hair Dye Color
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    {(avatarConfig.style === 'adventurer'
+                      ? ADVENTURER_OPTIONS.hairColors
+                      : avatarConfig.style === 'avataaars'
+                      ? AVATAAARS_OPTIONS.hairColors
+                      : LORELEI_OPTIONS.hairColors
+                    ).map((color) => {
+                      const isSelected = avatarConfig.hairColor === color.value;
+                      const displayBg =
+                        avatarConfig.style === 'avataaars'
+                          ? (color.value === 'Black' ? '#09090b' : color.value === 'Auburn' ? '#A0522D' : color.value === 'Blonde' ? '#F4D03F' : color.value === 'Brown' ? '#8B4513' : color.value === 'Red' ? '#E74C3C' : '#BDC3C7')
+                          : `#${color.value}`;
+                      return (
+                        <TouchableOpacity
+                          key={color.value}
+                          onPress={() => setAvatarConfig((prev) => ({ ...prev, hairColor: color.value }))}
+                          className="items-center m-2"
+                        >
+                          <View
+                            className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-lg"
+                            style={{
+                              borderColor: isSelected ? '#FFFFFF' : 'transparent',
+                              backgroundColor: displayBg,
+                            }}
                           >
-                            <View
-                              className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-md"
+                            {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                          </View>
+                          <Text className="text-white/40 text-[9px] font-bold mt-1.5">{color.name}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Facial Eyes & Mouth Expressions (Adventurer / Avataaars styles) */}
+                {avatarConfig.style !== 'lorelei' && (
+                  <>
+                    <View>
+                      <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                        Eyes Shape & Expression
+                      </Text>
+                      <View className="flex-row flex-wrap">
+                        {(avatarConfig.style === 'adventurer'
+                          ? ADVENTURER_OPTIONS.eyes
+                          : AVATAAARS_OPTIONS.eyes
+                        ).map((eye) => {
+                          const isSelected = avatarConfig.eyes === eye.id;
+                          return (
+                            <TouchableOpacity
+                              key={eye.id}
+                              onPress={() => setAvatarConfig((prev) => ({ ...prev, eyes: eye.id }))}
+                              className="px-4 py-2.5 rounded-2xl m-1.5 border"
                               style={{
-                                borderColor: isSelected ? '#FFFFFF' : 'transparent',
-                                backgroundColor: color.value,
+                                borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                                backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
                               }}
                             >
-                              {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                            </View>
-                            <Text className="text-white/40 text-[9px] font-bold mt-1">{color.name}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                              <Text
+                                className="text-xs font-extrabold"
+                                style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
+                              >
+                                {eye.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
-                  </View>
+
+                    <View>
+                      <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                        Happy Mouth Shape
+                      </Text>
+                      <View className="flex-row flex-wrap">
+                        {(avatarConfig.style === 'adventurer'
+                          ? ADVENTURER_OPTIONS.mouths
+                          : AVATAAARS_OPTIONS.mouths
+                        ).map((m) => {
+                          const isSelected = avatarConfig.mouth === m.id;
+                          return (
+                            <TouchableOpacity
+                              key={m.id}
+                              onPress={() => setAvatarConfig((prev) => ({ ...prev, mouth: m.id }))}
+                              className="px-4 py-2.5 rounded-2xl m-1.5 border"
+                              style={{
+                                borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                                backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
+                              }}
+                            >
+                              <Text
+                                className="text-xs font-extrabold"
+                                style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
+                              >
+                                {m.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </>
                 )}
               </View>
             )}
 
+            {/* Panel 4: Eyewear & Outerwear Clothes */}
             {activeAvatarTab === 'accessories' && (
               <View className="space-y-6">
-                {/* Eyewear/Glasses selection */}
-                <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Spectacles & Frames
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {[
-                      { id: 'none', name: 'No Glasses' },
-                      { id: 'classic', name: 'Classic Rect' },
-                      { id: 'round', name: 'Hipster Round' },
-                      { id: 'sunglasses', name: 'Aviator Shades' },
-                    ].map((g) => {
-                      const isSelected = avatarConfig.glasses === g.id;
-                      return (
-                        <TouchableOpacity
-                          key={g.id}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, glasses: g.id as any }))}
-                          className="px-4 py-2.5 rounded-2xl m-1.5 border"
-                          style={{
-                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
-                            backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.15)' : 'rgba(255,255,255,0.03)',
-                          }}
-                        >
-                          <Text
-                            className="text-xs font-extrabold"
-                            style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
-                          >
-                            {g.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Hats & headwear selection */}
-                <View>
-                  <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                    Hats & Caps
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {[
-                      { id: 'none', name: 'No Hat' },
-                      { id: 'cap', name: 'Sports Snapback' },
-                      { id: 'beanie', name: 'Winter Beanie' },
-                      { id: 'cowboy', name: 'Cowboy Hat' },
-                    ].map((hat) => {
-                      const isSelected = avatarConfig.hat === hat.id;
-                      return (
-                        <TouchableOpacity
-                          key={hat.id}
-                          onPress={() => setAvatarConfig((prev) => ({ ...prev, hat: hat.id as any }))}
-                          className="px-4 py-2.5 rounded-2xl m-1.5 border"
-                          style={{
-                            borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.1)',
-                            backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.15)' : 'rgba(255,255,255,0.03)',
-                          }}
-                        >
-                          <Text
-                            className="text-xs font-extrabold"
-                            style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
-                          >
-                            {hat.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Accessories Theme Color (applied to hats/glasses) */}
-                {(avatarConfig.hat !== 'none' || avatarConfig.glasses !== 'none') && (
+                
+                {/* Glasses / Sunglasses customizers */}
+                {avatarConfig.style !== 'lorelei' && (
                   <View>
-                    <Text className="text-white/60 font-black text-xs uppercase tracking-widest mb-3.5">
-                      Accessory Frame/Dye Color
+                    <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                      Eyewear & Glasses Frames
                     </Text>
                     <View className="flex-row flex-wrap">
-                      {THEME_COLORS.map((color) => {
-                        const isSelected = avatarConfig.hatColor === color.value;
+                      {(avatarConfig.style === 'adventurer'
+                        ? ADVENTURER_OPTIONS.glasses
+                        : AVATAAARS_OPTIONS.glasses
+                      ).map((glass) => {
+                        const isSelected = avatarConfig.glasses === glass.id;
                         return (
                           <TouchableOpacity
-                            key={color.value}
-                            onPress={() => setAvatarConfig((prev) => ({ ...prev, hatColor: color.value }))}
-                            className="items-center m-2"
+                            key={glass.id}
+                            onPress={() => setAvatarConfig((prev) => ({ ...prev, glasses: glass.id }))}
+                            className="px-4 py-2.5 rounded-2xl m-1.5 border"
+                            style={{
+                              borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                              backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
+                            }}
                           >
-                            <View
-                              className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-md"
-                              style={{
-                                borderColor: isSelected ? '#FFFFFF' : 'transparent',
-                                backgroundColor: color.value,
-                              }}
+                            <Text
+                              className="text-xs font-extrabold"
+                              style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
                             >
-                              {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                            </View>
-                            <Text className="text-white/40 text-[9px] font-bold mt-1">{color.name}</Text>
+                              {glass.name}
+                            </Text>
                           </TouchableOpacity>
                         );
                       })}
                     </View>
                   </View>
                 )}
+
+                {/* Clothing Dress Tshirts (Adventurer style) */}
+                {avatarConfig.style === 'adventurer' && (
+                  <View>
+                    <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                      T-Shirt Outerwear Color
+                    </Text>
+                    <View className="flex-row flex-wrap">
+                      {ADVENTURER_OPTIONS.shirtColors.map((color) => {
+                        const isSelected = avatarConfig.shirtColor === color.value;
+                        return (
+                          <TouchableOpacity
+                            key={color.value}
+                            onPress={() => setAvatarConfig((prev) => ({ ...prev, shirtColor: color.value }))}
+                            className="items-center m-2"
+                          >
+                            <View
+                              className="w-12 h-12 rounded-full border-2 items-center justify-center shadow-lg"
+                              style={{
+                                borderColor: isSelected ? '#FFFFFF' : 'transparent',
+                                backgroundColor: `#${color.value}`,
+                              }}
+                            >
+                              {isSelected && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                            </View>
+                            <Text className="text-white/40 text-[9px] font-bold mt-1.5">{color.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+
+                <View className="pt-6">
+                  <Text className="text-white/40 text-center text-xs leading-relaxed">
+                    Choose from hundreds of character styles & variations. Save your character design above to immediately update all your live campus pulses!
+                  </Text>
+                </View>
               </View>
             )}
           </ScrollView>

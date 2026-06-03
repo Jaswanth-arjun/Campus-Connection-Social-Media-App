@@ -29,6 +29,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SnapCameraFilter from '../../components/SnapCameraFilter';
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { useStoryStore } from '../../store/storyStore';
 import { Story } from '../../types';
@@ -362,60 +363,7 @@ export default function FeedScreen() {
   };
 
   const handleAddStory = async () => {
-    if (!currentUser) return;
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        if (Platform.OS === 'web') {
-          alert('Camera permission is required to take snaps.');
-        } else {
-          Alert.alert('Permission Denied', 'Camera permission is required to take snaps.');
-        }
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.25,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        let base64Uri = '';
-        if (result.assets[0].base64) {
-          base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        } else {
-          try {
-            const res = await fetch(result.assets[0].uri);
-            const blob = await res.blob();
-            const reader = new FileReader();
-            await new Promise<void>((resolve) => {
-              reader.onloadend = () => {
-                base64Uri = reader.result as string;
-                resolve();
-              };
-              reader.readAsDataURL(blob);
-            });
-          } catch (e) {
-            console.error('Error fallback reading camera base64:', e);
-            base64Uri = result.assets[0].uri;
-          }
-        }
-
-        if (base64Uri) {
-          setTempStoryImage(base64Uri);
-          setSelectedFilter('none');
-          setShowFilterModal(true);
-        }
-      }
-    } catch (error: any) {
-      console.error('Error adding story:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Failed',
-        text2: error.message || 'Could not post pulse',
-      });
-    }
+    setShowFilterModal(true);
   };
 
   const CAMERA_FILTERS = [
@@ -1068,170 +1016,31 @@ export default function FeedScreen() {
         </Modal>
       )}
 
-      {/* 📸 Instagram/Snapchat Style Premium Photo Filter Modal */}
-      <Modal
+      {/* 📸 In-App Live Snap Camera Filter Screen */}
+      <SnapCameraFilter
         visible={showFilterModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => {
-          if (!isUploadingStory) {
+        onClose={() => setShowFilterModal(false)}
+        onPost={async (imageUri, filterId) => {
+          if (!currentUser) return;
+          try {
+            await createStory(
+              currentUser.uid,
+              currentUser.name,
+              currentUser.avatar || '',
+              imageUri,
+              filterId
+            );
             setShowFilterModal(false);
-            setTempStoryImage(null);
+          } catch (err: any) {
+            Toast.show({
+              type: 'error',
+              text1: 'Failed',
+              text2: err.message || 'Could not upload pulse',
+            });
+            throw err;
           }
         }}
-      >
-        <View className="flex-1 bg-slate-950 relative">
-          <StatusBar barStyle="light-content" backgroundColor="#020617" />
-
-          {/* Top Bar */}
-          <View className="absolute top-12 left-0 right-0 px-5 flex-row justify-between items-center z-30">
-            <TouchableOpacity
-              disabled={isUploadingStory}
-              onPress={() => {
-                setShowFilterModal(false);
-                setTempStoryImage(null);
-              }}
-              className="bg-black/50 w-10 h-10 rounded-full items-center justify-center border border-white/10 active:opacity-85"
-            >
-              <Ionicons name="trash-outline" size={20} color="#EF4444" />
-            </TouchableOpacity>
-
-            <Text className="text-white font-extrabold text-base tracking-tight shadow-md">
-              Apply Live Filter 📸
-            </Text>
-
-            <TouchableOpacity
-              disabled={isUploadingStory}
-              onPress={handleUploadStoryWithFilter}
-              className="bg-[#6A2FF9] px-5 py-2.5 rounded-full flex-row items-center justify-center shadow-lg active:opacity-90"
-            >
-              {isUploadingStory ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Text className="text-white font-black text-xs uppercase tracking-wider mr-1.5">Share</Text>
-                  <Ionicons name="paper-plane-outline" size={13} color="#FFFFFF" />
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Captured Image Preview Area */}
-          <View className="flex-1 justify-center items-center relative">
-            {tempStoryImage && (
-              <Image
-                source={{ uri: tempStoryImage }}
-                className="w-full h-full"
-                resizeMode="cover"
-              />
-            )}
-
-            {/* Selected Color Gel Filter Overlay Preview */}
-            {selectedFilter !== 'none' && (
-              <View
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor:
-                    selectedFilter === 'warm'
-                      ? 'rgba(255, 140, 0, 0.18)'
-                      : selectedFilter === 'cool'
-                        ? 'rgba(0, 191, 255, 0.18)'
-                        : selectedFilter === 'vintage'
-                          ? 'rgba(139, 69, 19, 0.22)'
-                          : selectedFilter === 'neon'
-                            ? 'rgba(255, 20, 147, 0.18)'
-                            : selectedFilter === 'emerald'
-                              ? 'rgba(50, 205, 50, 0.15)'
-                              : selectedFilter === 'sunset'
-                                ? 'rgba(255, 69, 0, 0.18)'
-                                : selectedFilter === 'midnight'
-                                  ? 'rgba(75, 0, 130, 0.22)'
-                                  : 'transparent',
-                  zIndex: 10,
-                }}
-              />
-            )}
-          </View>
-
-          {/* Horizontal Filters Picker Carousel */}
-          <View className="absolute bottom-10 left-0 right-0 z-30">
-            <Text className="text-center text-white/50 text-[10px] font-black uppercase tracking-widest mb-3.5">
-              Swipe to select a camera filter
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            >
-              <View className="flex-row space-x-3.5">
-                {CAMERA_FILTERS.map((item) => {
-                  const isSelected = selectedFilter === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      activeOpacity={0.8}
-                      onPress={() => setSelectedFilter(item.id)}
-                      className="items-center"
-                    >
-                      {/* Filter preview circle */}
-                      <View
-                        className="w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center relative shadow-md shadow-black/30"
-                        style={{
-                          borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.2)',
-                          backgroundColor: '#1E293B',
-                        }}
-                      >
-                        {/* Tiny photo mock */}
-                        {tempStoryImage && (
-                          <Image
-                            source={{ uri: tempStoryImage }}
-                            className="w-full h-full opacity-60 absolute"
-                            resizeMode="cover"
-                          />
-                        )}
-
-                        {/* Gel color overlay inside the circle */}
-                        {item.id !== 'none' && (
-                          <View
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              backgroundColor: item.overlay,
-                            }}
-                          />
-                        )}
-
-                        {/* Selected Indicator Checkmark */}
-                        {isSelected && (
-                          <View className="bg-[#6A2FF9] w-6 h-6 rounded-full items-center justify-center border border-white/90">
-                            <Ionicons name="checkmark" size={13} color="#FFFFFF" />
-                          </View>
-                        )}
-                      </View>
-                      
-                      {/* Filter Name */}
-                      <Text
-                        className="text-[11px] font-extrabold mt-2 text-center"
-                        style={{ color: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }}
-                      >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      />
     </View>
   );
 }

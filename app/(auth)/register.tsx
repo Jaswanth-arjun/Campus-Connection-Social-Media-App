@@ -94,13 +94,13 @@ export default function RegisterScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Glowing background auras */}
-      <View 
-        className="absolute bg-[#5C24B3]/25 rounded-full" 
-        style={{ width: 300, height: 300, top: -50, right: -50, opacity: 0.8 }} 
+      <View
+        className="absolute bg-[#5C24B3]/25 rounded-full"
+        style={{ width: 300, height: 300, top: -50, right: -50, opacity: 0.8 }}
       />
-      <View 
-        className="absolute bg-white/20 rounded-full" 
-        style={{ width: 250, height: 250, bottom: -50, left: -50, opacity: 0.6 }} 
+      <View
+        className="absolute bg-white/20 rounded-full"
+        style={{ width: 250, height: 250, bottom: -50, left: -50, opacity: 0.6 }}
       />
 
       <ScrollView
@@ -110,8 +110,8 @@ export default function RegisterScreen() {
       >
         {/* Back navigation button */}
         <View className="absolute top-12 left-6">
-          <TouchableOpacity 
-            onPress={() => router.replace('/(auth)/login')} 
+          <TouchableOpacity
+            onPress={() => router.replace('/(auth)/login')}
             className="w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/10"
           >
             <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
@@ -121,8 +121,8 @@ export default function RegisterScreen() {
         {/* Top Header */}
         <View className="items-center mb-8 mt-8">
           <View className="w-24 h-24 bg-white/40 rounded-3xl items-center justify-center border border-white/60 mb-5 shadow-lg shadow-purple-950/10 rotate-12 overflow-hidden">
-            <Image 
-              source={require('../../assets/images/logo.png')} 
+            <Image
+              source={require('../../assets/images/logo.jpg')}
               className="w-full h-full -rotate-12"
               resizeMode="cover"
             />
@@ -140,8 +140,8 @@ export default function RegisterScreen() {
           {/* Full Name Input */}
           <View>
             <Text className="text-[#3B1480] text-xs font-black uppercase tracking-widest mb-2 ml-1" style={{ fontWeight: '900' }}>
-               Full Name
-             </Text>
+              Full Name
+            </Text>
             <View className="flex-row items-center bg-[#5C24B3] border border-white/20 px-5 shadow-inner" style={{ height: 58, borderRadius: 29 }}>
               <Ionicons name="person-outline" size={20} color="#EBE5FF" className="mr-3.5" />
               <TextInput

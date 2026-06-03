@@ -370,7 +370,7 @@ Ensure these exist in `assets/images/`:
 | `adaptive-icon.png` | 1024×1024 | Android adaptive icon |
 | `splash.png` | 1242×2436 | Splash screen |
 | `notification-icon.png` | 96×96 | Notification icon |
-| `favicon.png` | 32×32 | Web favicon |
+| `favicon.jpg` | 32×32 | Web favicon |
 
 Generate icons at: https://icon.kitchen/
 
