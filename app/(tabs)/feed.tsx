@@ -1017,30 +1017,32 @@ export default function FeedScreen() {
       )}
 
       {/* 📸 In-App Live Snap Camera Filter Screen */}
-      <SnapCameraFilter
-        visible={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        onPost={async (imageUri, filterId) => {
-          if (!currentUser) return;
-          try {
-            await createStory(
-              currentUser.uid,
-              currentUser.name,
-              currentUser.avatar || '',
-              imageUri,
-              filterId
-            );
-            setShowFilterModal(false);
-          } catch (err: any) {
-            Toast.show({
-              type: 'error',
-              text1: 'Failed',
-              text2: err.message || 'Could not upload pulse',
-            });
-            throw err;
-          }
-        }}
-      />
+      {showFilterModal && (
+        <SnapCameraFilter
+          visible={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          onPost={async (imageUri, filterId) => {
+            if (!currentUser) return;
+            try {
+              await createStory(
+                currentUser.uid,
+                currentUser.name,
+                currentUser.avatar || '',
+                imageUri,
+                filterId
+              );
+              setShowFilterModal(false);
+            } catch (err: any) {
+              Toast.show({
+                type: 'error',
+                text1: 'Failed',
+                text2: err.message || 'Could not upload pulse',
+              });
+              throw err;
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
