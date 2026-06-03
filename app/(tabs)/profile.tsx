@@ -14,6 +14,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { UserAvatar } from '../../components/UserAvatar';
@@ -1351,27 +1352,77 @@ export default function ProfileScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
               {/* Vibrant Top Circular Summary */}
-              <View className="bg-gradient-to-tr from-purple-600 to-indigo-600 p-6 rounded-3xl shadow-xl shadow-purple-900/10 mb-6 relative overflow-hidden">
-                <View className="absolute -right-10 -top-10 w-36 h-36 rounded-full bg-white/10" />
-                <View className="absolute -left-10 -bottom-10 w-24 h-24 rounded-full bg-white/5" />
-                
-                <Text className="text-white/80 text-[10px] font-black uppercase tracking-widest">Overall Attendance</Text>
-                <View className="flex-row items-baseline mt-1.5">
-                  <Text className="text-white text-5xl font-black tracking-tight">{attendanceData?.percentage}%</Text>
-                  <Text className="text-white/60 text-xs ml-2 font-bold uppercase tracking-wider">Status</Text>
+              {/* Circular Gauge Card resembling QIK but Premium */}
+              <View className="bg-slate-900 p-6 rounded-3xl mb-6 items-center shadow-xl shadow-slate-950/20">
+                {/* Top status indicator row */}
+                <View className="w-full flex-row justify-between items-center mb-5">
+                  <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={18} color="#10B981" />
+                    <Text className="text-white font-extrabold text-sm ml-2">Attendance</Text>
+                  </View>
+                  <View className="flex-row items-center bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    <View className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5" />
+                    <Text className="text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                      {attendanceData?.percentage && attendanceData.percentage >= 75 ? 'On Track' : 'Low Attendance'}
+                    </Text>
+                  </View>
                 </View>
 
-                {/* Info Pills */}
-                <View className="flex-row items-center justify-between mt-6 pt-4 border-t border-white/10">
-                  <View>
-                    <Text className="text-white/70 text-[10px] font-bold uppercase">Attended</Text>
-                    <Text className="text-white text-lg font-black">{attendanceData?.totalClasses.attended} Classes</Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-white/70 text-[10px] font-bold uppercase">Conducted</Text>
-                    <Text className="text-white text-lg font-black">{attendanceData?.totalClasses.conducted} Total</Text>
-                  </View>
+                {/* Circular Svg Indicator */}
+                <View className="relative items-center justify-center my-2">
+                  {(() => {
+                    const size = 160;
+                    const strokeWidth = 12;
+                    const radius = (size - strokeWidth) / 2;
+                    const circumference = radius * 2 * Math.PI;
+                    const pct = attendanceData?.percentage || 0;
+                    const strokeDashoffset = circumference - (pct / 100) * circumference;
+                    const strokeColor = pct >= 75 ? '#10B981' : '#F59E0B'; // green or orange
+
+                    return (
+                      <>
+                        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                          {/* Track Circle */}
+                          <Circle
+                            cx={size / 2}
+                            cy={size / 2}
+                            r={radius}
+                            stroke="#1E293B" // Slate 800 track
+                            strokeWidth={strokeWidth}
+                            fill="transparent"
+                          />
+                          {/* Progress Circle */}
+                          <Circle
+                            cx={size / 2}
+                            cy={size / 2}
+                            r={radius}
+                            stroke={strokeColor}
+                            strokeWidth={strokeWidth}
+                            strokeDasharray={`${circumference} ${circumference}`}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            fill="transparent"
+                            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                          />
+                        </Svg>
+                        {/* Middle Text */}
+                        <View className="absolute items-center justify-center">
+                          <Text className="text-white text-3xl font-black tracking-tight">
+                            {pct}
+                          </Text>
+                          <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-0.5">
+                            percent
+                          </Text>
+                        </View>
+                      </>
+                    );
+                  })()}
                 </View>
+
+                {/* Class count summary */}
+                <Text className="text-slate-400 text-xs font-semibold mt-4">
+                  {attendanceData?.totalClasses.attended} of {attendanceData?.totalClasses.conducted} classes
+                </Text>
               </View>
 
               {/* Subject Breakdown list */}
@@ -1384,27 +1435,25 @@ export default function ProfileScreen() {
                   const isWarning = percent >= 65 && percent < 75;
                   const barColorClass = isGood ? 'bg-emerald-500' : isWarning ? 'bg-amber-500' : 'bg-rose-500';
                   const textColor = isGood ? 'text-emerald-600' : isWarning ? 'text-amber-600' : 'text-rose-600';
-                  const badgeBg = isGood ? 'bg-emerald-50' : isWarning ? 'bg-amber-50' : 'bg-rose-50';
 
                   return (
-                    <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl flex-row items-center justify-between shadow-sm mb-3">
-                      <View className="flex-1 mr-4">
-                        <Text className="text-slate-800 font-extrabold text-sm mb-1.5" numberOfLines={1}>
-                          {sub.subject}
-                        </Text>
+                    <View key={idx} className="mb-5 bg-slate-50 border border-slate-100 p-4.5 rounded-2xl">
+                      {/* Top line with subject and class fraction */}
+                      <View className="flex-row justify-between items-center mb-2.5">
+                        <Text className="text-slate-800 font-bold text-sm">{sub.subject}</Text>
                         <Text className="text-slate-400 text-xs font-semibold">
-                          Attended: {sub.attended} / {sub.conducted} lectures
+                          {sub.attended}/{sub.conducted}
                         </Text>
-                        {/* Custom progress line */}
-                        <View className="w-full h-2 bg-slate-200/80 rounded-full mt-3.5 overflow-hidden">
-                          <View className={`h-full rounded-full ${barColorClass}`} style={{ width: `${percent}%` }} />
-                        </View>
                       </View>
-
-                      {/* Percentage pill */}
-                      <View className={`px-3 py-2 rounded-xl items-center justify-center ${badgeBg}`}>
-                        <Text className={`font-black text-sm ${textColor}`}>{percent}%</Text>
-                        <Text className="text-[9px] font-bold text-slate-400 mt-0.5">Ratio</Text>
+                      
+                      {/* Bottom line with progress bar and percent */}
+                      <View className="flex-row items-center">
+                        <View className="flex-1 h-2 bg-slate-200/60 rounded-full mr-3 overflow-hidden">
+                          <View className={`h-full ${barColorClass}`} style={{ width: `${percent}%` }} />
+                        </View>
+                        <Text className={`font-extrabold text-xs ${textColor} w-10 text-right`}>
+                          {percent}%
+                        </Text>
                       </View>
                     </View>
                   );

@@ -85,12 +85,11 @@ export const getAcademicInfo = (rollNumber: string): AcademicInfo => {
       ];
     } else if (yearOfStudy === 3) {
       subjects = [
-        'Compiler Design',
-        'Computer Networks',
-        'Artificial Intelligence',
-        'Cryptography & Network Security',
-        'Web Technologies',
-        'Web & Networks Lab'
+        'TPW.IPR',
+        'SPM',
+        'ML',
+        'CS_',
+        'CNS'
       ];
     } else {
       subjects = [
