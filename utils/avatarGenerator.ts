@@ -28,12 +28,12 @@ export const ADVENTURER_OPTIONS = {
     { name: 'Rich Charcoal', value: '542a18' },
   ],
   hairColors: [
-    { name: 'Midnight Black', value: '09090b' },
-    { name: 'Chestnut Brown', value: '4e2406' },
-    { name: 'Golden Blonde', value: 'b45309' },
-    { name: 'Sunset Red', value: 'b91c1c' },
-    { name: 'Cyber Purple', value: '6d28d9' },
-    { name: 'Neon Teal', value: '0891b2' },
+    { name: 'Midnight Black', value: '0e0e0e' },
+    { name: 'Chestnut Brown', value: '6a4e35' },
+    { name: 'Golden Blonde', value: 'b9a05f' },
+    { name: 'Sunset Red', value: 'ab2a18' },
+    { name: 'Cyber Purple', value: '592454' },
+    { name: 'Neon Teal', value: '85c2c6' },
   ],
   maleHair: [
     { id: 'short01', name: 'Classic Crop' },
@@ -52,26 +52,26 @@ export const ADVENTURER_OPTIONS = {
     { id: 'long06', name: 'Braided Locks' },
   ],
   eyes: [
-    { id: 'default', name: 'Friendly' },
-    { id: 'happy', name: 'Starry Happy' },
-    { id: 'wink', name: 'Playful Wink' },
-    { id: 'winkWacky', name: 'Wacky Wink' },
-    { id: 'xd', name: 'Laughing XD' },
-    { id: 'eyeRoll', name: 'Cool Roll' },
+    { id: 'variant01', name: 'Friendly' },
+    { id: 'variant02', name: 'Starry Happy' },
+    { id: 'variant03', name: 'Playful Wink' },
+    { id: 'variant04', name: 'Wacky Wink' },
+    { id: 'variant05', name: 'Laughing XD' },
+    { id: 'variant06', name: 'Cool Roll' },
   ],
   eyebrows: [
-    { id: 'default', name: 'Normal' },
-    { id: 'defaultNatural', name: 'Soft Curve' },
-    { id: 'flatNatural', name: 'Bold Flat' },
-    { id: 'raisedExcited', name: 'Curious' },
+    { id: 'variant01', name: 'Normal' },
+    { id: 'variant02', name: 'Soft Curve' },
+    { id: 'variant03', name: 'Bold Flat' },
+    { id: 'variant04', name: 'Curious' },
   ],
   mouths: [
-    { id: 'smile', name: 'Gentle Smile' },
-    { id: 'happy', name: 'Happy Laugh' },
-    { id: 'grin', name: 'Big Grin' },
-    { id: 'smirk', name: 'Sassy Smirk' },
-    { id: 'tongueOut', name: 'Silly Tongue' },
-    { id: 'carefree', name: 'Carefree Open' },
+    { id: 'variant01', name: 'Gentle Smile' },
+    { id: 'variant02', name: 'Happy Laugh' },
+    { id: 'variant03', name: 'Big Grin' },
+    { id: 'variant04', name: 'Sassy Smirk' },
+    { id: 'variant05', name: 'Silly Tongue' },
+    { id: 'variant06', name: 'Carefree Open' },
   ],
   glasses: [
     { id: 'none', name: 'No Glasses' },
@@ -100,53 +100,53 @@ export const ADVENTURER_OPTIONS = {
 // 2. Avataaars Curated Options (Instagram / Facebook Flat Style)
 export const AVATAAARS_OPTIONS = {
   skinColors: [
-    { name: 'Pale', value: 'Pale' },
-    { name: 'Light', value: 'Light' },
-    { name: 'Tanned', value: 'Tanned' },
-    { name: 'Brown', value: 'Brown' },
-    { name: 'Dark Brown', value: 'DarkBrown' },
-    { name: 'Black', value: 'Black' },
+    { name: 'Pale', value: 'ffdbb4' },
+    { name: 'Light', value: 'edb98a' },
+    { name: 'Tanned', value: 'fd9841' },
+    { name: 'Brown', value: 'd08b5b' },
+    { name: 'Dark Brown', value: 'ae5d29' },
+    { name: 'Black', value: '614335' },
   ],
   hairColors: [
-    { name: 'Black', value: 'Black' },
-    { name: 'Auburn', value: 'Auburn' },
-    { name: 'Blonde', value: 'Blonde' },
-    { name: 'Brown', value: 'Brown' },
-    { name: 'Red', value: 'Red' },
-    { name: 'Silver Gray', value: 'SilverGray' },
+    { name: 'Black', value: '2c1b18' },
+    { name: 'Auburn', value: 'a55728' },
+    { name: 'Blonde', value: 'd6b370' },
+    { name: 'Brown', value: '724133' },
+    { name: 'Red', value: 'c93305' },
+    { name: 'Silver Gray', value: 'e8e1e1' },
   ],
   maleHair: [
-    { id: 'ShortHairShortCurly', name: 'Short Curly' },
-    { id: 'ShortHairShortFlat', name: 'Short Flat' },
-    { id: 'ShortHairShortRound', name: 'Short Crop' },
-    { id: 'ShortHairSides', name: 'Undercut Fade' },
-    { id: 'ShortHairDreads01', name: 'Textured Dreads' },
+    { id: 'shortRound', name: 'Short Crop' },
+    { id: 'shortCurly', name: 'Short Curly' },
+    { id: 'shortFlat', name: 'Short Flat' },
+    { id: 'sides', name: 'Undercut Fade' },
+    { id: 'dreads01', name: 'Textured Dreads' },
   ],
   femaleHair: [
-    { id: 'LongHairBigHair', name: 'Voluminous Locks' },
-    { id: 'LongHairBob', name: 'Classic Bob' },
-    { id: 'LongHairCurly', name: 'Curly Wave' },
-    { id: 'LongHairStraight', name: 'Sleek Straight' },
-    { id: 'LongHairBun', name: 'High Top Bun' },
+    { id: 'bob', name: 'Classic Bob' },
+    { id: 'bigHair', name: 'Voluminous Locks' },
+    { id: 'curly', name: 'Curly Wave' },
+    { id: 'straight01', name: 'Sleek Straight' },
+    { id: 'bun', name: 'High Top Bun' },
   ],
   eyes: [
-    { id: 'Default', name: 'Regular' },
-    { id: 'Happy', name: 'Happy Arc' },
-    { id: 'Wink', name: 'Friendly Wink' },
-    { id: 'Surprised', name: 'Shocked' },
+    { id: 'default', name: 'Regular' },
+    { id: 'happy', name: 'Happy Arc' },
+    { id: 'wink', name: 'Friendly Wink' },
+    { id: 'surprised', name: 'Shocked' },
   ],
   mouths: [
-    { id: 'Smile', name: 'Warm Smile' },
-    { id: 'Default', name: 'Happy Open' },
-    { id: 'Grin', name: 'Cheerful Grin' },
-    { id: 'Serious', name: 'Calm Serious' },
+    { id: 'default', name: 'Happy Open' },
+    { id: 'smile', name: 'Warm Smile' },
+    { id: 'serious', name: 'Calm Serious' },
+    { id: 'twinkle', name: 'Cheerful Grin' },
   ],
   glasses: [
     { id: 'none', name: 'No Glasses' },
-    { id: 'Kurt', name: 'Grunge Shades' },
-    { id: 'Prescription01', name: 'Classic Frame' },
-    { id: 'Round', name: 'Hipster Circle' },
-    { id: 'Sunglasses', name: 'Cool Aviators' },
+    { id: 'kurt', name: 'Grunge Shades' },
+    { id: 'prescription01', name: 'Classic Frame' },
+    { id: 'round', name: 'Hipster Circle' },
+    { id: 'sunglasses', name: 'Cool Aviators' },
   ],
 };
 
@@ -159,12 +159,12 @@ export const LORELEI_OPTIONS = {
     { name: 'Bronze', value: 'c68642' },
   ],
   hair: [
-    { id: 'hair01', name: 'Aesthetic Bangs' },
-    { id: 'hair02', name: 'Anime Spikes' },
-    { id: 'hair03', name: 'Taper Fade' },
-    { id: 'hair04', name: 'Long Wave' },
-    { id: 'hair05', name: 'Twin Tails' },
-    { id: 'hair06', name: 'Messy Bun' },
+    { id: 'variant01', name: 'Aesthetic Bangs' },
+    { id: 'variant02', name: 'Anime Spikes' },
+    { id: 'variant03', name: 'Taper Fade' },
+    { id: 'variant04', name: 'Long Wave' },
+    { id: 'variant05', name: 'Twin Tails' },
+    { id: 'variant06', name: 'Messy Bun' },
   ],
   hairColors: [
     { name: 'Jet Black', value: '2c3e50' },
@@ -176,23 +176,53 @@ export const LORELEI_OPTIONS = {
 };
 
 /**
- * Encodes a string in base64 safely in all JavaScript runtimes including Hermes.
+ * Returns a valid starting configuration matching the required schema values for a specific style.
  */
-export function base64Encode(str: string): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  let output = '';
-  const utf8Str = unescape(encodeURIComponent(str));
-  for (let i = 0; i < utf8Str.length; i += 3) {
-    const c1 = utf8Str.charCodeAt(i);
-    const c2 = i + 1 < utf8Str.length ? utf8Str.charCodeAt(i + 1) : NaN;
-    const c3 = i + 2 < utf8Str.length ? utf8Str.charCodeAt(i + 2) : NaN;
-    const byte1 = c1 >> 2;
-    const byte2 = ((c1 & 3) << 4) | (isNaN(c2) ? 0 : c2 >> 4);
-    const byte3 = isNaN(c2) ? 64 : (((c2 & 15) << 2) | (isNaN(c3) ? 0 : c3 >> 6));
-    const byte4 = isNaN(c3) ? 64 : (c3 & 63);
-    output += chars.charAt(byte1) + chars.charAt(byte2) + chars.charAt(byte3) + chars.charAt(byte4);
+export function getDefaultConfigForStyle(style: 'adventurer' | 'avataaars' | 'lorelei', gender: 'male' | 'female'): DiceBearConfig {
+  if (style === 'adventurer') {
+    return {
+      style: 'adventurer',
+      gender,
+      hair: gender === 'male' ? 'short01' : 'long01',
+      hairColor: '0e0e0e',
+      skinColor: 'f5c0b1',
+      eyes: 'variant01',
+      eyebrows: 'variant01',
+      mouth: 'variant01',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '4f46e5',
+    };
+  } else if (style === 'avataaars') {
+    return {
+      style: 'avataaars',
+      gender,
+      hair: gender === 'male' ? 'shortRound' : 'bob',
+      hairColor: '2c1b18',
+      skinColor: 'ffdbb4',
+      eyes: 'default',
+      eyebrows: 'default',
+      mouth: 'default',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '4f46e5', // not used by avataaars in URL, but kept for interface consistency
+    };
+  } else {
+    // lorelei
+    return {
+      style: 'lorelei',
+      gender,
+      hair: 'variant01',
+      hairColor: '2c3e50',
+      skinColor: 'ffdbac',
+      eyes: 'variant01',
+      eyebrows: 'variant01',
+      mouth: 'variant01',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '4f46e5',
+    };
   }
-  return output;
 }
 
 /**
@@ -213,7 +243,10 @@ export function getDiceBearUrl(config: DiceBearConfig): string {
     params.push(`eyebrows=${config.eyebrows}`);
     params.push(`mouth=${config.mouth}`);
     if (config.glasses !== 'none') {
-      params.push(`features=${config.glasses}`);
+      params.push(`glasses=${config.glasses}`);
+      params.push(`glassesProbability=100`);
+    } else {
+      params.push(`glassesProbability=0`);
     }
     params.push(`backgroundColor=${config.bgColor}`);
     params.push(`clothingColor=${config.shirtColor}`);
@@ -225,6 +258,9 @@ export function getDiceBearUrl(config: DiceBearConfig): string {
     params.push(`mouth=${config.mouth}`);
     if (config.glasses !== 'none') {
       params.push(`accessories=${config.glasses}`);
+      params.push(`accessoriesProbability=100`);
+    } else {
+      params.push(`accessoriesProbability=0`);
     }
     params.push(`backgroundColor=${config.bgColor}`);
   } else if (config.style === 'lorelei') {

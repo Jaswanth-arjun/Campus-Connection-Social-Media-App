@@ -29,6 +29,7 @@ import {
   DiceBearConfig,
   getDiceBearUrl,
   compileDiceBearAvatar,
+  getDefaultConfigForStyle,
   ADVENTURER_OPTIONS,
   AVATAAARS_OPTIONS,
   LORELEI_OPTIONS,
@@ -153,12 +154,7 @@ export default function ProfileScreen() {
         {
           text: '🎨 Create 2D Vector Avatar',
           onPress: () => {
-            setAvatarConfig((prev) => ({
-              ...prev,
-              style: 'adventurer',
-              gender: 'male',
-              hair: 'short01',
-            }));
+            setAvatarConfig(getDefaultConfigForStyle('adventurer', 'male'));
             setShowAvatarModal(true);
           },
         },
@@ -732,12 +728,7 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                       key={style.id}
                       onPress={() => {
-                        setAvatarConfig((prev) => ({
-                          ...prev,
-                          style: style.id as any,
-                          hair: style.defaultHair,
-                          glasses: 'none',
-                        }));
+                        setAvatarConfig(getDefaultConfigForStyle(style.id as any, avatarConfig.gender));
                       }}
                       className="p-5 rounded-3xl border-2 mb-3 relative"
                       style={{
@@ -777,19 +768,7 @@ export default function ProfileScreen() {
                         <TouchableOpacity
                           key={g.id}
                           onPress={() => {
-                            setAvatarConfig((prev) => {
-                              const defaultHair =
-                                prev.style === 'adventurer'
-                                  ? (g.id === 'male' ? 'short01' : 'long01')
-                                  : prev.style === 'avataaars'
-                                  ? (g.id === 'male' ? 'ShortHairShortRound' : 'LongHairBob')
-                                  : 'hair01';
-                              return {
-                                ...prev,
-                                gender: g.id as any,
-                                hair: defaultHair,
-                              };
-                            });
+                            setAvatarConfig(getDefaultConfigForStyle(avatarConfig.style, g.id as any));
                           }}
                           className="flex-1 p-5 rounded-3xl border-2 items-center relative"
                           style={{
@@ -859,10 +838,7 @@ export default function ProfileScreen() {
                       : LORELEI_OPTIONS.skinColors
                     ).map((skin) => {
                       const isSelected = avatarConfig.skinColor === skin.value;
-                      const displayBg =
-                        avatarConfig.style === 'avataaars'
-                          ? (skin.value === 'Pale' ? '#FDD7E4' : skin.value === 'Light' ? '#F6D1B1' : skin.value === 'Tanned' ? '#F4B083' : skin.value === 'Brown' ? '#9F6845' : skin.value === 'DarkBrown' ? '#6C3F24' : '#2D1B11')
-                          : `#${skin.value}`;
+                      const displayBg = `#${skin.value}`;
                       return (
                         <TouchableOpacity
                           key={skin.value}
@@ -933,10 +909,7 @@ export default function ProfileScreen() {
                       : LORELEI_OPTIONS.hairColors
                     ).map((color) => {
                       const isSelected = avatarConfig.hairColor === color.value;
-                      const displayBg =
-                        avatarConfig.style === 'avataaars'
-                          ? (color.value === 'Black' ? '#09090b' : color.value === 'Auburn' ? '#A0522D' : color.value === 'Blonde' ? '#F4D03F' : color.value === 'Brown' ? '#8B4513' : color.value === 'Red' ? '#E74C3C' : '#BDC3C7')
-                          : `#${color.value}`;
+                      const displayBg = `#${color.value}`;
                       return (
                         <TouchableOpacity
                           key={color.value}
