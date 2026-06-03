@@ -13,59 +13,219 @@ const getDeterministicValue = (rollNumber: string, key: string, min: number, max
   return min + val;
 };
 
-export const getMockAttendance = (rollNumber: string): Attendance => {
-  const seed = rollNumber.toUpperCase();
-  const branchCode = seed.substring(6, 8) || '05'; // e.g., 05 for CSE
-  
-  let branchName = 'CSE';
-  let subjectsList = [
-    'Data Structures & Algorithms',
-    'Database Management Systems',
-    'Operating Systems',
-    'Computer Networks',
-    'Software Engineering',
-    'Machine Learning Lab'
-  ];
+interface AcademicInfo {
+  yearOfStudy: number; // 1, 2, 3, 4
+  semText: string;     // "II Sem", "IV Sem", etc.
+  yearText: string;    // "1st Year", etc.
+  branchName: string;  // "CSE", "ECE", "EEE", "MECH"
+  subjects: string[];
+  yearBranchSection: string;
+}
 
-  // Try to parse branch code
+export const getAcademicInfo = (rollNumber: string): AcademicInfo => {
+  const seed = rollNumber.toUpperCase();
+  
+  // Extract joining year (first 2 digits, e.g. "23")
+  const joinYearShort = parseInt(seed.substring(0, 2), 10);
+  
+  // Current year is 2026. Join year short is 23.
+  // 26 - 23 = 3 (3rd year).
+  // If joinYearShort is invalid, fallback to 23 (3rd year).
+  let yearOfStudy = 3;
+  if (!isNaN(joinYearShort)) {
+    yearOfStudy = 26 - joinYearShort;
+    // Bounds check
+    if (yearOfStudy < 1) yearOfStudy = 1;
+    if (yearOfStudy > 4) yearOfStudy = 4;
+  }
+
+  // Extract branch code (indices 6 and 7, e.g., "05")
+  const branchCode = seed.substring(6, 8) || '05';
+  let branchName = 'CSE';
   if (branchCode === '04' || seed.includes('ECE') || seed.includes('A4')) {
     branchName = 'ECE';
-    subjectsList = [
-      'Microcontrollers & Applications',
-      'Digital Signal Processing',
-      'Analog Communications',
-      'VLSI Design',
-      'Control Systems Lab',
-      'Antennas & Wave Propagation'
-    ];
   } else if (branchCode === '02' || seed.includes('EEE') || seed.includes('A2')) {
     branchName = 'EEE';
-    subjectsList = [
-      'Power Electronics',
-      'Electrical Machines-II',
-      'Control Systems',
-      'Power System Analysis',
-      'Electrical Measurements Lab',
-      'Renewable Energy Sources'
-    ];
   } else if (branchCode === '03' || seed.includes('ME') || seed.includes('A3')) {
     branchName = 'MECH';
-    subjectsList = [
-      'Thermodynamics',
-      'Fluid Mechanics',
-      'Machine Drawing',
-      'Kinematics of Machinery',
-      'Thermal Engineering Lab',
-      'Manufacturing Technology'
-    ];
   }
+
+  // Determine semester text (Assuming June is end of even semester, i.e., Sem II / IV / VI / VIII)
+  const semText = yearOfStudy === 1 ? 'II Sem' : yearOfStudy === 2 ? 'IV Sem' : yearOfStudy === 3 ? 'VI Sem' : 'VIII Sem';
+  const yearText = yearOfStudy === 1 ? '1st Year' : yearOfStudy === 2 ? '2nd Year' : yearOfStudy === 3 ? '3rd Year' : '4th Year';
+
+  // Map subjects based on branch and year of study
+  let subjects: string[] = [];
+  if (branchName === 'CSE') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Engineering Chemistry',
+        'Differential Equations & Vector Calculus',
+        'Basic Electrical & Electronics Eng.',
+        'Engineering Drawing',
+        'Introduction to Python Programming',
+        'IT Workshop Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Discrete Mathematics & Graph Theory',
+        'Design and Analysis of Algorithms',
+        'Operating Systems',
+        'Software Engineering',
+        'Java Programming',
+        'Java & OS Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Compiler Design',
+        'Computer Networks',
+        'Artificial Intelligence',
+        'Cryptography & Network Security',
+        'Web Technologies',
+        'Web & Networks Lab'
+      ];
+    } else {
+      subjects = [
+        'Cloud Computing',
+        'Cyber Security & Forensics',
+        'Big Data Analytics',
+        'Professional Ethics & Human Values',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'ECE') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Applied Physics',
+        'Linear Algebra & Multivariable Calculus',
+        'Basic Civil & Mechanical Eng.',
+        'Engineering Graphics',
+        'C Programming for Problem Solving',
+        'Engineering Physics Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Electromagnetic Waves & Transmission Lines',
+        'Analog Circuits',
+        'Signals & Systems',
+        'Digital System Design',
+        'Random Variables & Stochastic Processes',
+        'Analog & Digital Circuits Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Microprocessors & Microcontrollers',
+        'Digital Signal Processing',
+        'Antennas & Wave Propagation',
+        'Control Systems',
+        'VLSI Design',
+        'MPMC & DSP Lab'
+      ];
+    } else {
+      subjects = [
+        'Cellular & Mobile Communications',
+        'Optical Fiber Communications',
+        'Embedded Systems',
+        'Professional Elective - IoT',
+        'Major Project Work'
+      ];
+    }
+  } else if (branchName === 'EEE') {
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Engineering Chemistry',
+        'Differential Equations & Vector Calculus',
+        'Basic Electrical & Electronics Eng.',
+        'Engineering Drawing',
+        'Python Programming',
+        'Electrical Engineering Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Electrical Circuit Analysis',
+        'DC Machines & Transformers',
+        'Electromagnetic Fields',
+        'Analog Electronic Circuits',
+        'Fluid Mechanics & Hydraulic Machinery',
+        'DC Machines Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'AC Machines',
+        'Power Electronics',
+        'Power System Analysis',
+        'Control Systems',
+        'Linear & Digital Integrated Circuits',
+        'AC Machines & Power Electronics Lab'
+      ];
+    } else {
+      subjects = [
+        'Power System Operation & Control',
+        'High Voltage Engineering',
+        'Utilization of Electrical Energy',
+        'Smart Grid Technologies',
+        'Major Project Work'
+      ];
+    }
+  } else { // MECH
+    if (yearOfStudy === 1) {
+      subjects = [
+        'Applied Physics',
+        'Linear Algebra & Multivariable Calculus',
+        'Basic Electrical & Electronics Eng.',
+        'Engineering Graphics',
+        'C Programming for Problem Solving',
+        'Engineering Workshop Lab'
+      ];
+    } else if (yearOfStudy === 2) {
+      subjects = [
+        'Thermodynamics',
+        'Fluid Mechanics & Hydraulic Machines',
+        'Mechanics of Solids',
+        'Kinematics of Machinery',
+        'Manufacturing Technology-I',
+        'Fluid Mechanics Lab'
+      ];
+    } else if (yearOfStudy === 3) {
+      subjects = [
+        'Dynamics of Machinery',
+        'Design of Machine Members-II',
+        'Heat Transfer',
+        'CAD/CAM',
+        'Operations Research',
+        'Heat Transfer Lab'
+      ];
+    } else {
+      subjects = [
+        'Power Plant Engineering',
+        'Production & Operations Management',
+        'Automobile Engineering',
+        'Additive Manufacturing',
+        'Major Project Work'
+      ];
+    }
+  }
+
+  return {
+    yearOfStudy,
+    semText,
+    yearText,
+    branchName,
+    subjects,
+    yearBranchSection: `${yearOfStudy}_${branchName}_A`
+  };
+};
+
+export const getMockAttendance = (rollNumber: string): Attendance => {
+  const seed = rollNumber.toUpperCase();
+  const info = getAcademicInfo(seed);
 
   const overallPercent = getDeterministicValue(seed, 'overall', 65, 93);
   
   let totalAttended = 0;
   let totalConducted = 0;
 
-  const subjects = subjectsList.map((sub, index) => {
+  const subjects = info.subjects.map((sub, index) => {
     const conducted = getDeterministicValue(seed, `cond_${index}`, 24, 30);
     const subPercent = getDeterministicValue(seed, `percent_${index}`, overallPercent - 8, Math.min(overallPercent + 8, 100));
     const attended = Math.round((subPercent / 100) * conducted);
@@ -85,7 +245,7 @@ export const getMockAttendance = (rollNumber: string): Attendance => {
 
   return {
     rollno: seed,
-    year_branch_section: `3_${branchName}_A`,
+    year_branch_section: info.yearBranchSection,
     percentage,
     totalClasses: {
       attended: totalAttended,
@@ -97,51 +257,9 @@ export const getMockAttendance = (rollNumber: string): Attendance => {
 
 export const getMockMidmarks = (rollNumber: string): Midmarks => {
   const seed = rollNumber.toUpperCase();
-  const branchCode = seed.substring(6, 8) || '05';
-  
-  let branchName = 'CSE';
-  let subjectsList = [
-    'Data Structures & Algorithms',
-    'Database Management Systems',
-    'Operating Systems',
-    'Computer Networks',
-    'Software Engineering',
-    'Machine Learning Lab'
-  ];
+  const info = getAcademicInfo(seed);
 
-  if (branchCode === '04' || seed.includes('ECE') || seed.includes('A4')) {
-    branchName = 'ECE';
-    subjectsList = [
-      'Microcontrollers & Applications',
-      'Digital Signal Processing',
-      'Analog Communications',
-      'VLSI Design',
-      'Control Systems Lab',
-      'Antennas & Wave Propagation'
-    ];
-  } else if (branchCode === '02' || seed.includes('EEE') || seed.includes('A2')) {
-    branchName = 'EEE';
-    subjectsList = [
-      'Power Electronics',
-      'Electrical Machines-II',
-      'Control Systems',
-      'Power System Analysis',
-      'Electrical Measurements Lab',
-      'Renewable Energy Sources'
-    ];
-  } else if (branchCode === '03' || seed.includes('ME') || seed.includes('A3')) {
-    branchName = 'MECH';
-    subjectsList = [
-      'Thermodynamics',
-      'Fluid Mechanics',
-      'Machine Drawing',
-      'Kinematics of Machinery',
-      'Thermal Engineering Lab',
-      'Manufacturing Technology'
-    ];
-  }
-
-  const subjects = subjectsList.map((sub, index) => {
+  const subjects = info.subjects.map((sub, index) => {
     const hasM2 = getDeterministicValue(seed, `hasM2_${index}`, 0, 1) === 1;
     const m1Value = getDeterministicValue(seed, `m1_${index}`, 15, 29);
     const m1 = getDeterministicValue(seed, `m1_present_${index}`, 1, 10) > 1 ? m1Value : null;
@@ -160,13 +278,13 @@ export const getMockMidmarks = (rollNumber: string): Midmarks => {
       M1: m1,
       M2: m2,
       average,
-      type: sub.endsWith('Lab') ? 'Practical' : 'Theory'
+      type: sub.toLowerCase().includes('lab') || sub.toLowerCase().includes('project') || sub.toLowerCase().includes('workshop') ? 'Practical' : 'Theory'
     };
   });
 
   return {
     rollno: seed,
-    year_branch_section: `3_${branchName}_A`,
+    year_branch_section: info.yearBranchSection,
     subjects
   };
 };

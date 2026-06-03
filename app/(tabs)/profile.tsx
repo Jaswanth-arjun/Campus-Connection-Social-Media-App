@@ -147,6 +147,19 @@ export default function ProfileScreen() {
     return prefix.toUpperCase();
   };
 
+  const getYearSemText = (ybs?: string) => {
+    if (!ybs) return '';
+    const parts = ybs.split('_');
+    if (parts.length < 2) return '';
+    const yearNum = parts[0];
+    const branchName = parts[1];
+    
+    const yearText = yearNum === '1' ? '1st Year' : yearNum === '2' ? '2nd Year' : yearNum === '3' ? '3rd Year' : '4th Year';
+    const semText = yearNum === '1' ? 'II Sem' : yearNum === '2' ? 'IV Sem' : yearNum === '3' ? 'VI Sem' : 'VIII Sem';
+    
+    return `${yearText} - ${semText} (${branchName})`;
+  };
+
   const handleCheckAttendance = async () => {
     const rollNo = getRollNumber();
     if (!rollNo) {
@@ -1313,9 +1326,11 @@ export default function ProfileScreen() {
             
             {/* Header */}
             <View className="flex-row justify-between items-center mb-6">
-              <View>
+              <View className="flex-1 mr-2">
                 <Text className="text-2xl font-black text-slate-900 tracking-tight">Academic Pulse</Text>
-                <Text className="text-slate-400 text-xs font-semibold">Live Roll: {academicRollNumber}</Text>
+                <Text className="text-slate-400 text-xs font-semibold" numberOfLines={1}>
+                  Live Roll: {academicRollNumber} • {getYearSemText(attendanceData?.year_branch_section)}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowAttendanceModal(false)}
@@ -1414,9 +1429,11 @@ export default function ProfileScreen() {
             
             {/* Header */}
             <View className="flex-row justify-between items-center mb-6">
-              <View>
+              <View className="flex-1 mr-2">
                 <Text className="text-2xl font-black text-slate-900 tracking-tight">Mid Term Hub</Text>
-                <Text className="text-slate-400 text-xs font-semibold">Live Roll: {academicRollNumber}</Text>
+                <Text className="text-slate-400 text-xs font-semibold" numberOfLines={1}>
+                  Live Roll: {academicRollNumber} • {getYearSemText(midmarksData?.year_branch_section)}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowMidmarksModal(false)}
