@@ -216,7 +216,7 @@ export default function ProfileScreen() {
       let coverUrl = currentUser.coverImage || '';
 
       if (editAvatar) {
-        if (editAvatar.startsWith('data:')) {
+        if (editAvatar.startsWith('data:') || editAvatar.startsWith('https://api.dicebear.com')) {
           avatarUrl = editAvatar;
         } else {
           try {
@@ -231,7 +231,7 @@ export default function ProfileScreen() {
       }
 
       if (editPulseAvatar) {
-        if (editPulseAvatar.startsWith('data:')) {
+        if (editPulseAvatar.startsWith('data:') || editPulseAvatar.startsWith('https://api.dicebear.com')) {
           pulseAvatarUrl = editPulseAvatar;
         } else {
           try {
@@ -246,7 +246,7 @@ export default function ProfileScreen() {
       }
 
       if (editCover) {
-        if (editCover.startsWith('data:')) {
+        if (editCover.startsWith('data:') || editCover.startsWith('https://api.dicebear.com')) {
           coverUrl = editCover;
         } else {
           try {
@@ -532,7 +532,7 @@ export default function ProfileScreen() {
               {/* Avatar Picker */}
               <TouchableOpacity onPress={handlePickAvatar} className="items-center flex-1">
                 <UserAvatar uri={editAvatar || currentUser.avatar} size={76} />
-                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider">
+                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider text-center">
                   Change Photo
                 </Text>
               </TouchableOpacity>
@@ -548,18 +548,21 @@ export default function ProfileScreen() {
                 }}
                 className="items-center flex-1"
               >
-                <View className="w-18 h-18 rounded-2xl bg-purple-100 items-center justify-center border border-purple-200 shadow-sm overflow-hidden">
+                <View 
+                  className="rounded-full bg-[#6A2FF9]/10 items-center justify-center border border-[#6A2FF9]/20 overflow-hidden"
+                  style={{ width: 76, height: 76 }}
+                >
                   {editPulseAvatar || currentUser.pulseAvatar ? (
                     <Image
                       source={{ uri: editPulseAvatar || currentUser.pulseAvatar }}
-                      className="w-full h-full"
-                      resizeMode="contain"
+                      style={{ width: 76, height: 76 }}
+                      resizeMode="cover"
                     />
                   ) : (
-                    <Ionicons name="body" size={32} color="#6A2FF9" />
+                    <Ionicons name="sparkles" size={32} color="#6A2FF9" />
                   )}
                 </View>
-                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider">
+                <Text className="text-[#6A2FF9] mt-2 font-extrabold text-xs uppercase tracking-wider text-center">
                   Edit Avatar
                 </Text>
               </TouchableOpacity>
@@ -639,93 +642,46 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <Text className="text-lg font-extrabold text-white">Cartoon Avatar Studio</Text>
             <TouchableOpacity
-              onPress={async () => {
-                try {
-                  setIsCompilingAvatar(true);
-                  const compiledBase64 = await compileDiceBearAvatar(avatarConfig);
-                  setIsCompilingAvatar(false);
+              onPress={() => {
+                const directUrl = getDiceBearUrl(avatarConfig);
 
-                  Alert.alert(
-                    'Set as Profile Photo?',
-                    'Would you like to set this new avatar as your main profile picture (DP), or use it only for your campus stories/pulse?',
-                    [
-                      {
-                        text: 'Only for Stories/Pulse',
-                        onPress: () => {
-                          setEditPulseAvatar(compiledBase64);
-                          setShowAvatarModal(false);
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Avatar Set for Stories! 📸✨',
-                            text2: 'Saved for campus pulses. Tap Save Profile to apply.',
-                          });
-                        }
-                      },
-                      {
-                        text: 'Set as Profile Picture',
-                        style: 'default',
-                        onPress: () => {
-                          setEditAvatar(compiledBase64);
-                          setEditPulseAvatar(compiledBase64);
-                          setShowAvatarModal(false);
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Avatar Set as DP! 🎨🌟',
-                            text2: 'Saved as profile photo. Tap Save Profile to apply.',
-                          });
-                        }
+                Alert.alert(
+                  'Set as Profile Photo?',
+                  'Would you like to set this new avatar as your main profile picture (DP), or use it only for your campus stories/pulse?',
+                  [
+                    {
+                      text: 'Only for Stories/Pulse',
+                      onPress: () => {
+                        setEditPulseAvatar(directUrl);
+                        setShowAvatarModal(false);
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Avatar Set for Stories! 📸✨',
+                          text2: 'Saved for campus pulses. Tap Save Profile to apply.',
+                        });
                       }
-                    ],
-                    { cancelable: true }
-                  );
-                } catch (e) {
-                  console.error(e);
-                  setIsCompilingAvatar(false);
-                  const directUrl = getDiceBearUrl(avatarConfig);
-
-                  Alert.alert(
-                    'Set as Profile Photo?',
-                    'Would you like to set this new avatar as your main profile picture (DP), or use it only for your campus stories/pulse?',
-                    [
-                      {
-                        text: 'Only for Stories/Pulse',
-                        onPress: () => {
-                          setEditPulseAvatar(directUrl);
-                          setShowAvatarModal(false);
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Avatar Set for Stories! 📸✨',
-                            text2: 'Saved for campus pulses. Tap Save Profile to apply.',
-                          });
-                        }
-                      },
-                      {
-                        text: 'Set as Profile Picture',
-                        style: 'default',
-                        onPress: () => {
-                          setEditAvatar(directUrl);
-                          setEditPulseAvatar(directUrl);
-                          setShowAvatarModal(false);
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Avatar Set as DP! 🎨🌟',
-                            text2: 'Saved as profile photo. Tap Save Profile to apply.',
-                          });
-                        }
+                    },
+                    {
+                      text: 'Set as Profile Picture',
+                      style: 'default',
+                      onPress: () => {
+                        setEditAvatar(directUrl);
+                        setEditPulseAvatar(directUrl);
+                        setShowAvatarModal(false);
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Avatar Set as DP! 🎨🌟',
+                          text2: 'Saved as profile photo. Tap Save Profile to apply.',
+                        });
                       }
-                    ],
-                    { cancelable: true }
-                  );
-                }
+                    }
+                  ],
+                  { cancelable: true }
+                );
               }}
-              disabled={isCompilingAvatar}
               className="bg-[#6A2FF9] px-5 py-2.5 rounded-full"
             >
-              {isCompilingAvatar ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text className="text-white font-extrabold text-sm">Save Avatar</Text>
-              )}
+              <Text className="text-white font-extrabold text-sm">Save Avatar</Text>
             </TouchableOpacity>
           </View>
 
