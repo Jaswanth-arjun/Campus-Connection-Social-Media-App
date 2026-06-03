@@ -30,6 +30,7 @@
     "@types/react": "~18.2.79",
     "date-fns": "^3.3.1",
     "expo": "~51.0.39",
+    "expo-auth-session": "~5.5.2",
     "expo-av": "~14.0.5",
     "expo-camera": "~15.0.16",
     "expo-constants": "~16.0.2",
