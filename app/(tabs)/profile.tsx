@@ -35,6 +35,8 @@ import {
   LORELEI_OPTIONS,
   OPEN_PEEPS_OPTIONS,
   MICAH_OPTIONS,
+  TOON_HEAD_OPTIONS,
+  BIG_EARS_OPTIONS,
 } from '../../utils/avatarGenerator';
 
 export default function ProfileScreen() {
@@ -660,6 +662,10 @@ export default function ProfileScreen() {
                 ? 'Open Peeps Hand-Drawn Style 🧑‍🎨'
                 : avatarConfig.style === 'micah'
                 ? 'Micah Abstract Geometric Style 💎'
+                : avatarConfig.style === 'toon-head'
+                ? 'Toon Head Animation Style 🤠'
+                : avatarConfig.style === 'big-ears'
+                ? 'Big Ears Comic Style 🐰'
                 : 'Lorelei Aesthetic Anime Style 💖'}
             </Text>
           </View>
@@ -719,6 +725,16 @@ export default function ProfileScreen() {
                     id: 'avataaars',
                     title: '🎨 Modern Minimalist Flat',
                     desc: 'Instagram-inspired aesthetic flat graphics with custom round frames and trendy geometric designs.',
+                  },
+                  {
+                    id: 'toon-head',
+                    title: '🤠 Toon Head Animation',
+                    desc: 'Modern, high-quality cartoon avatars from popular animated series. Rich details and expressions.',
+                  },
+                  {
+                    id: 'big-ears',
+                    title: '🐰 Big Ears Comic',
+                    desc: 'Playful, fun comic character profiles with adorable stylized ears and expressive faces.',
                   },
                   {
                     id: 'open-peeps',
@@ -852,6 +868,10 @@ export default function ProfileScreen() {
                       ? OPEN_PEEPS_OPTIONS.skinColors
                       : avatarConfig.style === 'micah'
                       ? MICAH_OPTIONS.skinColors
+                      : avatarConfig.style === 'toon-head'
+                      ? TOON_HEAD_OPTIONS.skinColors
+                      : avatarConfig.style === 'big-ears'
+                      ? BIG_EARS_OPTIONS.skinColors
                       : LORELEI_OPTIONS.skinColors
                     ).map((skin) => {
                       const isSelected = avatarConfig.skinColor === skin.value;
@@ -892,6 +912,10 @@ export default function ProfileScreen() {
                       ? (avatarConfig.gender === 'male' ? OPEN_PEEPS_OPTIONS.maleHair : OPEN_PEEPS_OPTIONS.femaleHair)
                       : avatarConfig.style === 'micah'
                       ? MICAH_OPTIONS.hair
+                      : avatarConfig.style === 'toon-head'
+                      ? (avatarConfig.gender === 'male' ? TOON_HEAD_OPTIONS.maleHair : TOON_HEAD_OPTIONS.femaleHair)
+                      : avatarConfig.style === 'big-ears'
+                      ? (avatarConfig.gender === 'male' ? BIG_EARS_OPTIONS.maleHair : BIG_EARS_OPTIONS.femaleHair)
                       : LORELEI_OPTIONS.hair
                     ).map((hair) => {
                       const isSelected = avatarConfig.hair === hair.id;
@@ -931,6 +955,10 @@ export default function ProfileScreen() {
                       ? OPEN_PEEPS_OPTIONS.hairColors
                       : avatarConfig.style === 'micah'
                       ? MICAH_OPTIONS.hairColors
+                      : avatarConfig.style === 'toon-head'
+                      ? TOON_HEAD_OPTIONS.hairColors
+                      : avatarConfig.style === 'big-ears'
+                      ? BIG_EARS_OPTIONS.hairColors
                       : LORELEI_OPTIONS.hairColors
                     ).map((color) => {
                       const isSelected = avatarConfig.hairColor === color.value;
@@ -971,7 +999,11 @@ export default function ProfileScreen() {
                           ? AVATAAARS_OPTIONS.eyes
                           : avatarConfig.style === 'open-peeps'
                           ? OPEN_PEEPS_OPTIONS.eyes
-                          : MICAH_OPTIONS.eyes
+                          : avatarConfig.style === 'micah'
+                          ? MICAH_OPTIONS.eyes
+                          : avatarConfig.style === 'toon-head'
+                          ? TOON_HEAD_OPTIONS.eyes
+                          : BIG_EARS_OPTIONS.eyes
                         ).map((eye) => {
                           const isSelected = avatarConfig.eyes === eye.id;
                           return (
@@ -1006,7 +1038,11 @@ export default function ProfileScreen() {
                             ? ADVENTURER_OPTIONS.mouths
                             : avatarConfig.style === 'avataaars'
                             ? AVATAAARS_OPTIONS.mouths
-                            : MICAH_OPTIONS.mouths
+                            : avatarConfig.style === 'micah'
+                            ? MICAH_OPTIONS.mouths
+                            : avatarConfig.style === 'toon-head'
+                            ? TOON_HEAD_OPTIONS.mouths
+                            : BIG_EARS_OPTIONS.mouths
                           ).map((m) => {
                             const isSelected = avatarConfig.mouth === m.id;
                             return (
@@ -1041,7 +1077,7 @@ export default function ProfileScreen() {
               <View className="space-y-6">
                 
                 {/* Glasses / Sunglasses customizers */}
-                {avatarConfig.style !== 'lorelei' && (
+                {avatarConfig.style !== 'lorelei' && avatarConfig.style !== 'toon-head' && avatarConfig.style !== 'big-ears' && (
                   <View>
                     <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
                       Eyewear & Glasses Frames
@@ -1071,6 +1107,38 @@ export default function ProfileScreen() {
                               style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
                             >
                               {glass.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+
+                {/* Clothes Style Selector (Toon Head style) */}
+                {avatarConfig.style === 'toon-head' && (
+                  <View className="mb-6">
+                    <Text className="text-white/50 font-black text-xs uppercase tracking-widest mb-3">
+                      Outerwear Clothing Style
+                    </Text>
+                    <View className="flex-row flex-wrap">
+                      {TOON_HEAD_OPTIONS.clothes.map((cloth) => {
+                        const isSelected = avatarConfig.shirtColor === cloth.id;
+                        return (
+                          <TouchableOpacity
+                            key={cloth.id}
+                            onPress={() => setAvatarConfig((prev) => ({ ...prev, shirtColor: cloth.id }))}
+                            className="px-4 py-2.5 rounded-2xl m-1.5 border"
+                            style={{
+                              borderColor: isSelected ? '#6A2FF9' : 'rgba(255,255,255,0.08)',
+                              backgroundColor: isSelected ? 'rgba(106, 47, 249, 0.16)' : 'rgba(255,255,255,0.03)',
+                            }}
+                          >
+                            <Text
+                              className="text-xs font-extrabold"
+                              style={{ color: isSelected ? '#A78BFA' : 'rgba(255,255,255,0.7)' }}
+                            >
+                              {cloth.name}
                             </Text>
                           </TouchableOpacity>
                         );

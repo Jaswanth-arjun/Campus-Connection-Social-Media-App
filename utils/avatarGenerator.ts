@@ -4,7 +4,7 @@
  */
 
 export interface DiceBearConfig {
-  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah';
+  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah' | 'toon-head' | 'big-ears';
   gender: 'male' | 'female';
   hair: string;
   hairColor: string;
@@ -277,11 +277,120 @@ export const MICAH_OPTIONS = {
   ]
 };
 
+// 6. Toon Head Curated Options (Johan Melin Animated Series Style - DiceBear v9+)
+export const TOON_HEAD_OPTIONS = {
+  skinColors: [
+    { name: 'Peach', value: 'f1c3a5' },
+    { name: 'Warm Beige', value: 'c68e7a' },
+    { name: 'Tanned', value: 'b98e6a' },
+    { name: 'Bronze', value: 'a36b4f' },
+    { name: 'Espresso', value: '5c3829' },
+  ],
+  hairColors: [
+    { name: 'Black', value: '2c1b18' },
+    { name: 'Auburn', value: 'a55728' },
+    { name: 'Bronze Gold', value: 'b58143' },
+    { name: 'Golden Blonde', value: 'd6b370' },
+    { name: 'Warm Brown', value: '724133' },
+  ],
+  maleHair: [
+    { id: 'sideComed', name: 'Side Combed' },
+    { id: 'undercut', name: 'Undercut Fade' },
+    { id: 'spiky', name: 'Spiky Punk' },
+  ],
+  femaleHair: [
+    { id: 'bun', name: 'Top Bun' },
+    { id: 'sideComed', name: 'Side Combed' },
+  ],
+  eyes: [
+    { id: 'happy', name: 'Happy Arc' },
+    { id: 'wide', name: 'Wide Open' },
+    { id: 'bow', name: 'Gentle Arc' },
+    { id: 'humble', name: 'Soft Look' },
+    { id: 'wink', name: 'Playful Wink' },
+  ],
+  eyebrows: [
+    { id: 'neutral', name: 'Neutral' },
+    { id: 'raised', name: 'Excited Raised' },
+    { id: 'happy', name: 'Happy Curve' },
+    { id: 'angry', name: 'Angry Flat' },
+    { id: 'sad', name: 'Sad Angle' },
+  ],
+  mouths: [
+    { id: 'smile', name: 'Gentle Smile' },
+    { id: 'laugh', name: 'Loud Laugh' },
+    { id: 'agape', name: 'Agape Surprise' },
+    { id: 'sad', name: 'Slight Frown' },
+    { id: 'angry', name: 'Angry Line' },
+  ],
+  clothes: [
+    { id: 'tShirt', name: 'Casual T-Shirt' },
+    { id: 'shirt', name: 'Buttoned Shirt' },
+    { id: 'openJacket', name: 'Open Jacket' },
+    { id: 'turtleNeck', name: 'Turtle Neck' },
+    { id: 'dress', name: 'Elegant Dress' },
+  ],
+  clothesColors: [
+    { name: 'Royal Indigo', value: '0b3286' },
+    { name: 'Crimson Red', value: 'b11f1f' },
+    { name: 'Forest Green', value: '147f3c' },
+    { name: 'Amber Gold', value: 'eab308' },
+    { name: 'Dark Slate', value: '151613' },
+  ]
+};
+
+// 7. Big Ears Curated Options (Playful Cartoon Face Style - DiceBear v9+)
+export const BIG_EARS_OPTIONS = {
+  skinColors: [
+    { name: 'Peach', value: 'f8b788' },
+    { name: 'Warm Beige', value: 'da9969' },
+    { name: 'Tanned', value: 'c07f50' },
+    { name: 'Bronze', value: 'a66637' },
+    { name: 'Espresso', value: '89532c' },
+  ],
+  hairColors: [
+    { name: 'Midnight Black', value: '2c1b18' },
+    { name: 'Chestnut Brown', value: '724133' },
+    { name: 'Deep Auburn', value: 'a55728' },
+    { name: 'Golden Blonde', value: 'd6b370' },
+    { name: 'Pastel Pink', value: 'f59797' },
+  ],
+  maleHair: [
+    { id: 'short01', name: 'Side Part' },
+    { id: 'short03', name: 'Spiky Top' },
+    { id: 'short05', name: 'Buzzcut' },
+    { id: 'short08', name: 'Messy Shag' },
+    { id: 'short12', name: 'Curly Top' },
+  ],
+  femaleHair: [
+    { id: 'long01', name: 'Sleek Long' },
+    { id: 'long05', name: 'Long Waves' },
+    { id: 'long10', name: 'Cute Ponytail' },
+    { id: 'long12', name: 'Bob Cut' },
+    { id: 'long18', name: 'Double Buns' },
+  ],
+  eyes: [
+    { id: 'variant01', name: 'Happy Blink' },
+    { id: 'variant05', name: 'Round Open' },
+    { id: 'variant08', name: 'Anime Sparkle' },
+    { id: 'variant12', name: 'Playful Wink' },
+    { id: 'variant18', name: 'Curious Arc' },
+    { id: 'variant25', name: 'Muted Sleepy' },
+  ],
+  mouths: [
+    { id: 'variant0101', name: 'Warm Smile' },
+    { id: 'variant0301', name: 'Wide Laugh' },
+    { id: 'variant0401', name: 'Sassy Smirk' },
+    { id: 'variant0501', name: 'Teeth Smile' },
+    { id: 'variant0701', name: 'Open Grin' },
+  ],
+};
+
 /**
  * Returns a valid starting configuration matching the required schema values for a specific style.
  */
 export function getDefaultConfigForStyle(
-  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah',
+  style: 'adventurer' | 'avataaars' | 'lorelei' | 'open-peeps' | 'micah' | 'toon-head' | 'big-ears',
   gender: 'male' | 'female'
 ): DiceBearConfig {
   if (style === 'adventurer') {
@@ -340,6 +449,34 @@ export function getDefaultConfigForStyle(
       bgColor: 'c0aede',
       shirtColor: '4f46e5',
     };
+  } else if (style === 'toon-head') {
+    return {
+      style,
+      gender,
+      hair: 'sideComed',
+      hairColor: '2c1b18',
+      skinColor: 'f1c3a5',
+      eyes: 'happy',
+      eyebrows: 'neutral',
+      mouth: 'smile',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '0b3286',
+    };
+  } else if (style === 'big-ears') {
+    return {
+      style,
+      gender,
+      hair: gender === 'male' ? 'short01' : 'long01',
+      hairColor: '2c1b18',
+      skinColor: 'f8b788',
+      eyes: 'variant01',
+      eyebrows: 'variant01',
+      mouth: 'variant0101',
+      glasses: 'none',
+      bgColor: 'c0aede',
+      shirtColor: '4f46e5',
+    };
   } else {
     // lorelei
     return {
@@ -362,7 +499,8 @@ export function getDefaultConfigForStyle(
  * Builds a customizable DiceBear API endpoint URL with specific query parameters.
  */
 export function getDiceBearUrl(config: DiceBearConfig): string {
-  const base = `https://api.dicebear.com/7.x/${config.style}/png`;
+  // Use DiceBear 9.x API for maximum capability and style support (including toon-head and big-ears)
+  const base = `https://api.dicebear.com/9.x/${config.style}/png`;
   const params: string[] = [];
 
   // Seed randomized base name to keep unique styling
@@ -428,6 +566,23 @@ export function getDiceBearUrl(config: DiceBearConfig): string {
     }
     params.push(`backgroundColor=${config.bgColor}`);
     params.push(`shirtColor=${config.shirtColor}`);
+  } else if (config.style === 'toon-head') {
+    params.push(`skinColor=${config.skinColor}`);
+    params.push(`hair=${config.hair}`);
+    params.push(`hairColor=${config.hairColor}`);
+    params.push(`eyes=${config.eyes}`);
+    params.push(`eyebrows=${config.eyebrows}`);
+    params.push(`mouth=${config.mouth}`);
+    params.push(`clothes=${config.shirtColor}`); // map shirtColor field to the clothes style
+    params.push(`backgroundColor=${config.bgColor}`);
+    params.push(`rearHairProbability=${config.gender === 'female' ? '100' : '0'}`);
+  } else if (config.style === 'big-ears') {
+    params.push(`skinColor=${config.skinColor}`);
+    params.push(`hair=${config.hair}`);
+    params.push(`hairColor=${config.hairColor}`);
+    params.push(`eyes=${config.eyes}`);
+    params.push(`mouth=${config.mouth}`);
+    params.push(`backgroundColor=${config.bgColor}`);
   }
 
   return `${base}?${params.join('&')}`;
