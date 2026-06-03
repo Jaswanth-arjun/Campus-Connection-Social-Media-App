@@ -80,28 +80,10 @@ export default function ProfileScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.3,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      if (result.assets[0].base64) {
-        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setEditCover(base64Uri);
-      } else {
-        // Fallback for Web
-        try {
-          const res = await fetch(result.assets[0].uri);
-          const blob = await res.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setEditCover(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
-        } catch (e) {
-          console.error(e);
-          setEditCover(result.assets[0].uri);
-        }
-      }
+      setEditCover(result.assets[0].uri);
     }
   };
 
@@ -112,20 +94,16 @@ export default function ProfileScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.3,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
       try {
-        let coverBase64 = '';
-        if (result.assets[0].base64) {
-          coverBase64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        } else {
-          coverBase64 = result.assets[0].uri;
-        }
-
         Toast.show({ type: 'info', text1: 'Uploading...', text2: 'Saving cover photo' });
-        await updateProfile({ coverImage: coverBase64 });
+        const uploadedUrl = await storageService.uploadImage(
+          result.assets[0].uri,
+          `covers/${currentUser.uid}/${Date.now()}`
+        );
+        await updateProfile({ coverImage: uploadedUrl });
         Toast.show({ type: 'success', text1: 'Success', text2: 'Cover photo updated! 🎉' });
       } catch (e: any) {
         Toast.show({ type: 'error', text1: 'Upload Failed', text2: e.message || 'Could not save cover image' });
@@ -181,28 +159,10 @@ export default function ProfileScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.2, // Compressed for fast Firestore profile avatar storage
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      if (result.assets[0].base64) {
-        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setEditAvatar(base64Uri);
-      } else {
-        // Fallback for Web
-        try {
-          const res = await fetch(result.assets[0].uri);
-          const blob = await res.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setEditAvatar(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
-        } catch (e) {
-          console.error(e);
-          setEditAvatar(result.assets[0].uri);
-        }
-      }
+      setEditAvatar(result.assets[0].uri);
     }
   };
 
