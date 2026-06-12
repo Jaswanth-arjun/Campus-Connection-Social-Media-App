@@ -68,9 +68,9 @@ export default function ChatScreen() {
           </View>
           <TouchableOpacity
             onPress={() => setShowCreateModal(true)}
-            className="bg-[#6A2FF9] w-11 h-11 rounded-2xl items-center justify-center shadow-lg shadow-purple-900/10 active:opacity-90"
+            className="bg-[#6A2FF9]/10 w-11 h-11 rounded-2xl items-center justify-center border border-[#6A2FF9]/20 active:opacity-90"
           >
-            <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="create-outline" size={22} color="#6A2FF9" />
           </TouchableOpacity>
         </View>
       </View>
@@ -161,14 +161,14 @@ export default function ChatScreen() {
             <TouchableOpacity
               onPress={handleCreateRoom}
               disabled={isCreatingRoom}
-              className="bg-[#6A2FF9] rounded-full py-4 items-center flex-row justify-center shadow-lg shadow-purple-900/10"
+              className="bg-[#6A2FF9]/10 border border-[#6A2FF9]/20 rounded-full py-4 items-center flex-row justify-center active:opacity-90"
             >
               {isCreatingRoom ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#6A2FF9" />
               ) : (
                 <>
-                  <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-                  <Text className="text-white font-extrabold text-base ml-2">Create Room</Text>
+                  <Ionicons name="add-circle" size={20} color="#6A2FF9" />
+                  <Text className="text-[#6A2FF9] font-black text-base ml-2">Create Room</Text>
                 </>
               )}
             </TouchableOpacity>

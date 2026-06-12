@@ -19,7 +19,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 
-const normalizeUser = (userId: string, data: any): User => ({
+export const normalizeUser = (userId: string, data: any): User => ({
   uid: userId,
   name: data?.name || data?.displayName || data?.email?.split?.('@')?.[0] || 'Campus User',
   email: data?.email || '',
@@ -28,10 +28,13 @@ const normalizeUser = (userId: string, data: any): User => ({
   year: data?.year || '',
   bio: data?.bio || '',
   fcmToken: data?.fcmToken || '',
-  createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt || new Date(),
+  createdAt: data?.createdAt?.toDate
+    ? data.createdAt.toDate()
+    : (data?.createdAt ? new Date(data.createdAt) : new Date()),
   darkMode: Boolean(data?.darkMode),
   isAdmin: Boolean(data?.isAdmin),
   coverImage: data?.coverImage || '',
+  pulseAvatar: data?.pulseAvatar || '',
 });
 
 export const createFallbackUser = (userId: string): User => {
@@ -52,6 +55,7 @@ export const createFallbackUser = (userId: string): User => {
     darkMode: false,
     isAdmin: false,
     coverImage: '',
+    pulseAvatar: '',
   };
 };
 
@@ -133,7 +137,7 @@ export const authService = {
           // Start a background server update without blocking the UI
           getDoc(doc(db, 'users', userId)).then(async (serverDoc) => {
             if (serverDoc.exists()) {
-              const freshData = serverDoc.data() as User;
+              const freshData = normalizeUser(userId, serverDoc.data());
               // Update AsyncStorage/store in the background
               try {
                 await AsyncStorage.setItem('user', JSON.stringify(freshData));
@@ -191,7 +195,22 @@ export const authService = {
 
   async updateUserProfile(userId: string, updates: Partial<User>): Promise<void> {
     try {
-      await updateDoc(doc(db, 'users', userId), updates);
+      // Strip immutable/problematic fields before writing to Firestore
+      const { uid: _uid, createdAt: _createdAt, ...safeUpdates } = updates;
+      await updateDoc(doc(db, 'users', userId), safeUpdates);
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser && firebaseUser.uid === userId) {
+        const authUpdates: { displayName?: string; photoURL?: string } = {};
+        if (updates.name !== undefined) {
+          authUpdates.displayName = updates.name;
+        }
+        if (updates.avatar !== undefined) {
+          authUpdates.photoURL = updates.avatar;
+        }
+        if (Object.keys(authUpdates).length > 0) {
+          await updateProfile(firebaseUser, authUpdates);
+        }
+      }
     } catch (error: any) {
       throw new Error(error.message || 'Failed to update profile');
     }

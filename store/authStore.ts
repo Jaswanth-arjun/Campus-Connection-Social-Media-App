@@ -70,15 +70,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateProfile: async (updates: Partial<User>) => {
-    try {
-      const { currentUser } = get();
-      if (!currentUser) throw new Error('No user logged in');
+    const { currentUser } = get();
+    if (!currentUser) throw new Error('No user logged in');
 
+    // Optimistic update: reflect changes in UI immediately
+    const updatedUser = { ...currentUser, ...updates };
+    set({ currentUser: updatedUser });
+    AsyncStorage.setItem('user', JSON.stringify(updatedUser)).catch(() => undefined);
+
+    try {
       await authService.updateUserProfile(currentUser.uid, updates);
-      const updatedUser = { ...currentUser, ...updates };
-      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-      set({ currentUser: updatedUser });
+      // Firestore write succeeded; onSnapshot listener will also confirm
     } catch {
+      // Revert optimistic update on failure
+      set({ currentUser });
+      AsyncStorage.setItem('user', JSON.stringify(currentUser)).catch(() => undefined);
       throw new Error('Failed to update profile');
     }
   },

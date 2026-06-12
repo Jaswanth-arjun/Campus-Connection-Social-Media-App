@@ -27,10 +27,10 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
       )}
       
       <View
-        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[70%] rounded-2xl px-4 py-3 border ${
           isOwn
-            ? 'bg-primary-600 rounded-br-sm'
-            : 'bg-gray-200 dark:bg-gray-700 rounded-bl-sm'
+            ? 'bg-[#6A2FF9]/15 border-[#6A2FF9]/25 rounded-br-sm'
+            : 'bg-slate-50 border-purple-100/50 dark:bg-gray-800 dark:border-gray-700/50 rounded-bl-sm'
         }`}
       >
         {!isOwn && (
@@ -40,7 +40,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
         )}
 
         {message.type === 'text' && message.text && (
-          <Text className={isOwn ? 'text-white' : 'text-gray-900 dark:text-white'}>
+          <Text className={isOwn ? 'text-slate-900 dark:text-purple-100 font-medium' : 'text-gray-900 dark:text-white'}>
             {message.text}
           </Text>
         )}
@@ -60,7 +60,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
         <View className="flex-row items-center justify-end mt-1">
           <Text
             className={`text-xs ${
-              isOwn ? 'text-primary-200' : 'text-gray-500 dark:text-gray-400'
+              isOwn ? 'text-purple-500 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400'
             }`}
           >
             {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
@@ -69,7 +69,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
             <Ionicons
               name={message.readBy.length > 1 ? 'checkmark-done' : 'checkmark'}
               size={14}
-              color={isOwn ? '#C7D2FE' : '#9CA3AF'}
+              color={isOwn ? '#6A2FF9' : '#9CA3AF'}
               style={{ marginLeft: 4 }}
             />
           )}

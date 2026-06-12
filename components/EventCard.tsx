@@ -65,15 +65,15 @@ export const EventCard: React.FC<EventCardProps> = ({
           
           <TouchableOpacity
             onPress={onRegister}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-xl border ${
               isRegistered
-                ? 'bg-gray-200 dark:bg-gray-700'
-                : 'bg-primary-600'
+                ? 'bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
+                : 'bg-[#6A2FF9]/10 border-[#6A2FF9]/20'
             }`}
           >
             <Text
-              className={`font-medium ${
-                isRegistered ? 'text-gray-700 dark:text-gray-300' : 'text-white'
+              className={`font-extrabold ${
+                isRegistered ? 'text-slate-600 dark:text-slate-400' : 'text-[#6A2FF9]'
               }`}
             >
               {isRegistered ? 'Registered' : 'Register'}

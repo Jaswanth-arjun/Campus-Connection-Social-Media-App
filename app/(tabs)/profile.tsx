@@ -429,6 +429,31 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleSaveAvatarDirectly = async (avatarUrl: string, pulseAvatarUrl: string) => {
+    if (!currentUser) return;
+    try {
+      setIsSaving(true);
+      Toast.show({ type: 'info', text1: 'Saving...', text2: 'Updating avatar' });
+      await updateProfile({
+        avatar: avatarUrl,
+        pulseAvatar: pulseAvatarUrl,
+      });
+      Toast.show({
+        type: 'success',
+        text1: 'Avatar Updated 🎉',
+        text2: 'Saved successfully!',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Save Failed',
+        text2: error.message || 'Could not save avatar',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handlePickAvatarOption = () => {
     Alert.alert(
       'Profile Picture',
@@ -454,6 +479,7 @@ export default function ProfileScreen() {
   };
 
   const handlePickAvatar = async () => {
+    if (!currentUser) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -462,7 +488,24 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setEditAvatar(result.assets[0].uri);
+      if (showEditModal) {
+        setEditAvatar(result.assets[0].uri);
+      } else {
+        try {
+          setIsSaving(true);
+          Toast.show({ type: 'info', text1: 'Uploading...', text2: 'Saving profile picture' });
+          const uploadedUrl = await storageService.uploadImage(
+            result.assets[0].uri,
+            `avatars/${currentUser.uid}/${Date.now()}`
+          );
+          await updateProfile({ avatar: uploadedUrl });
+          Toast.show({ type: 'success', text1: 'Success', text2: 'Profile picture updated! 🎉' });
+        } catch (e: any) {
+          Toast.show({ type: 'error', text1: 'Upload Failed', text2: e.message || 'Could not save profile picture' });
+        } finally {
+          setIsSaving(false);
+        }
+      }
     }
   };
 
@@ -476,8 +519,24 @@ export default function ProfileScreen() {
       let coverUrl = currentUser.coverImage || '';
 
       if (editAvatar) {
-        if (editAvatar.startsWith('data:') || editAvatar.startsWith('https://api.dicebear.com')) {
+        if (editAvatar.startsWith('data:')) {
           avatarUrl = editAvatar;
+        } else if (editAvatar.startsWith('https://api.dicebear.com')) {
+          // Compile DiceBear URL to permanent base64 PNG
+          try {
+            avatarUrl = await compileDiceBearAvatar({ style: 'adventurer', gender: 'male', hair: '', hairColor: '', skinColor: '', eyes: '', eyebrows: '', mouth: '', glasses: '', bgColor: '', shirtColor: '' });
+            // Actually use the already-set editAvatar URL to fetch
+            const resp = await fetch(editAvatar);
+            const blob = await resp.blob();
+            avatarUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('Failed to compile avatar'));
+              reader.readAsDataURL(blob);
+            });
+          } catch {
+            avatarUrl = editAvatar; // Fallback to raw URL
+          }
         } else {
           try {
             avatarUrl = await storageService.uploadImage(
@@ -491,8 +550,22 @@ export default function ProfileScreen() {
       }
 
       if (editPulseAvatar) {
-        if (editPulseAvatar.startsWith('data:') || editPulseAvatar.startsWith('https://api.dicebear.com')) {
+        if (editPulseAvatar.startsWith('data:')) {
           pulseAvatarUrl = editPulseAvatar;
+        } else if (editPulseAvatar.startsWith('https://api.dicebear.com')) {
+          // Compile DiceBear URL to permanent base64 PNG
+          try {
+            const resp = await fetch(editPulseAvatar);
+            const blob = await resp.blob();
+            pulseAvatarUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('Failed to compile pulse avatar'));
+              reader.readAsDataURL(blob);
+            });
+          } catch {
+            pulseAvatarUrl = editPulseAvatar; // Fallback to raw URL
+          }
         } else {
           try {
             pulseAvatarUrl = await storageService.uploadImage(
@@ -567,47 +640,47 @@ export default function ProfileScreen() {
 
   if (!currentUser) {
     return (
-      <View className="flex-1 bg-themeBgLight p-4 pt-12">
+      <View className="flex-1 bg-themeBgLight dark:bg-slate-950 p-4 pt-12">
         <SkeletonLoader type="profile" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-themeBgLight">
-      <StatusBar barStyle="dark-content" />
+    <View className="flex-1 bg-themeBgLight dark:bg-slate-950">
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Profile Navigation Header */}
       <View 
-        className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5 flex-row items-center justify-between"
+        className="bg-white dark:bg-slate-900 px-5 pb-4 border-b border-purple-100/70 dark:border-purple-900/30 shadow-md shadow-purple-950/5 flex-row items-center justify-between"
         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
       >
         <TouchableOpacity 
           onPress={() => router.back()} 
-          className="w-10 h-10 rounded-2xl bg-purple-50 items-center justify-center border border-purple-100"
+          className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 items-center justify-center border border-purple-100 dark:border-purple-800/40"
         >
           <Ionicons name="arrow-back" size={20} color="#6A2FF9" />
         </TouchableOpacity>
-        <Text className="text-lg font-extrabold text-slate-900 tracking-tight">
+        <Text className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
           Profile Hub
         </Text>
         <View className="flex-row items-center space-x-2">
           <TouchableOpacity 
             onPress={toggleDarkMode}
-            className="w-10 h-10 rounded-2xl bg-purple-50 items-center justify-center border border-purple-100"
+            className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 items-center justify-center border border-purple-100 dark:border-purple-800/40"
           >
             <Ionicons name={isDark ? 'moon' : 'sunny'} size={19} color="#6A2FF9" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleLogout}
-            className="w-10 h-10 rounded-2xl bg-red-50 items-center justify-center border border-red-100"
+            className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/50 items-center justify-center border border-red-100 dark:border-red-800/40"
           >
             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView className="flex-1 bg-themeBgLight" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 bg-themeBgLight dark:bg-slate-950" showsVerticalScrollIndicator={false}>
         {/* LinkedIn-Style Cover Banner Container */}
         <View className="relative w-full h-44 bg-slate-200">
           <Image 
@@ -616,59 +689,38 @@ export default function ProfileScreen() {
             resizeMode="cover" 
           />
           <TouchableOpacity 
-            onPress={() => {
-              setAvatarConfig(getDefaultConfigForStyle('adventurer', 'male'));
-              setShowAvatarModal(true);
-            }}
-            className="absolute top-3 right-3 bg-black/50 px-3.5 py-1.5 rounded-full flex-row items-center justify-center border border-white/20 active:opacity-80"
+            onPress={handlePickCover}
+            className="absolute top-3 right-3 bg-black/50 w-9 h-9 rounded-full items-center justify-center border border-white/20 active:opacity-80 shadow-md"
           >
-            <Ionicons name="color-wand-outline" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text className="text-white text-[11px] font-black">Edit Avatar</Text>
+            <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* Overlapping Centered Profile Avatar */}
+          {/* Overlapping Centered Profile Avatar (display only) */}
           <View 
-            className="absolute -bottom-14 w-28 h-28 rounded-full border-4 border-white bg-slate-50 shadow-lg items-center justify-center overflow-hidden"
+            className="absolute -bottom-14 w-28 h-28 rounded-full border-4 border-white bg-slate-50 shadow-lg"
             style={{ left: '50%', marginLeft: -56 }}
           >
-            <Image 
-              source={{ uri: currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }} 
-              className="w-full h-full" 
-              resizeMode="cover" 
-            />
-            <TouchableOpacity 
-              onPress={() => {
-                setEditName(currentUser.name);
-                setEditBio(currentUser.bio);
-                setEditDepartment(currentUser.department);
-                setEditYear(currentUser.year);
-                setEditAvatar(null);
-                setEditPulseAvatar(null);
-                setEditCover(null);
-                setShowEditModal(true);
-              }}
-              className="absolute bottom-1 right-1 bg-[#6A2FF9] w-7 h-7 rounded-full items-center justify-center border-2 border-white shadow-md active:opacity-90"
-            >
-              <Ionicons name="pencil" size={12} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View className="w-full h-full rounded-full overflow-hidden">
+              <UserAvatar uri={currentUser.avatar} size={112} />
+            </View>
           </View>
         </View>
 
         {/* User Details & Biography Card */}
         <View className="pt-16 items-center px-6">
-          <Text className="text-2xl font-extrabold text-slate-900 tracking-tight text-center">
+          <Text className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight text-center">
             {currentUser.name}
           </Text>
-          <Text className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider mt-0.5 text-center">
+          <Text className="text-slate-400 dark:text-slate-500 font-extrabold text-[11px] uppercase tracking-wider mt-0.5 text-center">
             {currentUser.email}
           </Text>
           
           {currentUser.bio ? (
-            <Text className="text-slate-600 text-center mt-3.5 px-4 text-sm leading-5 font-medium">
+            <Text className="text-slate-600 dark:text-slate-300 text-center mt-3.5 px-4 text-sm leading-5 font-medium">
               {currentUser.bio}
             </Text>
           ) : (
-            <Text className="text-slate-400 text-center mt-3.5 px-4 text-xs italic">
+            <Text className="text-slate-400 dark:text-slate-500 text-center mt-3.5 px-4 text-xs italic">
               No biography details added. Tap the edit button to complete your profile!
             </Text>
           )}
@@ -686,24 +738,24 @@ export default function ProfileScreen() {
                 setEditCover(null);
                 setShowEditModal(true);
               }}
-              className="w-full bg-[#6A2FF9] py-3.5 rounded-2xl items-center justify-center shadow-md shadow-purple-900/15 active:opacity-90 flex-row"
+              className="w-full bg-[#6A2FF9]/10 py-3.5 rounded-2xl items-center justify-center border border-[#6A2FF9]/20 active:opacity-90 flex-row"
             >
-              <Ionicons name="create-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text className="text-white font-black text-sm">Edit Profile</Text>
+              <Ionicons name="create-outline" size={17} color="#6A2FF9" style={{ marginRight: 6 }} />
+              <Text className="text-[#6A2FF9] font-black text-sm">Edit Profile</Text>
             </TouchableOpacity>
 
             <View className="flex-row items-center mt-3.5 space-x-3 w-full">
               <TouchableOpacity
                 onPress={handleCheckAttendance}
                 disabled={loadingAcademic}
-                className="flex-1 bg-emerald-600 py-3.5 rounded-2xl items-center justify-center shadow-md shadow-emerald-900/10 active:opacity-90 flex-row"
+                className="flex-1 bg-emerald-50 dark:bg-emerald-950/30 py-3.5 rounded-2xl items-center justify-center border border-emerald-200 dark:border-emerald-800/50 active:opacity-90 flex-row"
               >
                 {loadingAcademic ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#059669" />
                 ) : (
                   <>
-                    <Ionicons name="calendar-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
-                    <Text className="text-white font-black text-sm">Attendance</Text>
+                    <Ionicons name="calendar-outline" size={17} color="#059669" style={{ marginRight: 6 }} />
+                    <Text className="text-emerald-700 dark:text-emerald-400 font-black text-sm">Attendance</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -711,14 +763,14 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={handleCheckMidMarks}
                 disabled={loadingAcademic}
-                className="flex-1 bg-blue-600 py-3.5 rounded-2xl items-center justify-center shadow-md shadow-blue-900/10 active:opacity-90 flex-row"
+                className="flex-1 bg-blue-50 dark:bg-blue-950/30 py-3.5 rounded-2xl items-center justify-center border border-blue-200 dark:border-blue-800/50 active:opacity-90 flex-row"
               >
                 {loadingAcademic ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#2563EB" />
                 ) : (
                   <>
-                    <Ionicons name="bar-chart-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
-                    <Text className="text-white font-black text-sm">Mid Marks</Text>
+                    <Ionicons name="bar-chart-outline" size={17} color="#2563EB" style={{ marginRight: 6 }} />
+                    <Text className="text-blue-700 dark:text-blue-400 font-black text-sm">Mid Marks</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -940,8 +992,15 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <Text className="text-lg font-extrabold text-white">Cartoon Avatar Studio</Text>
             <TouchableOpacity
-              onPress={() => {
-                const directUrl = getDiceBearUrl(avatarConfig);
+              onPress={async () => {
+                setIsCompilingAvatar(true);
+                let compiledUrl: string;
+                try {
+                  compiledUrl = await compileDiceBearAvatar(avatarConfig);
+                } catch {
+                  compiledUrl = getDiceBearUrl(avatarConfig);
+                }
+                setIsCompilingAvatar(false);
 
                 Alert.alert(
                   'Set as Profile Photo?',
@@ -950,36 +1009,52 @@ export default function ProfileScreen() {
                     {
                       text: 'No, Stories Only',
                       onPress: () => {
-                        setEditPulseAvatar(directUrl);
-                        setShowAvatarModal(false);
-                        Toast.show({
-                          type: 'success',
-                          text1: 'Avatar Saved for Stories! 📸✨',
-                          text2: 'Saved for campus pulses. Tap Save Profile to apply.',
-                        });
+                        if (showEditModal) {
+                          setEditPulseAvatar(compiledUrl);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Saved for Stories! 📸✨',
+                            text2: 'Saved for campus pulses. Tap Save Profile to apply.',
+                          });
+                        } else {
+                          setShowAvatarModal(false);
+                          void handleSaveAvatarDirectly(currentUser.avatar, compiledUrl);
+                        }
                       }
                     },
                     {
                       text: 'Yes, Set as Profile DP',
                       style: 'default',
                       onPress: () => {
-                        setEditAvatar(directUrl);
-                        setEditPulseAvatar(directUrl);
-                        setShowAvatarModal(false);
-                        Toast.show({
-                          type: 'success',
-                          text1: 'Avatar Set as DP! 🎨🌟',
-                          text2: 'Saved as profile photo. Tap Save Profile to apply.',
-                        });
+                        if (showEditModal) {
+                          setEditAvatar(compiledUrl);
+                          setEditPulseAvatar(compiledUrl);
+                          setShowAvatarModal(false);
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Avatar Set as DP! 🎨🌟',
+                            text2: 'Saved as profile photo. Tap Save Profile to apply.',
+                          });
+                        } else {
+                          setShowAvatarModal(false);
+                          void handleSaveAvatarDirectly(compiledUrl, compiledUrl);
+                        }
                       }
                     }
                   ],
                   { cancelable: true }
                 );
               }}
-              className="bg-[#6A2FF9] px-5 py-2.5 rounded-full"
+              disabled={isCompilingAvatar}
+              className="bg-[#6A2FF9] px-5 py-2.5 rounded-full opacity-100"
+              style={isCompilingAvatar ? { opacity: 0.7 } : {}}
             >
-              <Text className="text-white font-extrabold text-sm">Save Avatar</Text>
+              {isCompilingAvatar ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-extrabold text-sm">Save Avatar</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -1912,9 +1987,9 @@ export default function ProfileScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveCustomStats}
-                className="flex-1 bg-[#6A2FF9] py-3.5 rounded-2xl items-center justify-center shadow-lg shadow-[#6A2FF9]/15"
+                className="flex-1 bg-[#6A2FF9]/10 py-3.5 rounded-2xl items-center justify-center border border-[#6A2FF9]/20 active:opacity-90"
               >
-                <Text className="text-white font-extrabold text-sm">Save Stats</Text>
+                <Text className="text-[#6A2FF9] font-black text-sm">Save Stats</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1998,9 +2073,9 @@ export default function ProfileScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveCustomMarks}
-                className="flex-1 bg-[#6A2FF9] py-3.5 rounded-2xl items-center justify-center shadow-lg shadow-[#6A2FF9]/15"
+                className="flex-1 bg-[#6A2FF9]/10 py-3.5 rounded-2xl items-center justify-center border border-[#6A2FF9]/20 active:opacity-90"
               >
-                <Text className="text-white font-extrabold text-sm">Save Marks</Text>
+                <Text className="text-[#6A2FF9] font-black text-sm">Save Marks</Text>
               </TouchableOpacity>
             </View>
           </View>

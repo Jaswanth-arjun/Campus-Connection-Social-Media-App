@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { authService, createFallbackUser } from '../services/authService';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { authService, createFallbackUser, normalizeUser } from '../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAuth = () => {
@@ -46,10 +47,18 @@ export const useAuth = () => {
       setLoading(false);
     });
 
+    let unsubscribeProfile: (() => void) | null = null;
+
     // 2. Main Firebase authentication listener (the source of truth)
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      void (async () => {
-        if (firebaseUser) {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      // Clean up previous profile listener if any
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
+      if (firebaseUser) {
+        void (async () => {
           try {
             // Check if user exists in AsyncStorage (fastest, load optimistically first)
             const userJson = await AsyncStorage.getItem('user');
@@ -59,37 +68,58 @@ export const useAuth = () => {
                 setCurrentUser(userData);
               }
             } else {
-              // Show a local fallback immediately if no cache exists, then refresh in background
+              // Show a local fallback immediately if no cache exists
               const fallbackUser = createFallbackUser(firebaseUser.uid);
               setCurrentUser(fallbackUser);
             }
 
-            // Always fetch the source of truth from Firestore database in the background!
-            void authService.getUser(firebaseUser.uid)
-              .then(async (dbUser) => {
-                if (dbUser) {
-                  await AsyncStorage.setItem('user', JSON.stringify(dbUser));
-                  setCurrentUser(dbUser);
+            // Always subscribe to real-time updates for the user profile document
+            unsubscribeProfile = onSnapshot(
+              doc(db, 'users', firebaseUser.uid),
+              async (snapshot) => {
+                if (snapshot.exists()) {
+                  const userData = normalizeUser(firebaseUser.uid, snapshot.data());
+                  await AsyncStorage.setItem('user', JSON.stringify(userData));
+                  setCurrentUser(userData);
+                } else {
+                  // If doc does not exist (new user), use fallback and save it
+                  const fallbackUser = createFallbackUser(firebaseUser.uid);
+                  await AsyncStorage.setItem('user', JSON.stringify(fallbackUser));
+                  setCurrentUser(fallbackUser);
                 }
-              })
-              .catch((err) => {
-                console.log('[Auth] Background user refresh failed:', err?.message || err);
-              });
+              },
+              (error) => {
+                console.warn('[Auth] Profile listener error:', error);
+                // Fall back to AsyncStorage in case of permissions or offline errors
+                AsyncStorage.getItem('user')
+                  .then((userJson) => {
+                    if (userJson) {
+                      setCurrentUser(JSON.parse(userJson));
+                    }
+                  })
+                  .catch(() => undefined);
+              }
+            );
           } catch (err) {
             console.error('Error synchronizing auth state:', err);
             setLoading(false);
           }
-        } else {
-          // Not authenticated
-          setCurrentUser(null);
-        }
-      })().catch((err) => {
-        console.error('[Auth] auth state listener rejected:', err);
-        setLoading(false);
-      });
+        })().catch((err) => {
+          console.error('[Auth] auth state listener rejected:', err);
+          setLoading(false);
+        });
+      } else {
+        // Not authenticated
+        setCurrentUser(null);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+    };
   }, [setCurrentUser, setLoading]);
 
   return {

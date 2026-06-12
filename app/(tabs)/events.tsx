@@ -222,13 +222,13 @@ export default function EventsScreen() {
               onPress={() => handleFilterChange(category)}
               className={`px-4.5 py-2 rounded-2xl mr-2 ${
                 filter === category
-                  ? 'bg-[#6A2FF9] shadow-md shadow-purple-900/10'
+                  ? 'bg-[#6A2FF9]/10 border border-[#6A2FF9]/20'
                   : 'bg-slate-50 border border-purple-100/60'
               }`}
             >
               <Text
                 className={`text-sm font-extrabold ${
-                  filter === category ? 'text-white' : 'text-slate-600'
+                  filter === category ? 'text-[#6A2FF9]' : 'text-slate-600'
                 }`}
               >
                 {category}
@@ -295,12 +295,12 @@ export default function EventsScreen() {
             <TouchableOpacity
               onPress={handleCreateEvent}
               disabled={isPublishing}
-              className="bg-[#6A2FF9] px-5 py-2.5 rounded-full"
+              className="bg-[#6A2FF9]/10 px-5 py-2.5 rounded-full border border-[#6A2FF9]/20"
             >
               {isPublishing ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#6A2FF9" />
               ) : (
-                <Text className="text-white font-extrabold text-sm">Publish</Text>
+                <Text className="text-[#6A2FF9] font-black text-sm">Publish</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -407,12 +407,12 @@ export default function EventsScreen() {
                       key={cat}
                       onPress={() => setCategory(cat)}
                       className={`px-4.5 py-2.5 rounded-2xl mr-2 mb-2 ${
-                        category === cat ? 'bg-[#6A2FF9]' : 'bg-slate-100 border border-slate-200/50'
+                        category === cat ? 'bg-[#6A2FF9]/10 border border-[#6A2FF9]/20' : 'bg-slate-100 border border-slate-200/50'
                       }`}
                     >
                       <Text
                         className={`text-sm font-extrabold ${
-                          category === cat ? 'text-white' : 'text-slate-600'
+                          category === cat ? 'text-[#6A2FF9]' : 'text-slate-600'
                         }`}
                       >
                         {cat}

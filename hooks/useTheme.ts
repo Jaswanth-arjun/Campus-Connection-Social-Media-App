@@ -1,22 +1,33 @@
-import { useColorScheme } from 'react-native';
+import { useEffect } from 'react';
+import { useColorScheme, Appearance } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 
 export const useTheme = () => {
   const systemColorScheme = useColorScheme();
   const { currentUser, updateProfile } = useAuthStore();
-  
+
   const userPreference = currentUser?.darkMode;
-  const colorScheme = userPreference !== undefined ? (userPreference ? 'dark' : 'light') : systemColorScheme;
+  const isDark = userPreference !== undefined ? userPreference : systemColorScheme === 'dark';
+
+  // Sync Appearance with user preference so NativeWind dark: classes work
+  useEffect(() => {
+    if (userPreference !== undefined) {
+      Appearance.setColorScheme(userPreference ? 'dark' : 'light');
+    }
+  }, [userPreference]);
 
   const toggleDarkMode = async () => {
     if (currentUser) {
-      await updateProfile({ darkMode: !currentUser.darkMode });
+      const newDarkMode = !currentUser.darkMode;
+      // Immediately switch the system appearance for instant visual feedback
+      Appearance.setColorScheme(newDarkMode ? 'dark' : 'light');
+      await updateProfile({ darkMode: newDarkMode });
     }
   };
 
   return {
-    colorScheme,
-    isDark: colorScheme === 'dark',
+    colorScheme: isDark ? 'dark' : 'light',
+    isDark,
     toggleDarkMode,
   };
 };

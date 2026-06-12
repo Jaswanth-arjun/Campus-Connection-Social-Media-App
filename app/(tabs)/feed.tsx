@@ -740,12 +740,12 @@ export default function FeedScreen() {
             <TouchableOpacity
               onPress={handleCreatePost}
               disabled={isCreating}
-              className="bg-primary-600 px-5 py-2 rounded-xl shadow-sm"
+              className="bg-[#6A2FF9]/10 px-5 py-2 rounded-xl border border-[#6A2FF9]/20"
             >
               {isCreating ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#6A2FF9" />
               ) : (
-                <Text className="text-white font-semibold text-sm">Post</Text>
+                <Text className="text-[#6A2FF9] font-black text-sm">Post</Text>
               )}
             </TouchableOpacity>
           </View>
