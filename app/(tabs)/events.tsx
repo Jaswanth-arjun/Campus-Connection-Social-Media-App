@@ -23,12 +23,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 
 import { SkeletonLoader } from '../../components/SkeletonLoader';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
   const { events, isLoading, filter, fetchEvents, registerForEvent, unregisterForEvent, searchEvents, createEvent, createEventWithImage } = useEventStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const { isDark } = useTheme();
 
   // Event Creation Form State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -167,35 +169,35 @@ export default function EventsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-themeBgLight">
-      <StatusBar barStyle="dark-content" />
+    <View className="flex-1 bg-themeBgLight dark:bg-darkBg">
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header */}
       <View 
-        className="bg-white px-5 pb-4 border-b border-purple-100/70 shadow-md shadow-purple-950/5"
+        className="bg-white dark:bg-darkSurface px-5 pb-4 border-b border-purple-100/70 dark:border-white/[0.06] shadow-md shadow-purple-950/5 dark:shadow-none"
         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
       >
         <View className="flex-row items-center justify-between mb-3.5">
           <View>
-            <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <Text className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Events
             </Text>
             <Text className="text-xs font-extrabold text-purple-400 mt-0.5">
               Campus activities & happenings
             </Text>
           </View>
-          <View className="bg-purple-50 w-11 h-11 rounded-2xl items-center justify-center border border-purple-100">
-            <Ionicons name="calendar-outline" size={21} color="#6A2FF9" />
+          <View className="bg-purple-50 dark:bg-purple-500/10 w-11 h-11 rounded-2xl items-center justify-center border border-purple-100 dark:border-white/[0.08]">
+            <Ionicons name="calendar-outline" size={21} color={isDark ? '#8B5CF6' : '#6A2FF9'} />
           </View>
         </View>
 
         {/* Inline Search */}
-        <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-3xl px-4 py-2.5 shadow-inner">
-          <Ionicons name="search" size={18} color="#6A2FF9" />
+        <View className="flex-row items-center bg-slate-50 dark:bg-darkElevated border border-purple-100/60 dark:border-white/[0.08] rounded-3xl px-4 py-2.5 shadow-inner">
+          <Ionicons name="search" size={18} color={isDark ? '#8B5CF6' : '#6A2FF9'} />
           <TextInput
-            className="flex-1 text-slate-800 font-semibold text-sm ml-2.5 py-0.5"
+            className="flex-1 text-slate-800 dark:text-white font-semibold text-sm ml-2.5 py-0.5"
             placeholder="Search events..."
-            placeholderTextColor="#A78BFA"
+            placeholderTextColor={isDark ? '#A1A1AA' : '#A78BFA'}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -210,7 +212,7 @@ export default function EventsScreen() {
       </View>
 
       {/* Category Chips Scroll Wrapper */}
-      <View className="bg-white border-b border-purple-100/20 py-3.5 px-4 max-h-[64px]">
+      <View className="bg-white dark:bg-darkSurface border-b border-purple-100/20 dark:border-white/[0.06] py-3.5 px-4 max-h-[64px]">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -223,12 +225,12 @@ export default function EventsScreen() {
               className={`px-4.5 py-2 rounded-2xl mr-2 ${
                 filter === category
                   ? 'bg-[#6A2FF9]/10 border border-[#6A2FF9]/20'
-                  : 'bg-slate-50 border border-purple-100/60'
+                  : 'bg-slate-50 dark:bg-darkElevated border border-purple-100/60 dark:border-white/[0.08]'
               }`}
             >
               <Text
                 className={`text-sm font-extrabold ${
-                  filter === category ? 'text-[#6A2FF9]' : 'text-slate-600'
+                  filter === category ? 'text-[#6A2FF9] dark:text-[#A78BFA]' : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 {category}
@@ -281,17 +283,17 @@ export default function EventsScreen() {
       <Modal visible={showCreateModal} animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 bg-white"
+          className="flex-1 bg-white dark:bg-darkBg"
         >
           {/* Modal Header */}
           <View 
-            className="flex-row items-center justify-between px-5 pb-4 border-b border-slate-100"
+            className="flex-row items-center justify-between px-5 pb-4 border-b border-slate-100 dark:border-white/[0.06] bg-white dark:bg-darkSurface"
             style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
           >
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
               <Text className="text-slate-500 font-bold text-base">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-extrabold text-slate-900">Post Event</Text>
+            <Text className="text-lg font-extrabold text-slate-900 dark:text-white">Post Event</Text>
             <TouchableOpacity
               onPress={handleCreateEvent}
               disabled={isPublishing}
@@ -309,7 +311,7 @@ export default function EventsScreen() {
             {/* Banner Picker */}
             <TouchableOpacity 
               onPress={handlePickBanner} 
-              className="items-center mb-6 h-40 w-full bg-slate-100 rounded-2xl items-center justify-center border border-dashed border-slate-200 overflow-hidden"
+              className="items-center mb-6 h-40 w-full bg-slate-100 dark:bg-darkElevated rounded-2xl items-center justify-center border border-dashed border-slate-200 dark:border-white/[0.08] overflow-hidden"
               style={{ minHeight: 160 }}
             >
               {imageUri ? (
@@ -331,11 +333,11 @@ export default function EventsScreen() {
                   Event Title
                 </Text>
                 <TextInput
-                  className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
                   value={title}
                   onChangeText={setTitle}
                   placeholder="e.g., CodeCraft Hackathon"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 />
               </View>
 
@@ -344,11 +346,11 @@ export default function EventsScreen() {
                   Description
                 </Text>
                 <TextInput
-                  className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
                   value={description}
                   onChangeText={setDescription}
                   placeholder="What is this event about?"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -361,11 +363,11 @@ export default function EventsScreen() {
                     Date (YYYY-MM-DD)
                   </Text>
                   <TextInput
-                    className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                    className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
                     value={dateStr}
                     onChangeText={setDateStr}
                     placeholder="e.g., 2026-06-15"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   />
                 </View>
                 <View className="flex-1">
@@ -373,11 +375,11 @@ export default function EventsScreen() {
                     Venue / Location
                   </Text>
                   <TextInput
-                    className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                    className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
                     value={location}
                     onChangeText={setLocation}
                     placeholder="e.g., CSE Seminar Hall"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   />
                 </View>
               </View>
@@ -388,11 +390,11 @@ export default function EventsScreen() {
                     Organizer Name
                   </Text>
                   <TextInput
-                    className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                    className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
                     value={organizer}
                     onChangeText={setOrganizer}
                     placeholder="e.g., ACM Student Chapter"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   />
                 </View>
               </View>
@@ -407,12 +409,12 @@ export default function EventsScreen() {
                       key={cat}
                       onPress={() => setCategory(cat)}
                       className={`px-4.5 py-2.5 rounded-2xl mr-2 mb-2 ${
-                        category === cat ? 'bg-[#6A2FF9]/10 border border-[#6A2FF9]/20' : 'bg-slate-100 border border-slate-200/50'
+                        category === cat ? 'bg-[#6A2FF9]/10 border border-[#6A2FF9]/20' : 'bg-slate-100 dark:bg-darkElevated border border-slate-200/50 dark:border-white/[0.08]'
                       }`}
                     >
                       <Text
                         className={`text-sm font-extrabold ${
-                          category === cat ? 'text-[#6A2FF9]' : 'text-slate-600'
+                          category === cat ? 'text-[#6A2FF9] dark:text-[#A78BFA]' : 'text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         {cat}

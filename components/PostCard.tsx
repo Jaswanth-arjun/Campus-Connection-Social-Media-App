@@ -58,13 +58,13 @@ export const PostCard: React.FC<PostCardProps> = ({
     <TouchableOpacity
       onPress={() => router.push(`/post/${post.id}`)}
       activeOpacity={0.95}
-      className={`bg-white/75 rounded-3xl mb-4.5 shadow-xl shadow-purple-950/5 border border-white/30 overflow-hidden ${className}`}
+      className={`bg-white/75 dark:bg-darkSurface/90 rounded-3xl mb-4.5 shadow-xl shadow-purple-950/5 dark:shadow-none border border-white/30 dark:border-white/[0.06] overflow-hidden ${className}`}
     >
       {/* Author Header */}
       <View className="flex-row items-center px-4.5 pt-4.5 pb-2">
         <UserAvatar uri={post.authorAvatar} size={42} />
         <View className="flex-1 ml-3">
-          <Text className="font-extrabold text-slate-900 text-[15px]">
+          <Text className="font-extrabold text-slate-900 dark:text-white text-[15px]">
             {post.authorName}
           </Text>
           <Text className="text-xs font-semibold text-slate-400">
@@ -75,7 +75,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <TouchableOpacity 
             onPress={handleDelete}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            className="p-2 rounded-2xl bg-red-50 border border-red-100"
+            className="p-2 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20"
           >
             <Ionicons name="trash-outline" size={16} color="#EF4444" />
           </TouchableOpacity>
@@ -84,7 +84,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
       {/* Content */}
       {post.content ? (
-        <Text className="text-slate-700 px-4.5 pb-3.5 text-[15px] leading-[22px] font-medium">
+        <Text className="text-slate-700 dark:text-slate-300 px-4.5 pb-3.5 text-[15px] leading-[22px] font-medium">
           {post.content}
         </Text>
       ) : null}
@@ -111,15 +111,15 @@ export const PostCard: React.FC<PostCardProps> = ({
       {post.tags && post.tags.length > 0 && (
         <View className="flex-row flex-wrap px-4.5 pb-2">
           {post.tags.map((tag, idx) => (
-            <View key={idx} className="bg-purple-50 border border-purple-100/60 px-3 py-1 rounded-2xl mr-2 mb-1.5">
-              <Text className="text-[#6A2FF9] text-[11px] font-extrabold">#{tag}</Text>
+            <View key={idx} className="bg-purple-50 dark:bg-purple-500/10 border border-purple-100/60 dark:border-white/[0.08] px-3 py-1 rounded-2xl mr-2 mb-1.5">
+              <Text className="text-[#6A2FF9] dark:text-[#A78BFA] text-[11px] font-extrabold">#{tag}</Text>
             </View>
           ))}
         </View>
       )}
 
       {/* Action Bar */}
-      <View className="flex-row items-center justify-between px-4.5 py-3 border-t border-[#6A2FF9]/5">
+      <View className="flex-row items-center justify-between px-4.5 py-3 border-t border-[#6A2FF9]/5 dark:border-white/[0.06]">
         <TouchableOpacity
           onPress={onLike}
           className="flex-row items-center"

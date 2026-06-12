@@ -1,15 +1,17 @@
+import React, { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity, View } from 'react-native';
 import { emitOpenComposer } from '../../utils/composeBus';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useAuth } from '../../hooks/useAuth';
-import { useEffect } from 'react';
+import { useTheme } from '../../hooks/useTheme';
 import { auth } from '../../services/firebase';
 
 export default function TabLayout() {
   const { unreadCount, fetchNotifications } = useNotificationStore();
   const { currentUser } = useAuth();
+  const { isDark } = useTheme();
 
   useEffect(() => {
     if (currentUser) {
@@ -28,16 +30,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#6A2FF9',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarActiveTintColor: isDark ? '#8B5CF6' : '#6A2FF9',
+        tabBarInactiveTintColor: isDark ? '#A1A1AA' : '#94A3B8',
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDark ? '#171923' : '#FFFFFF',
 
           borderTopWidth: 0,
           elevation: 12,
-          shadowColor: '#000',
+          shadowColor: isDark ? '#8B5CF6' : '#000',
           shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.06,
+          shadowOpacity: isDark ? 0.12 : 0.06,
           shadowRadius: 12,
           height: 60,
           paddingBottom: 8,
@@ -78,7 +80,7 @@ export default function TabLayout() {
               onPress={() => emitOpenComposer()}
               style={{ alignItems: 'center', justifyContent: 'center' }}
             >
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#6A2FF9', alignItems: 'center', justifyContent: 'center', marginTop: -28, borderWidth: 4, borderColor: '#FFFFFF', elevation: 6 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? '#8B5CF6' : '#6A2FF9', alignItems: 'center', justifyContent: 'center', marginTop: -28, borderWidth: 4, borderColor: isDark ? '#0F1117' : '#FFFFFF', elevation: 6 }}>
                 <Ionicons name="add" size={28} color="#FFFFFF" />
               </View>
             </TouchableOpacity>

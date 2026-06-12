@@ -14,6 +14,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { ChatBubble } from '../../components/ChatBubble';
 import { EmptyState } from '../../components/EmptyState';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,6 +24,7 @@ import Toast from 'react-native-toast-message';
 export default function ChatRoomScreen() {
   const { roomId } = useLocalSearchParams();
   const { currentUser } = useAuth();
+  const { isDark } = useTheme();
   const { activeRoom, messages, isLoading, sendMessage, sendMessageWithImage, sendMessageWithFile } = useChat(roomId as string);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -107,17 +109,17 @@ export default function ChatRoomScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-slate-50 dark:bg-slate-950"
+      className="flex-1 bg-slate-50 dark:bg-darkBg"
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3.5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+      <View className="flex-row items-center px-4 py-3.5 bg-white dark:bg-darkSurface border-b border-slate-100 dark:border-white/[0.06] shadow-sm dark:shadow-none">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 items-center justify-center mr-3"
+          className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-darkElevated items-center justify-center mr-3"
         >
-          <Ionicons name="arrow-back" size={20} color="#4F46E5" />
+          <Ionicons name="arrow-back" size={20} color={isDark ? '#A78BFA' : '#8B5CF6'} />
         </TouchableOpacity>
 
         <View className="flex-1">
@@ -129,11 +131,11 @@ export default function ChatRoomScreen() {
           </Text>
         </View>
 
-        <View className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-950 items-center justify-center">
+        <View className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 items-center justify-center">
           <Ionicons
             name={activeRoom?.type === 'group' ? 'people' : 'person'}
             size={18}
-            color="#4F46E5"
+            color={isDark ? '#A78BFA' : '#8B5CF6'}
           />
         </View>
       </View>
@@ -168,35 +170,35 @@ export default function ChatRoomScreen() {
 
       {/* Sending indicator */}
       {isSending && (
-        <View className="flex-row items-center justify-center py-2 bg-primary-50 dark:bg-primary-950">
-          <ActivityIndicator size="small" color="#4F46E5" />
-          <Text className="text-primary-600 dark:text-primary-400 text-xs ml-2 font-medium">
+        <View className="flex-row items-center justify-center py-2 bg-purple-50 dark:bg-darkElevated">
+          <ActivityIndicator size="small" color="#8B5CF6" />
+          <Text className="text-purple-600 dark:text-purple-400 text-xs ml-2 font-medium">
             Uploading...
           </Text>
         </View>
       )}
 
       {/* Message Input */}
-      <View className="bg-white dark:bg-slate-900 px-3 py-2.5 border-t border-slate-100 dark:border-slate-800">
+      <View className="bg-white dark:bg-darkSurface px-3 py-2.5 border-t border-slate-100 dark:border-white/[0.06]">
         <View className="flex-row items-end space-x-2">
           <TouchableOpacity
             onPress={handlePickImage}
-            className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-950 items-center justify-center mb-0.5"
+            className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 items-center justify-center mb-0.5"
           >
-            <Ionicons name="image" size={18} color="#4F46E5" />
+            <Ionicons name="image" size={18} color={isDark ? '#A78BFA' : '#8B5CF6'} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handlePickFile}
-            className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 items-center justify-center mb-0.5"
+            className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-darkElevated items-center justify-center mb-0.5"
           >
-            <Ionicons name="attach" size={18} color="#64748B" />
+            <Ionicons name="attach" size={18} color={isDark ? '#A1A1AA' : '#64748B'} />
           </TouchableOpacity>
 
           <TextInput
-            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-2.5 text-slate-900 dark:text-white"
+            className="flex-1 bg-slate-50 dark:bg-darkElevated border border-slate-100 dark:border-white/[0.08] rounded-2xl px-4 py-2.5 text-slate-900 dark:text-white"
             style={{ maxHeight: 100, fontSize: 15 }}
             placeholder="Message..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
             value={messageText}
             onChangeText={setMessageText}
             multiline
@@ -207,14 +209,14 @@ export default function ChatRoomScreen() {
             disabled={!messageText.trim()}
             className={`w-10 h-10 rounded-xl items-center justify-center mb-0.5 ${
               messageText.trim()
-                ? 'bg-primary-600 shadow-sm'
-                : 'bg-slate-200 dark:bg-slate-700'
+                ? 'bg-purple-600 dark:bg-purple-500 shadow-sm'
+                : 'bg-slate-200 dark:bg-darkElevated'
             }`}
           >
             <Ionicons
               name="send"
               size={18}
-              color={messageText.trim() ? '#FFFFFF' : '#94A3B8'}
+              color={messageText.trim() ? '#FFFFFF' : (isDark ? '#4B5563' : '#94A3B8')}
             />
           </TouchableOpacity>
         </View>

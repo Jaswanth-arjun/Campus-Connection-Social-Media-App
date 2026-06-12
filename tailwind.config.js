@@ -8,10 +8,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Light theme
         themeBg: '#D6C7FF', // Beautiful soft lavender backdrop from reference
         themeBgLight: '#E8E3FF', // Lighter soft lavender for content pages
         themeDeepPurple: '#6A2FF9', // Vibrant glowing deep purple for inputs and icons
         themeDarkPurple: '#4A1C9E', // Deeper shade for high contrast texts
+        // Dark theme surfaces
+        darkBg: '#0F1117',
+        darkSurface: '#171923',
+        darkElevated: '#1E2230',
+        darkBorder: 'rgba(255,255,255,0.08)',
         primary: {
           50: '#F5F3FF',
           100: '#EDE9FE',

@@ -29,12 +29,12 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
       <View
         className={`max-w-[70%] rounded-2xl px-4 py-3 border ${
           isOwn
-            ? 'bg-[#6A2FF9]/15 border-[#6A2FF9]/25 rounded-br-sm'
-            : 'bg-slate-50 border-purple-100/50 dark:bg-gray-800 dark:border-gray-700/50 rounded-bl-sm'
+            ? 'bg-[#6A2FF9]/15 dark:bg-[#8B5CF6]/20 border-[#6A2FF9]/25 dark:border-[#8B5CF6]/30 rounded-br-sm'
+            : 'bg-slate-50 border-purple-100/50 dark:bg-darkSurface dark:border-white/[0.06] rounded-bl-sm'
         }`}
       >
         {!isOwn && (
-          <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <Text className="text-xs font-semibold text-gray-700 dark:text-[#A78BFA] mb-1">
             {message.senderName}
           </Text>
         )}
@@ -69,7 +69,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isOwn, classNam
             <Ionicons
               name={message.readBy.length > 1 ? 'checkmark-done' : 'checkmark'}
               size={14}
-              color={isOwn ? '#6A2FF9' : '#9CA3AF'}
+              color="#8B5CF6"
               style={{ marginLeft: 4 }}
             />
           )}

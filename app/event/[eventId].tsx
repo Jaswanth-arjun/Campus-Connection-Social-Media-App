@@ -12,12 +12,14 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useEventStore } from '../../store/eventStore';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { format } from 'date-fns';
 import Toast from 'react-native-toast-message';
 
 export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams();
   const { currentUser } = useAuth();
+  const { isDark } = useTheme();
   const { currentEvent, isLoading, fetchEvent, registerForEvent, unregisterForEvent } = useEventStore();
 
   useEffect(() => {
@@ -70,16 +72,16 @@ export default function EventDetailScreen() {
 
   if (isLoading && !currentEvent) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <ActivityIndicator size="large" color="#4F46E5" />
+      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-darkBg">
+        <ActivityIndicator size="large" color={isDark ? '#A78BFA' : '#8B5CF6'} />
       </View>
     );
   }
 
   if (!currentEvent) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <Text className="text-gray-500">Event not found</Text>
+      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-darkBg">
+        <Text className="text-gray-500 dark:text-slate-400">Event not found</Text>
       </View>
     );
   }
@@ -87,61 +89,61 @@ export default function EventDetailScreen() {
   const isRegistered = currentUser && currentEvent.registeredUsers.includes(currentUser.uid);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-950">
+    <ScrollView className="flex-1 bg-slate-50 dark:bg-darkBg">
       <Image source={{ uri: currentEvent.imageUrl }} className="w-full h-56" resizeMode="cover" />
 
-      <View className="flex-row items-center px-4 py-3 bg-white dark:bg-gray-900">
+      <View className="flex-row items-center px-4 py-3 bg-white dark:bg-darkSurface border-b border-slate-100 dark:border-white/[0.06]">
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#4F46E5" />
+          <Ionicons name="arrow-back" size={24} color={isDark ? '#A78BFA' : '#8B5CF6'} />
         </TouchableOpacity>
-        <Text className="flex-1 text-center font-semibold text-lg text-gray-900 dark:text-white">Event Details</Text>
+        <Text className="flex-1 text-center font-bold text-lg text-gray-900 dark:text-white">Event Details</Text>
         <TouchableOpacity>
-          <Ionicons name="share-outline" size={24} color="#9CA3AF" />
+          <Ionicons name="share-outline" size={24} color={isDark ? '#A1A1AA' : '#9CA3AF'} />
         </TouchableOpacity>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 p-4 mb-2">
+      <View className="bg-white dark:bg-darkSurface p-4 mb-2 border-b border-slate-100 dark:border-white/[0.06]">
         <View className="flex-row items-start justify-between mb-3">
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">{currentEvent.title}</Text>
-            <View className="bg-primary-100 dark:bg-primary-900 px-3 py-1 rounded-full self-start mt-2">
-              <Text className="text-primary-600 dark:text-primary-300 text-sm font-medium">{currentEvent.category}</Text>
+            <Text className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{currentEvent.title}</Text>
+            <View className="bg-purple-100 dark:bg-purple-500/10 px-3 py-1 rounded-full self-start mt-2">
+              <Text className="text-purple-600 dark:text-purple-300 text-sm font-semibold">{currentEvent.category}</Text>
             </View>
           </View>
         </View>
 
         <View className="flex-row items-center mt-4 mb-2">
-          <Ionicons name="calendar-outline" size={20} color="#4F46E5" />
-          <Text className="ml-2 text-gray-700 dark:text-gray-300">
+          <Ionicons name="calendar-outline" size={20} color={isDark ? '#A78BFA' : '#8B5CF6'} />
+          <Text className="ml-2 text-gray-700 dark:text-slate-300">
             {format(new Date(currentEvent.date), 'MMMM dd, yyyy • h:mm a')}
           </Text>
         </View>
 
         <View className="flex-row items-center mb-2">
-          <Ionicons name="location-outline" size={20} color="#4F46E5" />
-          <Text className="ml-2 text-gray-700 dark:text-gray-300">{currentEvent.location}</Text>
+          <Ionicons name="location-outline" size={20} color={isDark ? '#A78BFA' : '#8B5CF6'} />
+          <Text className="ml-2 text-gray-700 dark:text-slate-300">{currentEvent.location}</Text>
         </View>
 
         <View className="flex-row items-center mb-4">
-          <Ionicons name="person-outline" size={20} color="#4F46E5" />
-          <Text className="ml-2 text-gray-700 dark:text-gray-300">
+          <Ionicons name="person-outline" size={20} color={isDark ? '#A78BFA' : '#8B5CF6'} />
+          <Text className="ml-2 text-gray-700 dark:text-slate-300">
             {currentEvent.registeredUsers.length} registered
           </Text>
         </View>
 
-        <View className="border-t border-gray-200 dark:border-gray-800 pt-4">
-          <Text className="font-semibold text-gray-900 dark:text-white mb-2">Description</Text>
-          <Text className="text-gray-700 dark:text-gray-300">{currentEvent.description}</Text>
+        <View className="border-t border-slate-100 dark:border-white/[0.06] pt-4">
+          <Text className="font-bold text-gray-900 dark:text-white mb-2">Description</Text>
+          <Text className="text-gray-700 dark:text-slate-300">{currentEvent.description}</Text>
         </View>
       </View>
 
-      <View className="bg-white dark:bg-gray-900 p-4 mb-2">
-        <Text className="font-semibold text-gray-900 dark:text-white mb-3">Organizer</Text>
+      <View className="bg-white dark:bg-darkSurface p-4 mb-2 border-b border-slate-100 dark:border-white/[0.06]">
+        <Text className="font-bold text-gray-900 dark:text-white mb-3">Organizer</Text>
         <View className="flex-row items-center">
-          <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 items-center justify-center">
-            <Ionicons name="person" size={20} color="#4F46E5" />
+          <View className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-500/10 items-center justify-center">
+            <Ionicons name="person" size={20} color={isDark ? '#A78BFA' : '#8B5CF6'} />
           </View>
-          <Text className="ml-3 text-gray-900 dark:text-white">{currentEvent.organizer}</Text>
+          <Text className="ml-3 text-gray-900 dark:text-white font-medium">{currentEvent.organizer}</Text>
         </View>
       </View>
 
@@ -150,13 +152,13 @@ export default function EventDetailScreen() {
           onPress={handleRegister}
           className={`py-4 rounded-xl items-center ${
             isRegistered
-              ? 'bg-gray-200 dark:bg-gray-700'
-              : 'bg-primary-600'
+              ? 'bg-slate-200 dark:bg-darkElevated'
+              : 'bg-[#8B5CF6] active:opacity-90 shadow-lg shadow-purple-500/20'
           }`}
         >
           <Text
             className={`font-semibold text-lg ${
-              isRegistered ? 'text-gray-700 dark:text-gray-300' : 'text-white'
+              isRegistered ? 'text-slate-600 dark:text-slate-300' : 'text-white'
             }`}
           >
             {isRegistered ? 'Unregister' : 'Register Now'}

@@ -37,11 +37,13 @@ import { formatDistanceToNow } from 'date-fns';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuth();
   const { compose } = useLocalSearchParams();
+  const { isDark } = useTheme();
 
   const { posts, isLoading, hasMore, createPost, likePost, unlikePost, searchPosts, fetchPosts, loadMore, deletePost } = usePosts();
 
@@ -510,12 +512,12 @@ export default function FeedScreen() {
   }, [stories, currentUser]);
 
   return (
-    <View className="flex-1 bg-themeBgLight">
-      <StatusBar barStyle="dark-content" />
+    <View className="flex-1 bg-themeBgLight dark:bg-darkBg">
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Sleek Row Header (Profile + Name + Compact Search) */}
       <View
-        className="bg-white border-b border-purple-100/70 shadow-md shadow-purple-950/5 px-4 pb-3 flex-row items-center justify-between"
+        className="bg-white dark:bg-darkSurface border-b border-purple-100/70 dark:border-white/[0.06] shadow-md shadow-purple-950/5 dark:shadow-none px-4 pb-3 flex-row items-center justify-between"
         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 12 }}
       >
         {/* Left Part: Profile Photo & User Name */}
@@ -525,7 +527,7 @@ export default function FeedScreen() {
             className="active:opacity-85"
           >
             {/* Increased width & height from 42 to 52, and avatar size from 38 to 48 */}
-            <View className="rounded-full bg-slate-50 border-2 border-purple-200 overflow-hidden shadow-sm" style={{ width: 52, height: 52 }}>
+            <View className="rounded-full bg-slate-50 dark:bg-darkElevated border-2 border-purple-200 dark:border-white/[0.08] overflow-hidden shadow-sm" style={{ width: 52, height: 52 }}>
               <UserAvatar uri={currentUser?.avatar} size={48} />
             </View>
           </TouchableOpacity>
@@ -534,7 +536,7 @@ export default function FeedScreen() {
             className="ml-3 flex-1"
           >
             {/* Increased font size from text-base to text-lg */}
-            <Text className="text-lg font-black text-[#3B1480] tracking-tight leading-5" style={{ fontWeight: '900' }} numberOfLines={1}>
+            <Text className="text-lg font-black text-[#3B1480] dark:text-white tracking-tight leading-5" style={{ fontWeight: '900' }} numberOfLines={1}>
               {currentUser?.name}
             </Text>
           </TouchableOpacity>
@@ -542,12 +544,12 @@ export default function FeedScreen() {
 
         {/* Right Part: Search Input */}
         {/* Slightly increased flex to 0.95, and maxWidth to 140 */}
-        <View className="flex-row items-center bg-slate-50 border border-purple-100/60 rounded-full px-3 py-1.5 shadow-inner" style={{ flex: 0.95, maxWidth: 140 }}>
-          <Ionicons name="search" size={15} color="#6A2FF9" />
+        <View className="flex-row items-center bg-slate-50 dark:bg-darkElevated border border-purple-100/60 dark:border-white/[0.08] rounded-full px-3 py-1.5 shadow-inner" style={{ flex: 0.95, maxWidth: 140 }}>
+          <Ionicons name="search" size={15} color={isDark ? '#8B5CF6' : '#6A2FF9'} />
           <TextInput
-            className="flex-1 text-slate-800 font-semibold text-xs ml-1.5 py-0.5"
+            className="flex-1 text-slate-800 dark:text-white font-semibold text-xs ml-1.5 py-0.5"
             placeholder="Search..."
-            placeholderTextColor="#A78BFA"
+            placeholderTextColor={isDark ? '#A1A1AA' : '#A78BFA'}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -729,10 +731,10 @@ export default function FeedScreen() {
       <Modal visible={showCreateModal} animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 bg-white dark:bg-slate-900"
+          className="flex-1 bg-white dark:bg-darkBg"
         >
           {/* Modal Header */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]">
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
               <Text className="text-slate-500 font-medium text-base">Cancel</Text>
             </TouchableOpacity>
@@ -766,7 +768,7 @@ export default function FeedScreen() {
               className="text-slate-900 dark:text-white text-base leading-6"
               style={{ minHeight: 120 }}
               placeholder="What's happening on campus?"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDark ? "#6B7280" : "#94A3B8"}
               value={content}
               onChangeText={setContent}
               multiline
@@ -790,10 +792,10 @@ export default function FeedScreen() {
             )}
 
             {selectedFile && (
-              <View className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 mb-4 mt-2 flex-row items-center justify-between border border-slate-100 dark:border-slate-700">
+              <View className="bg-slate-50 dark:bg-darkElevated rounded-2xl p-4 mb-4 mt-2 flex-row items-center justify-between border border-slate-100 dark:border-white/[0.06]">
                 <View className="flex-row items-center flex-1">
-                  <View className="bg-primary-50 dark:bg-primary-900 w-10 h-10 rounded-xl items-center justify-center mr-3">
-                    <Ionicons name="document" size={20} color="#4F46E5" />
+                  <View className="bg-primary-50 dark:bg-primary-500/10 w-10 h-10 rounded-xl items-center justify-center mr-3">
+                    <Ionicons name="document" size={20} color={isDark ? '#8B5CF6' : '#4F46E5'} />
                   </View>
                   <Text className="text-slate-700 dark:text-white text-sm flex-1" numberOfLines={1}>
                     {selectedFile.name}
@@ -807,13 +809,13 @@ export default function FeedScreen() {
           </ScrollView>
 
           {/* Bottom Toolbar */}
-          <View className="flex-row items-center px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <TouchableOpacity onPress={handlePickImage} className="flex-row items-center mr-6 bg-primary-50 dark:bg-primary-950 px-4 py-2.5 rounded-xl">
-              <Ionicons name="image" size={20} color="#4F46E5" />
+          <View className="flex-row items-center px-5 py-3 border-t border-slate-100 dark:border-white/[0.06] bg-white dark:bg-darkSurface">
+            <TouchableOpacity onPress={handlePickImage} className="flex-row items-center mr-6 bg-primary-50 dark:bg-primary-500/10 px-4 py-2.5 rounded-xl">
+              <Ionicons name="image" size={20} color={isDark ? '#8B5CF6' : '#4F46E5'} />
               <Text className="ml-2 text-primary-600 dark:text-primary-400 font-medium text-sm">Photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handlePickFile} className="flex-row items-center bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-xl">
-              <Ionicons name="document-attach" size={20} color="#64748B" />
+            <TouchableOpacity onPress={handlePickFile} className="flex-row items-center bg-slate-50 dark:bg-darkElevated px-4 py-2.5 rounded-xl">
+              <Ionicons name="document-attach" size={20} color={isDark ? '#A1A1AA' : '#64748B'} />
               <Text className="ml-2 text-slate-600 dark:text-slate-300 font-medium text-sm">File</Text>
             </TouchableOpacity>
           </View>

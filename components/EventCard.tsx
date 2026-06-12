@@ -32,7 +32,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     <TouchableOpacity
       onPress={() => router.push(`/event/${event.id}`)}
       activeOpacity={0.9}
-      className={`bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm mb-4 ${className}`}
+      className={`bg-white dark:bg-darkSurface rounded-xl overflow-hidden border border-transparent dark:border-white/[0.06] shadow-sm mb-4 ${className}`}
     >
       <Image source={{ uri: event.imageUrl }} className="w-full h-40" resizeMode="cover" />
       
@@ -67,7 +67,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             onPress={onRegister}
             className={`px-4 py-2 rounded-xl border ${
               isRegistered
-                ? 'bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
+                ? 'bg-slate-100 border-slate-200 dark:bg-darkElevated dark:border-white/[0.08]'
                 : 'bg-[#6A2FF9]/10 border-[#6A2FF9]/20'
             }`}
           >
