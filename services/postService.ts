@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { Post, Comment } from '../types';
 import { storageService } from './storageService';
+import { lambdaApiService, isLambdaConfigured } from './lambdaApiService';
 import { Alert } from 'react-native';
 
 export const postService = {
@@ -35,6 +36,24 @@ export const postService = {
     tags: string[] = []
   ): Promise<string> {
     try {
+      // ── Step 1: Content Moderation via Lambda API ──
+      if (content && content.trim().length > 0 && isLambdaConfigured()) {
+        try {
+          const moderation = await lambdaApiService.moderateContent(content);
+          if (!moderation.safe) {
+            throw new Error(moderation.message);
+          }
+        } catch (moderationErr: any) {
+          // If it's a moderation rejection, re-throw to block the post
+          if (moderationErr.message && !moderationErr.message.includes('timed out') && !moderationErr.message.includes('not configured')) {
+            throw moderationErr;
+          }
+          // Otherwise (network error, timeout), allow the post through
+          console.warn('[PostService] Content moderation skipped:', moderationErr.message);
+        }
+      }
+
+      // ── Step 2: Upload media to S3 ──
       let imageUrl = '';
       let fileUrl = '';
 
@@ -57,6 +76,7 @@ export const postService = {
         }
       }
 
+      // ── Step 3: Save post to Firestore ──
       const postRef = await addDoc(collection(db, 'posts'), {
         authorId,
         authorName,
@@ -70,6 +90,11 @@ export const postService = {
         createdAt: serverTimestamp(),
         tags,
       } as Omit<Post, 'id' | 'createdAt'> & { createdAt: any });
+
+      // ── Step 4: Log analytics event via Lambda ──
+      if (isLambdaConfigured()) {
+        lambdaApiService.logEvent(postRef.id, 'view', authorId).catch(() => {});
+      }
 
       return postRef.id;
     } catch (error: any) {
