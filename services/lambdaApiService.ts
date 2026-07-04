@@ -5,6 +5,7 @@
  * functions via API Gateway REST endpoints.
  *
  * Endpoints:
+ *   POST /api/analyze-image  → Amazon Rekognition AI (image moderation + auto-tags + OCR)
  *   POST /api/moderate       → Content moderation
  *   POST /api/analytics      → Log engagement events
  *   GET  /api/analytics      → Get engagement stats
@@ -88,10 +89,35 @@ export interface Announcement {
   createdAt: string;
 }
 
+export interface ImageModerationLabel {
+  name: string;
+  confidence: number;
+  parentName: string | null;
+}
+
+export interface ImageAutoTag {
+  name: string;
+  confidence: number;
+}
+
+export interface DetectedText {
+  text: string;
+  confidence: number;
+}
+
+export interface ImageAnalysisResult {
+  safe: boolean;
+  moderationLabels: ImageModerationLabel[];
+  autoTags: ImageAutoTag[];
+  detectedText: DetectedText[];
+  message: string;
+}
+
 export interface HealthStatus {
   status: string;
   service: string;
   version: string;
+  features?: string[];
   timestamp: string;
   uptime: number;
   memory: { used: string; total: string };
@@ -100,6 +126,25 @@ export interface HealthStatus {
 // ─── API Methods ────────────────────────────────────────────────────────
 
 export const lambdaApiService = {
+  /**
+   * Analyze an image using Amazon Rekognition AI.
+   * Supports: content moderation, smart auto-tagging, and OCR text detection.
+   * 
+   * @param bucket - S3 bucket name
+   * @param key - S3 object key (e.g. 'posts/1234567890.jpeg')
+   * @param features - Array of features to run: 'moderation', 'labels', 'text'
+   */
+  async analyzeImage(
+    bucket: string,
+    key: string,
+    features: ('moderation' | 'labels' | 'text')[] = ['moderation', 'labels', 'text']
+  ): Promise<ImageAnalysisResult> {
+    return apiRequest<ImageAnalysisResult>('/api/analyze-image', {
+      method: 'POST',
+      body: JSON.stringify({ bucket, key, features }),
+    });
+  },
+
   /**
    * Moderate post content before publishing.
    * Returns whether the content is safe and any flagged words.

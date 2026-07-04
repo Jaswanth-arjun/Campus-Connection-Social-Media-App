@@ -2,14 +2,24 @@
  * Campus Connect — AWS Lambda Function
  * 
  * Handles multiple API Gateway routes:
- *   POST /api/moderate       → Content moderation (checks post text)
- *   POST /api/analytics      → Log post engagement events
- *   GET  /api/analytics      → Retrieve post engagement stats
- *   POST /api/announcements  → Create campus-wide announcement
- *   GET  /api/health         → Health check
+ *   POST /api/moderate        → Content moderation (checks post text)
+ *   POST /api/analyze-image   → Amazon Rekognition AI (image moderation + auto-tags + OCR)
+ *   POST /api/analytics       → Log post engagement events
+ *   GET  /api/analytics       → Retrieve post engagement stats
+ *   POST /api/announcements   → Create campus-wide announcement
+ *   GET  /api/announcements   → Get announcements
+ *   GET  /api/health          → Health check
  *
  * Runtime: Node.js 18.x (ES Modules)
+ * AWS SDK v3 is included in Lambda runtime by default.
  */
+
+import { RekognitionClient, DetectModerationLabelsCommand, DetectLabelsCommand, DetectTextCommand } from '@aws-sdk/client-rekognition';
+
+// ─── AWS Rekognition Client ─────────────────────────────────────────────
+const rekognitionClient = new RekognitionClient({
+  region: process.env.AWS_REGION || 'us-east-1',
+});
 
 // ─── In-memory store (use DynamoDB for production persistence) ────────────
 const analyticsStore = {};   // { postId: { views: N, likes: N, shares: N } }
@@ -19,6 +29,19 @@ const announcements  = [];   // [{ id, title, body, authorName, createdAt }]
 const BANNED_WORDS = [
   'spam', 'scam', 'hack', 'cheat', 'abuse',
   'violence', 'drugs', 'gambling', 'xxx',
+];
+
+// ─── Rekognition Moderation Config ───────────────────────────────────────
+const MODERATION_CONFIDENCE_THRESHOLD = 70; // Minimum confidence to flag (0-100)
+const BLOCKED_MODERATION_CATEGORIES = [
+  'Explicit Nudity',
+  'Violence',
+  'Visually Disturbing',
+  'Drugs',
+  'Tobacco',
+  'Alcohol',
+  'Gambling',
+  'Hate Symbols',
 ];
 
 // ─── CORS Headers (allow React Native / any origin) ─────────────────────
@@ -39,6 +62,137 @@ function respond(statusCode, body) {
 }
 
 // ─── Route Handlers ─────────────────────────────────────────────────────
+
+/**
+ * POST /api/analyze-image
+ * Body: { bucket: string, key: string, features?: string[] }
+ * 
+ * Features (optional, defaults to all):
+ *   - "moderation"  → Detect unsafe content (nudity, violence, etc.)
+ *   - "labels"      → Detect objects/scenes for auto-tagging
+ *   - "text"        → Extract text from image (OCR)
+ * 
+ * Returns: {
+ *   safe: boolean,
+ *   moderationLabels: [...],
+ *   autoTags: string[],
+ *   detectedText: string[],
+ *   message: string
+ * }
+ */
+async function analyzeImage(body) {
+  const { bucket, key, features } = body;
+
+  if (!bucket || !key) {
+    return respond(400, { error: 'Missing required fields: bucket, key' });
+  }
+
+  const s3Image = {
+    S3Object: {
+      Bucket: bucket,
+      Name: key,
+    },
+  };
+
+  // Determine which features to run
+  const enabledFeatures = features || ['moderation', 'labels', 'text'];
+  const runModeration = enabledFeatures.includes('moderation');
+  const runLabels = enabledFeatures.includes('labels');
+  const runText = enabledFeatures.includes('text');
+
+  const result = {
+    safe: true,
+    moderationLabels: [],
+    autoTags: [],
+    detectedText: [],
+    message: 'Image analysis complete.',
+  };
+
+  try {
+    // ── 1. Content Moderation ──────────────────────────────────────────
+    if (runModeration) {
+      const moderationResponse = await rekognitionClient.send(
+        new DetectModerationLabelsCommand({
+          Image: s3Image,
+          MinConfidence: MODERATION_CONFIDENCE_THRESHOLD,
+        })
+      );
+
+      const flaggedLabels = (moderationResponse.ModerationLabels || []).filter(
+        (label) => {
+          // Check if the label or its parent matches blocked categories
+          return BLOCKED_MODERATION_CATEGORIES.some(
+            (blocked) =>
+              label.Name?.includes(blocked) ||
+              label.ParentName?.includes(blocked)
+          );
+        }
+      );
+
+      result.moderationLabels = (moderationResponse.ModerationLabels || []).map((l) => ({
+        name: l.Name,
+        confidence: Math.round(l.Confidence * 100) / 100,
+        parentName: l.ParentName || null,
+      }));
+
+      if (flaggedLabels.length > 0) {
+        result.safe = false;
+        const flaggedNames = flaggedLabels.map((l) => l.Name).join(', ');
+        result.message = `Image contains inappropriate content: ${flaggedNames}. Please choose a different image.`;
+      }
+    }
+
+    // ── 2. Object/Scene Detection (Auto-Tagging) ───────────────────────
+    if (runLabels) {
+      const labelsResponse = await rekognitionClient.send(
+        new DetectLabelsCommand({
+          Image: s3Image,
+          MaxLabels: 15,
+          MinConfidence: 75,
+        })
+      );
+
+      result.autoTags = (labelsResponse.Labels || []).map((l) => ({
+        name: l.Name,
+        confidence: Math.round(l.Confidence * 100) / 100,
+      }));
+    }
+
+    // ── 3. Text Detection (OCR) ────────────────────────────────────────
+    if (runText) {
+      const textResponse = await rekognitionClient.send(
+        new DetectTextCommand({
+          Image: s3Image,
+        })
+      );
+
+      // Only get LINE type detections (not WORD, to avoid duplicates)
+      result.detectedText = (textResponse.TextDetections || [])
+        .filter((t) => t.Type === 'LINE')
+        .map((t) => ({
+          text: t.DetectedText,
+          confidence: Math.round(t.Confidence * 100) / 100,
+        }));
+    }
+
+    return respond(200, result);
+  } catch (err) {
+    console.error('[Rekognition] Error analyzing image:', err);
+
+    // Handle specific Rekognition errors
+    if (err.name === 'InvalidS3ObjectException') {
+      return respond(400, { error: 'Image not found in S3. Check bucket and key.' });
+    }
+    if (err.name === 'ImageTooLargeException') {
+      return respond(400, { error: 'Image is too large for analysis. Max size is 5MB via S3.' });
+    }
+    if (err.name === 'InvalidImageFormatException') {
+      return respond(400, { error: 'Invalid image format. Supported: JPEG, PNG.' });
+    }
+
+    return respond(500, { error: 'Image analysis failed', details: err.message });
+  }
+}
 
 /**
  * POST /api/moderate
@@ -232,7 +386,8 @@ function healthCheck() {
   return respond(200, {
     status: 'healthy',
     service: 'Campus Connect Lambda API',
-    version: '1.0.0',
+    version: '2.0.0',
+    features: ['text-moderation', 'image-moderation-rekognition', 'auto-tagging', 'ocr', 'analytics', 'announcements'],
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: {
@@ -271,6 +426,12 @@ export const handler = async (event) => {
 
   // Route requests
   try {
+    // --- /api/analyze-image (Rekognition AI) ---
+    if (path.endsWith('/analyze-image')) {
+      if (method === 'POST') return await analyzeImage(body);
+      return respond(405, { error: 'Method not allowed. Use POST.' });
+    }
+
     // --- /api/moderate ---
     if (path.endsWith('/moderate')) {
       if (method === 'POST') return moderateContent(body);
@@ -300,6 +461,7 @@ export const handler = async (event) => {
     return respond(404, {
       error: 'Route not found',
       availableRoutes: [
+        'POST /api/analyze-image   ← Rekognition AI (image moderation + auto-tags + OCR)',
         'POST /api/moderate',
         'POST /api/analytics',
         'GET  /api/analytics',

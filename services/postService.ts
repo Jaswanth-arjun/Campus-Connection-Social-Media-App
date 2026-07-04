@@ -76,6 +76,44 @@ export const postService = {
         }
       }
 
+      // ── Step 2.5: Amazon Rekognition AI — Image Moderation + Auto-Tags ──
+      let rekognitionTags: string[] = [];
+      if (imageUrl && imageUrl.includes('.amazonaws.com') && isLambdaConfigured()) {
+        try {
+          // Extract S3 bucket and key from the image URL
+          const s3Url = new URL(imageUrl);
+          const bucket = s3Url.hostname.split('.')[0];
+          const key = s3Url.pathname.startsWith('/') ? s3Url.pathname.slice(1) : s3Url.pathname;
+
+          const analysis = await lambdaApiService.analyzeImage(bucket, key, ['moderation', 'labels']);
+
+          // Block the post if image is unsafe
+          if (!analysis.safe) {
+            // Delete the unsafe image from S3
+            try { await storageService.deleteFile(imageUrl); } catch (e) {}
+            throw new Error(analysis.message);
+          }
+
+          // Collect high-confidence auto-tags (>80%) from Rekognition
+          if (analysis.autoTags && analysis.autoTags.length > 0) {
+            rekognitionTags = analysis.autoTags
+              .filter(tag => tag.confidence > 80)
+              .slice(0, 5) // Max 5 AI tags
+              .map(tag => tag.name.toLowerCase());
+          }
+        } catch (rekErr: any) {
+          // If it's a moderation rejection, re-throw
+          if (rekErr.message && rekErr.message.includes('inappropriate')) {
+            throw rekErr;
+          }
+          // Otherwise (network, timeout), allow the post through
+          console.warn('[PostService] Rekognition analysis skipped:', rekErr.message);
+        }
+      }
+
+      // Merge user tags with AI-generated tags (deduplicate)
+      const allTags = [...new Set([...tags, ...rekognitionTags])];
+
       // ── Step 3: Save post to Firestore ──
       const postRef = await addDoc(collection(db, 'posts'), {
         authorId,
@@ -88,7 +126,7 @@ export const postService = {
         likes: [],
         commentsCount: 0,
         createdAt: serverTimestamp(),
-        tags,
+        tags: allTags,
       } as Omit<Post, 'id' | 'createdAt'> & { createdAt: any });
 
       // ── Step 4: Log analytics event via Lambda ──
