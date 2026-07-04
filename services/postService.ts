@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { Post, Comment } from '../types';
 import { storageService } from './storageService';
+import { Alert } from 'react-native';
 
 export const postService = {
   async createPost(
@@ -43,8 +44,11 @@ export const postService = {
         } else {
           try {
             imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
-          } catch {
-            // Fallback to direct URI (e.g. if it's already base64 or storage is unavailable)
+            Alert.alert('✅ Upload Success', `Image uploaded to: ${imageUrl.substring(0, 80)}...`);
+          } catch (uploadErr: any) {
+            // === DEBUG — shows exact error on device ===
+            Alert.alert('❌ Post Image Upload Failed', uploadErr.message || uploadErr.toString());
+            // Fallback to direct URI
             imageUrl = imageUri;
           }
         }
@@ -56,7 +60,8 @@ export const postService = {
         } else {
           try {
             fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
-          } catch {
+          } catch (uploadErr: any) {
+            Alert.alert('❌ Post File Upload Failed', uploadErr.message || uploadErr.toString());
             fileUrl = fileUri;
           }
         }
