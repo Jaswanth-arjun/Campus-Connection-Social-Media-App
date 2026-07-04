@@ -64,7 +64,13 @@ export const storageService = {
    */
   async uploadImage(uri: string, path: string): Promise<string> {
     const isS3 = isS3Configured();
-    console.log('[StorageService] isS3Configured:', isS3);
+    
+    // === DEBUG ALERT — REMOVE AFTER TESTING ===
+    Alert.alert(
+      '🔍 Upload Debug Info',
+      `S3 Configured: ${isS3}\nBucket: ${process.env.EXPO_PUBLIC_AWS_S3_BUCKET || 'NOT SET'}\nRegion: ${process.env.EXPO_PUBLIC_AWS_REGION || 'NOT SET'}\nAccess Key: ${process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID ? 'SET (' + process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID.substring(0, 6) + '...)' : 'NOT SET'}\nSession Token: ${process.env.EXPO_PUBLIC_AWS_SESSION_TOKEN ? 'SET' : 'NOT SET'}\nPath: ${isS3 ? 'S3' : 'Firebase'}`
+    );
+    // === END DEBUG ===
     
     // --- AWS S3 Upload ---
     if (isS3) {
@@ -84,10 +90,11 @@ export const storageService = {
         });
 
         console.log('[StorageService] S3 upload success:', publicUrl);
+        Alert.alert('✅ S3 Upload Success', publicUrl);
         return publicUrl;
       } catch (error: any) {
         console.error('[StorageService] S3 uploadImage error:', error);
-        Alert.alert('S3 Image Upload Error', error.message || error.toString());
+        Alert.alert('❌ S3 Image Upload Error', error.message || error.toString());
         throw new Error(error.message || 'S3 image upload failed');
       }
     }
