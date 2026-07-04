@@ -1,0 +1,562 @@
+﻿diff --git a/app/(tabs)/profile.tsx b/app/(tabs)/profile.tsx
+index e4eb3c0..b4724bd 100644
+--- a/app/(tabs)/profile.tsx
++++ b/app/(tabs)/profile.tsx
+@@ -640,24 +640,24 @@ export default function ProfileScreen() {
+ 
+   if (!currentUser) {
+     return (
+-      <View className="flex-1 bg-themeBgLight dark:bg-slate-950 p-4 pt-12">
++      <View className="flex-1 bg-themeBgLight dark:bg-darkBg p-4 pt-12">
+         <SkeletonLoader type="profile" />
+       </View>
+     );
+   }
+ 
+   return (
+-    <View className="flex-1 bg-themeBgLight dark:bg-slate-950">
++    <View className="flex-1 bg-themeBgLight dark:bg-darkBg">
+       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+ 
+       {/* Profile Navigation Header */}
+       <View 
+-        className="bg-white dark:bg-slate-900 px-5 pb-4 border-b border-purple-100/70 dark:border-purple-900/30 shadow-md shadow-purple-950/5 flex-row items-center justify-between"
++        className="bg-white dark:bg-darkSurface px-5 pb-4 border-b border-purple-100/70 dark:border-white/[0.06] shadow-md shadow-purple-950/5 dark:shadow-none flex-row items-center justify-between"
+         style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
+       >
+         <TouchableOpacity 
+           onPress={() => router.back()} 
+-          className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 items-center justify-center border border-purple-100 dark:border-purple-800/40"
++          className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-500/10 items-center justify-center border border-purple-100 dark:border-white/[0.08]"
+         >
+           <Ionicons name="arrow-back" size={20} color="#6A2FF9" />
+         </TouchableOpacity>
+@@ -667,7 +667,7 @@ export default function ProfileScreen() {
+         <View className="flex-row items-center space-x-2">
+           <TouchableOpacity 
+             onPress={toggleDarkMode}
+-            className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 items-center justify-center border border-purple-100 dark:border-purple-800/40"
++            className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-500/10 items-center justify-center border border-purple-100 dark:border-white/[0.08]"
+           >
+             <Ionicons name={isDark ? 'moon' : 'sunny'} size={19} color="#6A2FF9" />
+           </TouchableOpacity>
+@@ -680,7 +680,7 @@ export default function ProfileScreen() {
+         </View>
+       </View>
+ 
+-      <ScrollView className="flex-1 bg-themeBgLight dark:bg-slate-950" showsVerticalScrollIndicator={false}>
++      <ScrollView className="flex-1 bg-themeBgLight dark:bg-darkBg" showsVerticalScrollIndicator={false}>
+         {/* LinkedIn-Style Cover Banner Container */}
+         <View className="relative w-full h-44 bg-slate-200">
+           <Image 
+@@ -779,19 +779,19 @@ export default function ProfileScreen() {
+         </View>
+ 
+         {/* Stats & Metadata Counts */}
+-        <View className="flex-row border-y border-slate-100 my-6 py-4.5 bg-slate-50/50 justify-around">
++        <View className="flex-row border-y border-slate-100 dark:border-white/[0.06] my-6 py-4.5 bg-slate-50/50 dark:bg-darkSurface/50 justify-around">
+           <View className="items-center flex-1">
+-            <Text className="text-lg font-extrabold text-slate-800">{userPosts.length}</Text>
++            <Text className="text-lg font-extrabold text-slate-800 dark:text-white">{userPosts.length}</Text>
+             <Text className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider mt-0.5">Posts</Text>
+           </View>
+-          <View className="items-center flex-1 border-x border-slate-100">
++          <View className="items-center flex-1 border-x border-slate-100 dark:border-white/[0.06]">
+             <Text className="text-sm font-extrabold text-[#6A2FF9] px-2 text-center" numberOfLines={1}>
+               {currentUser.department || 'Student'}
+             </Text>
+             <Text className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider mt-1">Dept</Text>
+           </View>
+           <View className="items-center flex-1">
+-            <Text className="text-lg font-extrabold text-slate-800">{currentUser.year || 'General'}</Text>
++            <Text className="text-lg font-extrabold text-slate-800 dark:text-white">{currentUser.year || 'General'}</Text>
+             <Text className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider mt-0.5">Year</Text>
+           </View>
+         </View>
+@@ -799,14 +799,14 @@ export default function ProfileScreen() {
+         {/* Instagram-Style Posts Grid */}
+         <View className="px-4 pb-12">
+           <View className="flex-row items-center mb-4.5 px-1 justify-between">
+-            <Text className="text-slate-900 font-extrabold text-lg tracking-tight">
++            <Text className="text-slate-900 dark:text-white font-extrabold text-lg tracking-tight">
+               Your Campus Posts
+             </Text>
+             <Ionicons name="grid-outline" size={18} color="#6A2FF9" />
+           </View>
+ 
+           {userPosts.length === 0 ? (
+-            <View className="items-center justify-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
++            <View className="items-center justify-center py-10 bg-slate-50 dark:bg-darkElevated border border-dashed border-slate-200 dark:border-white/[0.08] rounded-3xl">
+               <Ionicons name="images-outline" size={32} color="#94A3B8" />
+               <Text className="text-slate-500 font-extrabold text-sm mt-2">No Posts Yet</Text>
+               <Text className="text-slate-400 font-semibold text-xs mt-0.5">Share campus moments to see them here!</Text>
+@@ -823,7 +823,7 @@ export default function ProfileScreen() {
+                       [{ text: "Close", style: "cancel" }]
+                     );
+                   }}
+-                  className="w-[31.3%] aspect-square m-[1%] bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 shadow-sm active:opacity-90"
++                  className="w-[31.3%] aspect-square m-[1%] bg-slate-50 dark:bg-darkSurface rounded-2xl overflow-hidden border border-slate-100 dark:border-white/[0.06] shadow-sm active:opacity-90"
+                 >
+                   {post.imageUrl ? (
+                     <Image source={{ uri: post.imageUrl }} className="w-full h-full" resizeMode="cover" />
+@@ -851,17 +851,17 @@ export default function ProfileScreen() {
+       <Modal visible={showEditModal} animationType="slide">
+         <KeyboardAvoidingView
+           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+-          className="flex-1 bg-white dark:bg-slate-900"
++          className="flex-1 bg-white dark:bg-darkBg"
+         >
+           {/* Modal Header */}
+           <View 
+-            className="flex-row items-center justify-between px-5 pb-4 border-b border-slate-100"
++            className="flex-row items-center justify-between px-5 pb-4 border-b border-slate-100 dark:border-white/[0.06] bg-white dark:bg-darkSurface"
+             style={{ paddingTop: insets.top > 0 ? insets.top + 8 : 16 }}
+           >
+             <TouchableOpacity onPress={() => setShowEditModal(false)}>
+               <Text className="text-slate-500 font-bold text-base">Cancel</Text>
+             </TouchableOpacity>
+-            <Text className="text-lg font-extrabold text-slate-900">Edit Profile</Text>
++            <Text className="text-lg font-extrabold text-slate-900 dark:text-white">Edit Profile</Text>
+             <TouchableOpacity
+               onPress={handleSaveProfile}
+               disabled={isSaving}
+@@ -925,11 +925,11 @@ export default function ProfileScreen() {
+                   Full Name
+                 </Text>
+                 <TextInput
+-                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
++                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
+                   value={editName}
+                   onChangeText={setEditName}
+                   placeholder="Enter your name"
+-                  placeholderTextColor="#94A3B8"
++                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                 />
+               </View>
+ 
+@@ -938,11 +938,11 @@ export default function ProfileScreen() {
+                   Bio
+                 </Text>
+                 <TextInput
+-                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
++                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
+                   value={editBio}
+                   onChangeText={setEditBio}
+                   placeholder="Tell us about yourself"
+-                  placeholderTextColor="#94A3B8"
++                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                   multiline
+                   numberOfLines={3}
+                   textAlignVertical="top"
+@@ -954,11 +954,11 @@ export default function ProfileScreen() {
+                   Department
+                 </Text>
+                 <TextInput
+-                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
++                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
+                   value={editDepartment}
+                   onChangeText={setEditDepartment}
+                   placeholder="e.g., Computer Science"
+-                  placeholderTextColor="#94A3B8"
++                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                 />
+               </View>
+ 
+@@ -967,11 +967,11 @@ export default function ProfileScreen() {
+                   Year
+                 </Text>
+                 <TextInput
+-                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
++                  className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white text-base"
+                   value={editYear}
+                   onChangeText={setEditYear}
+                   placeholder="e.g., 1st, 2nd, 3rd, 4th"
+-                  placeholderTextColor="#94A3B8"
++                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                 />
+               </View>
+             </View>
+@@ -982,11 +982,11 @@ export default function ProfileScreen() {
+       {/* 2D Vector Avatar Builder Modal */}
+       <Modal visible={showAvatarModal} animationType="slide">
+         <View 
+-          className="flex-1 bg-slate-950"
++          className="flex-1 bg-darkBg"
+           style={{ paddingTop: insets.top > 0 ? insets.top : 20 }}
+         >
+           {/* Header Controls */}
+-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-white/5 bg-slate-900">
++          <View className="flex-row items-center justify-between px-5 py-4 border-b border-white/[0.06] bg-darkSurface">
+             <TouchableOpacity onPress={() => setShowAvatarModal(false)}>
+               <Text className="text-white/60 font-bold text-base">Cancel</Text>
+             </TouchableOpacity>
+@@ -1059,8 +1059,8 @@ export default function ProfileScreen() {
+           </View>
+ 
+           {/* Premium Canvas Live Viewfinder */}
+-          <View className="items-center justify-center py-10 bg-slate-900 border-b border-white/5 relative">
+-            <View className="w-36 h-36 rounded-full border-4 border-[#6A2FF9]/50 overflow-hidden bg-slate-800 shadow-2xl shadow-black/80 items-center justify-center">
++          <View className="items-center justify-center py-10 bg-darkSurface border-b border-white/[0.06] relative">
++            <View className="w-36 h-36 rounded-full border-4 border-[#6A2FF9]/50 overflow-hidden bg-darkElevated shadow-2xl shadow-black/80 items-center justify-center">
+               {isCompilingAvatar ? (
+                 <ActivityIndicator size="large" color="#6A2FF9" />
+               ) : (
+@@ -1090,7 +1090,7 @@ export default function ProfileScreen() {
+           </View>
+ 
+           {/* Premium Category Navigation Tabs */}
+-          <View className="border-b border-white/5 bg-slate-950">
++          <View className="border-b border-white/[0.06] bg-darkBg">
+             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-3 px-4">
+               <View className="flex-row space-x-3">
+                 {[
+@@ -1125,7 +1125,7 @@ export default function ProfileScreen() {
+           </View>
+ 
+           {/* Studio Workspace panels */}
+-          <ScrollView className="flex-1 p-5 bg-slate-900" showsVerticalScrollIndicator={false}>
++          <ScrollView className="flex-1 p-5 bg-darkSurface" showsVerticalScrollIndicator={false}>
+             
+             {/* Panel 1: Art Style Selection */}
+             {activeAvatarTab === 'artStyle' && (
+@@ -1620,30 +1620,30 @@ export default function ProfileScreen() {
+         onRequestClose={() => setShowAttendanceModal(false)}
+       >
+         <View className="flex-1 bg-black/60 justify-end">
+-          <View className="bg-white rounded-t-[40px] h-[85%] px-6 pt-6 pb-8 shadow-2xl">
++          <View className="bg-white dark:bg-darkSurface rounded-t-[40px] h-[85%] px-6 pt-6 pb-8 shadow-2xl">
+             {/* Handle Bar */}
+-            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
++            <View className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+             
+             {/* Header */}
+             <View className="flex-row justify-between items-center mb-6">
+               <View className="flex-1 mr-2">
+-                <Text className="text-2xl font-black text-slate-900 tracking-tight">Academic Pulse</Text>
++                <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Academic Pulse</Text>
+                 <Text className="text-slate-400 text-xs font-semibold" numberOfLines={1}>
+                   Live Roll: {academicRollNumber} ΓÇó {getYearSemText(attendanceData?.year_branch_section)}
+                 </Text>
+               </View>
+               <TouchableOpacity
+                 onPress={() => setShowAttendanceModal(false)}
+-                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
++                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-darkElevated items-center justify-center"
+               >
+-                <Ionicons name="close" size={20} color="#64748B" />
++                <Ionicons name="close" size={20} color={isDark ? '#E4E4E7' : '#64748B'} />
+               </TouchableOpacity>
+             </View>
+ 
+             {academicIsMock && (
+-              <View className="mb-4 bg-purple-50 border border-purple-100 p-3.5 rounded-2xl">
++              <View className="mb-4 bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-white/[0.08] p-3.5 rounded-2xl">
+                 <View className="flex-row items-center">
+-                  <Ionicons name="information-circle" size={18} color="#6A2FF9" />
++                  <Ionicons name="information-circle" size={18} color={isDark ? '#A78BFA' : '#6A2FF9'} />
+                   <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
+                     Connected via Offline Mode. Showing simulated profile stats for college.
+                   </Text>
+@@ -1660,7 +1660,7 @@ export default function ProfileScreen() {
+             )}
+ 
+             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+-              <View className="bg-slate-900 p-6 rounded-3xl mb-6 items-center shadow-xl shadow-slate-950/20">
++              <View className="bg-slate-900 dark:bg-darkElevated p-6 rounded-3xl mb-6 items-center shadow-xl shadow-slate-950/20 dark:shadow-none border border-transparent dark:border-white/[0.06]">
+                 {/* Top status indicator row */}
+                 <View className="w-full flex-row justify-between items-center mb-5">
+                   <View className="flex-row items-center">
+@@ -1725,7 +1725,7 @@ export default function ProfileScreen() {
+               </View>
+ 
+               {/* Subject Breakdown list */}
+-              <Text className="text-slate-800 font-extrabold text-base mb-4 px-1">Subject Breakdown</Text>
++              <Text className="text-slate-800 dark:text-white font-extrabold text-base mb-4 px-1">Subject Breakdown</Text>
+               
+               <View className="pb-8">
+                 {attendanceData?.subjects.map((sub, idx) => {
+@@ -1736,10 +1736,10 @@ export default function ProfileScreen() {
+                   const textColor = isGood ? 'text-emerald-600' : isWarning ? 'text-amber-600' : 'text-rose-600';
+ 
+                   return (
+-                    <View key={idx} className="mb-5 bg-slate-50 border border-slate-100 p-4.5 rounded-2xl">
++                    <View key={idx} className="mb-5 bg-slate-50 dark:bg-darkElevated border border-slate-100 dark:border-white/[0.08] p-4.5 rounded-2xl">
+                       {/* Top line with subject and class fraction */}
+-                      <View className="flex-row justify-between items-center mb-2.5">
+-                        <Text className="text-slate-800 font-bold text-sm">{sub.subject}</Text>
++                      <View className="flex-row justify-between items-center mb-2.5 border-b border-slate-100/10 dark:border-white/[0.04] pb-2">
++                        <Text className="text-slate-800 dark:text-white font-bold text-sm">{sub.subject}</Text>
+                         <Text className="text-slate-400 text-xs font-semibold">
+                           {sub.attended}/{sub.conducted}
+                         </Text>
+@@ -1747,7 +1747,7 @@ export default function ProfileScreen() {
+                       
+                       {/* Bottom line with progress bar and percent */}
+                       <View className="flex-row items-center">
+-                        <View className="flex-1 h-2 bg-slate-200/60 rounded-full mr-3 overflow-hidden">
++                        <View className="flex-1 h-2 bg-slate-200/60 dark:bg-white/10 rounded-full mr-3 overflow-hidden">
+                           <View className={`h-full ${barColorClass}`} style={{ width: `${percent}%` }} />
+                         </View>
+                         <Text className={`font-extrabold text-xs ${textColor} w-10 text-right`}>
+@@ -1771,31 +1771,31 @@ export default function ProfileScreen() {
+         onRequestClose={() => setShowMidmarksModal(false)}
+       >
+         <View className="flex-1 bg-black/60 justify-end">
+-          <View className="bg-white rounded-t-[40px] h-[85%] px-6 pt-6 pb-8 shadow-2xl">
++          <View className="bg-white dark:bg-darkSurface rounded-t-[40px] h-[85%] px-6 pt-6 pb-8 shadow-2xl">
+             {/* Handle Bar */}
+-            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
++            <View className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+             
+             {/* Header */}
+             <View className="flex-row justify-between items-center mb-6">
+               <View className="flex-1 mr-2">
+-                <Text className="text-2xl font-black text-slate-900 tracking-tight">Mid Term Hub</Text>
++                <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Mid Term Hub</Text>
+                 <Text className="text-slate-400 text-xs font-semibold" numberOfLines={1}>
+                   Live Roll: {academicRollNumber} ΓÇó {getYearSemText(midmarksData?.year_branch_section)}
+                 </Text>
+               </View>
+               <TouchableOpacity
+                 onPress={() => setShowMidmarksModal(false)}
+-                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
++                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-darkElevated items-center justify-center"
+               >
+-                <Ionicons name="close" size={20} color="#64748B" />
++                <Ionicons name="close" size={20} color={isDark ? '#E4E4E7' : '#64748B'} />
+               </TouchableOpacity>
+             </View>
+ 
+             {academicIsMock && (
+-              <View className="mb-4 bg-purple-50 border border-purple-100 p-3.5 rounded-2xl">
++              <View className="mb-4 bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-white/[0.08] p-3.5 rounded-2xl">
+                 <View className="flex-row items-center">
+-                  <Ionicons name="information-circle" size={18} color="#6A2FF9" />
+-                  <Text className="text-[#6A2FF9] text-xs font-bold ml-2 flex-1">
++                  <Ionicons name="information-circle" size={18} color={isDark ? '#A78BFA' : '#6A2FF9'} />
++                  <Text className="text-[#6A2FF9] dark:text-[#A78BFA] text-xs font-bold ml-2 flex-1">
+                     Connected via Offline Mode. Showing simulated profile stats for college.
+                   </Text>
+                 </View>
+@@ -1805,7 +1805,7 @@ export default function ProfileScreen() {
+                   className="mt-2.5 bg-[#6A2FF9]/10 py-2 rounded-xl flex-row items-center justify-center border border-[#6A2FF9]/20"
+                 >
+                   <Ionicons name="create-outline" size={14} color="#6A2FF9" />
+-                  <Text className="text-[#6A2FF9] text-xs font-black ml-1.5">Customize Mid Marks</Text>
++                  <Text className="text-[#6A2FF9] dark:text-[#A78BFA] text-xs font-black ml-1.5">Customize Mid Marks</Text>
+                 </TouchableOpacity>
+               </View>
+             )}
+@@ -1831,7 +1831,7 @@ export default function ProfileScreen() {
+               </View>
+ 
+               {/* Subject wise marks grid */}
+-              <Text className="text-slate-800 font-extrabold text-base mb-4 px-1">Subject Marks Breakdown</Text>
++              <Text className="text-slate-800 dark:text-white font-extrabold text-base mb-4 px-1">Subject Marks Breakdown</Text>
+               
+               <View className="pb-8">
+                 {midmarksData?.subjects.map((sub, idx) => {
+@@ -1843,25 +1843,25 @@ export default function ProfileScreen() {
+                   };
+ 
+                   const getAvgBg = (avg: number | null) => {
+-                    if (avg === null) return 'bg-slate-100 border-slate-200';
+-                    if (avg >= 22.5) return 'bg-emerald-50 border-emerald-100';
+-                    if (avg >= 15) return 'bg-amber-50 border-amber-100';
+-                    return 'bg-rose-50 border-rose-100';
++                    if (avg === null) return 'bg-slate-100 dark:bg-darkElevated border-slate-200 dark:border-white/[0.08]';
++                    if (avg >= 22.5) return 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20';
++                    if (avg >= 15) return 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20';
++                    return 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20';
+                   };
+ 
+                   const getAvgText = (avg: number | null) => {
+-                    if (avg === null) return 'text-slate-600';
+-                    if (avg >= 22.5) return 'text-emerald-600';
+-                    if (avg >= 15) return 'text-amber-600';
+-                    return 'text-rose-600';
++                    if (avg === null) return 'text-slate-600 dark:text-slate-400';
++                    if (avg >= 22.5) return 'text-emerald-600 dark:text-emerald-400';
++                    if (avg >= 15) return 'text-amber-600 dark:text-amber-400';
++                    return 'text-rose-600 dark:text-rose-400';
+                   };
+ 
+                   return (
+-                    <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl shadow-sm mb-4.5">
++                    <View key={idx} className="bg-slate-50 dark:bg-darkElevated border border-slate-100 dark:border-white/[0.08] p-4.5 rounded-2xl shadow-sm mb-4.5">
+                       {/* Subject Name & Type */}
+-                      <View className="flex-row justify-between items-center border-b border-slate-100 pb-2.5 mb-3.5">
++                      <View className="flex-row justify-between items-center border-b border-slate-100 dark:border-white/[0.06] pb-2.5 mb-3.5">
+                         <View className="flex-1 mr-2">
+-                          <Text className="text-slate-800 font-black text-sm" numberOfLines={1}>{sub.subject}</Text>
++                          <Text className="text-slate-800 dark:text-white font-black text-sm" numberOfLines={1}>{sub.subject}</Text>
+                           <Text className="text-[10px] font-extrabold text-slate-400 mt-0.5 uppercase tracking-wider">{sub.type}</Text>
+                         </View>
+                         {/* Avg Badge */}
+@@ -1875,7 +1875,7 @@ export default function ProfileScreen() {
+                       {/* Mid 1 and Mid 2 Columns */}
+                       <View className="flex-row justify-between items-center">
+                         <View className="flex-1 flex-row items-center justify-start">
+-                          <View className="bg-slate-100 p-1.5 rounded-lg mr-2">
++                          <View className="bg-slate-100 dark:bg-darkSurface p-1.5 rounded-lg mr-2">
+                             <Ionicons name="document-text-outline" size={13} color="#94A3B8" />
+                           </View>
+                           <View>
+@@ -1886,10 +1886,10 @@ export default function ProfileScreen() {
+                           </View>
+                         </View>
+ 
+-                        <View className="w-[1px] h-6 bg-slate-200 mx-4" />
++                        <View className="w-[1px] h-6 bg-slate-200 dark:bg-white/[0.08] mx-4" />
+ 
+                         <View className="flex-1 flex-row items-center justify-start">
+-                          <View className="bg-slate-100 p-1.5 rounded-lg mr-2">
++                          <View className="bg-slate-100 dark:bg-darkSurface p-1.5 rounded-lg mr-2">
+                             <Ionicons name="document-text-outline" size={13} color="#94A3B8" />
+                           </View>
+                           <View>
+@@ -1917,32 +1917,29 @@ export default function ProfileScreen() {
+         onRequestClose={() => setShowCustomizeModal(false)}
+       >
+         <KeyboardAvoidingView 
+-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+-          className="flex-1 bg-black/60 justify-end"
+-        >
+-          <View className="bg-white rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
++          behavior={Platform.OS === 'ios' ? 'padd            <View className="bg-white dark:bg-darkSurface rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
+             {/* Handle Bar */}
+-            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
++            <View className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+             
+             {/* Header */}
+             <View className="flex-row justify-between items-center mb-6">
+               <View>
+-                <Text className="text-xl font-black text-slate-900 tracking-tight">Customize Attendance</Text>
++                <Text className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Customize Attendance</Text>
+                 <Text className="text-slate-400 text-xs font-semibold">Set actual values for your subjects</Text>
+               </View>
+               <TouchableOpacity
+                 onPress={() => setShowCustomizeModal(false)}
+-                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
++                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-darkElevated items-center justify-center"
+               >
+-                <Ionicons name="close" size={20} color="#64748B" />
++                <Ionicons name="close" size={20} color={isDark ? '#E4E4E7' : '#64748B'} />
+               </TouchableOpacity>
+             </View>
+ 
+             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+               <View className="pb-8">
+                 {customSubjects.map((sub, idx) => (
+-                  <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl mb-4">
+-                    <Text className="text-slate-800 font-extrabold text-sm mb-3">{sub.subject}</Text>
++                  <View key={idx} className="bg-slate-50 dark:bg-darkElevated border border-slate-100 dark:border-white/[0.08] p-4.5 rounded-2xl mb-4">
++                    <Text className="text-slate-800 dark:text-white font-extrabold text-sm mb-3">{sub.subject}</Text>
+                     
+                     <View className="flex-row justify-between items-center">
+                       {/* Attended classes input */}
+@@ -1952,7 +1949,7 @@ export default function ProfileScreen() {
+                           keyboardType="number-pad"
+                           value={String(sub.attended)}
+                           onChangeText={(val) => handleUpdateCustomSubject(idx, 'attended', val)}
+-                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
++                          className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-slate-800 dark:text-white font-bold text-sm text-center"
+                           placeholder="0"
+                         />
+                       </View>
+@@ -1967,7 +1964,7 @@ export default function ProfileScreen() {
+                           keyboardType="number-pad"
+                           value={String(sub.conducted)}
+                           onChangeText={(val) => handleUpdateCustomSubject(idx, 'conducted', val)}
+-                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
++                          className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-slate-800 dark:text-white font-bold text-sm text-center"
+                           placeholder="0"
+                         />
+                       </View>
+@@ -1978,12 +1975,12 @@ export default function ProfileScreen() {
+             </ScrollView>
+ 
+             {/* Bottom Actions */}
+-            <View className="flex-row gap-3 pt-4 border-t border-slate-100">
++            <View className="flex-row gap-3 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+               <TouchableOpacity
+                 onPress={() => setShowCustomizeModal(false)}
+-                className="flex-1 bg-slate-100 py-3.5 rounded-2xl items-center justify-center"
++                className="flex-1 bg-slate-100 dark:bg-darkElevated py-3.5 rounded-2xl items-center justify-center"
+               >
+-                <Text className="text-slate-500 font-bold text-sm">Cancel</Text>
++                <Text className="text-slate-500 dark:text-slate-400 font-bold text-sm">Cancel</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 onPress={handleSaveCustomStats}
+@@ -2007,29 +2004,29 @@ export default function ProfileScreen() {
+           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+           className="flex-1 bg-black/60 justify-end"
+         >
+-          <View className="bg-white rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
++          <View className="bg-white dark:bg-darkSurface rounded-t-[40px] h-[75%] px-6 pt-6 pb-8 shadow-2xl">
+             {/* Handle Bar */}
+-            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" style={{ alignSelf: 'center' }} />
++            <View className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mb-6" style={{ alignSelf: 'center' }} />
+             
+             {/* Header */}
+             <View className="flex-row justify-between items-center mb-6">
+               <View>
+-                <Text className="text-xl font-black text-slate-900 tracking-tight">Customize Mid Marks</Text>
++                <Text className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Customize Mid Marks</Text>
+                 <Text className="text-slate-400 text-xs font-semibold">Set actual marks out of 30</Text>
+               </View>
+               <TouchableOpacity
+                 onPress={() => setShowCustomizeMarksModal(false)}
+-                className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center"
++                className="w-9 h-9 rounded-full bg-slate-100 dark:bg-darkElevated items-center justify-center"
+               >
+-                <Ionicons name="close" size={20} color="#64748B" />
++                <Ionicons name="close" size={20} color={isDark ? '#E4E4E7' : '#64748B'} />
+               </TouchableOpacity>
+             </View>
+ 
+             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+               <View className="pb-8">
+                 {customMarks.map((sub, idx) => (
+-                  <View key={idx} className="bg-slate-50 border border-slate-100 p-4.5 rounded-2xl mb-4">
+-                    <Text className="text-slate-800 font-extrabold text-sm mb-3">{sub.subject}</Text>
++                  <View key={idx} className="bg-slate-50 dark:bg-darkElevated border border-slate-100 dark:border-white/[0.08] p-4.5 rounded-2xl mb-4">
++                    <Text className="text-slate-800 dark:text-white font-extrabold text-sm mb-3">{sub.subject}</Text>
+                     
+                     <View className="flex-row justify-between items-center">
+                       {/* Mid 1 Input */}
+@@ -2039,7 +2036,7 @@ export default function ProfileScreen() {
+                           keyboardType="number-pad"
+                           value={sub.M1 !== null ? String(sub.M1) : ''}
+                           onChangeText={(val) => handleUpdateCustomMark(idx, 'M1', val)}
+-                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
++                          className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-slate-800 dark:text-white font-bold text-sm text-center"
+                           placeholder="0-30"
+                           maxLength={2}
+                         />
+@@ -2052,7 +2049,7 @@ export default function ProfileScreen() {
+                           keyboardType="number-pad"
+                           value={sub.M2 !== null ? String(sub.M2) : ''}
+                           onChangeText={(val) => handleUpdateCustomMark(idx, 'M2', val)}
+-                          className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold text-sm text-center"
++                          className="bg-white dark:bg-darkSurface border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-slate-800 dark:text-white font-bold text-sm text-center"
+                           placeholder="0-30"
+                           maxLength={2}
+                         />
+@@ -2064,12 +2061,12 @@ export default function ProfileScreen() {
+             </ScrollView>
+ 
+             {/* Bottom Actions */}
+-            <View className="flex-row gap-3 pt-4 border-t border-slate-100">
++            <View className="flex-row gap-3 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+               <TouchableOpacity
+                 onPress={() => setShowCustomizeMarksModal(false)}
+-                className="flex-1 bg-slate-100 py-3.5 rounded-2xl items-center justify-center"
++                className="flex-1 bg-slate-100 dark:bg-darkElevated py-3.5 rounded-2xl items-center justify-center"
+               >
+-                <Text className="text-slate-500 font-bold text-sm">Cancel</Text>
++                <Text className="text-slate-500 dark:text-slate-400 font-bold text-sm">Cancel</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 onPress={handleSaveCustomMarks}
