@@ -1,4 +1,5 @@
 import { uploadToS3 } from './s3Service';
+import { Alert } from 'react-native';
 
 // Fallback imports for Firebase Storage (used if AWS is not configured)
 import { storage } from './firebase';
@@ -8,11 +9,12 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
  * Check if AWS S3 is configured by verifying credentials exist.
  */
 const isS3Configured = (): boolean => {
-  return !!(
+  const isConfigured = !!(
     process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID &&
     process.env.EXPO_PUBLIC_AWS_SECRET_ACCESS_KEY &&
     process.env.EXPO_PUBLIC_AWS_S3_BUCKET
   );
+  return isConfigured;
 };
 
 /**
@@ -61,8 +63,11 @@ export const storageService = {
    * @returns Public download URL of the uploaded image
    */
   async uploadImage(uri: string, path: string): Promise<string> {
+    const isS3 = isS3Configured();
+    console.log('[StorageService] isS3Configured:', isS3);
+    
     // --- AWS S3 Upload ---
-    if (isS3Configured()) {
+    if (isS3) {
       try {
         const contentType = getContentType(uri);
         const key = `${path}.${contentType.split('/')[1] || 'jpg'}`;
@@ -82,6 +87,7 @@ export const storageService = {
         return publicUrl;
       } catch (error: any) {
         console.error('[StorageService] S3 uploadImage error:', error);
+        Alert.alert('S3 Image Upload Error', error.message || error.toString());
         throw new Error(error.message || 'S3 image upload failed');
       }
     }
@@ -100,6 +106,7 @@ export const storageService = {
       return downloadURL;
     } catch (error: any) {
       console.error('[StorageService] Firebase uploadImage error:', error);
+      Alert.alert('Firebase Image Fallback Error', error.message || error.toString());
       throw new Error(error.message || 'Image upload failed');
     }
   },
@@ -112,8 +119,10 @@ export const storageService = {
    * @returns Public download URL of the uploaded file
    */
   async uploadFile(uri: string, path: string, fileName: string): Promise<string> {
+    const isS3 = isS3Configured();
+    
     // --- AWS S3 Upload ---
-    if (isS3Configured()) {
+    if (isS3) {
       try {
         const contentType = getContentType(uri);
         const key = `${path}/${fileName}`;
@@ -133,6 +142,7 @@ export const storageService = {
         return publicUrl;
       } catch (error: any) {
         console.error('[StorageService] S3 uploadFile error:', error);
+        Alert.alert('S3 File Upload Error', error.message || error.toString());
         throw new Error(error.message || 'S3 file upload failed');
       }
     }
@@ -151,6 +161,7 @@ export const storageService = {
       return downloadURL;
     } catch (error: any) {
       console.error('[StorageService] Firebase uploadFile error:', error);
+      Alert.alert('Firebase File Fallback Error', error.message || error.toString());
       throw new Error(error.message || 'File upload failed');
     }
   },
