@@ -20,12 +20,14 @@
 
 import { RekognitionClient, DetectModerationLabelsCommand, DetectLabelsCommand, DetectTextCommand } from '@aws-sdk/client-rekognition';
 import { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand, ListSubscriptionsByTopicCommand } from '@aws-sdk/client-sns';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 // ─── AWS Clients ────────────────────────────────────────────────────────
 const REGION = process.env.AWS_REGION || 'us-east-1';
 
 const rekognitionClient = new RekognitionClient({ region: REGION });
 const snsClient = new SNSClient({ region: REGION });
+const s3Client = new S3Client({ region: REGION });
 
 // ─── SNS Topic ARN (set via environment variable or auto-created) ───────
 let campusTopicArn = process.env.SNS_TOPIC_ARN || null;
@@ -262,51 +264,82 @@ function moderateContent(body) {
 
 /**
  * POST /api/analytics
- * Body: { postId: string, event: 'view' | 'like' | 'share', userId: string }
+ * Body: { postId?: string, event: string, userId: string, metadata?: object }
  * Returns: { success: true }
  */
-function logAnalyticsEvent(body) {
-  const { postId, event, userId } = body;
+async function logAnalyticsEvent(body) {
+  const { postId, event, userId, metadata } = body;
 
-  if (!postId || !event) {
-    return respond(400, { error: 'Missing required fields: postId, event' });
+  if (!event || !userId) {
+    return respond(400, { error: 'Missing required fields: event, userId' });
   }
 
-  if (!['view', 'like', 'share'].includes(event)) {
-    return respond(400, { error: 'Invalid event type. Must be: view, like, or share' });
+  const allowedEvents = [
+    'view', 'like', 'share', 
+    'login', 'signup', 
+    'post_create', 'comment_create', 
+    'profile_update', 'settings_update'
+  ];
+
+  if (!allowedEvents.includes(event)) {
+    return respond(400, { error: `Invalid event type. Supported: ${allowedEvents.join(', ')}` });
   }
 
-  if (!analyticsStore[postId]) {
-    analyticsStore[postId] = { views: 0, likes: 0, shares: 0, uniqueViewers: [] };
-  }
-
-  const stats = analyticsStore[postId];
-
-  switch (event) {
-    case 'view':
+  // 1. Maintain in-memory stats for backward compatibility (GET /api/analytics)
+  if (postId && ['view', 'like', 'share'].includes(event)) {
+    if (!analyticsStore[postId]) {
+      analyticsStore[postId] = { views: 0, likes: 0, shares: 0, uniqueViewers: [] };
+    }
+    const stats = analyticsStore[postId];
+    if (event === 'view') {
       stats.views += 1;
       if (userId && !stats.uniqueViewers.includes(userId)) {
         stats.uniqueViewers.push(userId);
       }
-      break;
-    case 'like':
+    } else if (event === 'like') {
       stats.likes += 1;
-      break;
-    case 'share':
+    } else if (event === 'share') {
       stats.shares += 1;
-      break;
+    }
+  }
+
+  // 2. AWS Data Lake Integration: Write detailed user activity logs to S3 for Athena & QuickSight
+  const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  const payload = {
+    eventId,
+    event,
+    userId,
+    postId: postId || null,
+    timestamp: now.toISOString(),
+    metadata: metadata || {},
+  };
+
+  const bucketName = process.env.AWS_S3_BUCKET || 'campus-connection-app';
+  const s3Key = `analytics/year=${year}/month=${month}/day=${day}/${eventId}.json`;
+
+  try {
+    await s3Client.send(new PutObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+      Body: JSON.stringify(payload),
+      ContentType: 'application/json',
+    }));
+    console.log('[S3] Activity logged to S3:', s3Key);
+  } catch (s3Err) {
+    console.error('[S3] Failed to log user activity to S3:', s3Err);
   }
 
   return respond(200, {
     success: true,
-    postId,
+    eventId,
     event,
-    currentStats: {
-      views: stats.views,
-      likes: stats.likes,
-      shares: stats.shares,
-      uniqueViewers: stats.uniqueViewers.length,
-    },
+    userId,
+    s3Logged: true
   });
 }
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 import { authService } from '../services/authService';
+import { lambdaApiService, isLambdaConfigured } from '../services/lambdaApiService';
 
 interface AuthState {
   currentUser: User | null;
@@ -30,6 +31,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
+
+        // Log login event to AWS Data Lake
+        if (isLambdaConfigured()) {
+          lambdaApiService.logEvent(null, 'login', userData.uid, {
+            email: userData.email,
+            department: userData.department || 'Unspecified',
+            year: userData.year || 'Unspecified',
+          }).catch(() => {});
+        }
       } else {
         throw new Error('User profile not found');
       }
@@ -48,6 +58,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (userData) {
         await AsyncStorage.setItem('user', JSON.stringify(userData));
         set({ currentUser: userData, isAuthenticated: true, isLoading: false });
+
+        // Log signup event to AWS Data Lake
+        if (isLambdaConfigured()) {
+          lambdaApiService.logEvent(null, 'signup', userData.uid, {
+            email: userData.email,
+            department: userData.department || 'Unspecified',
+            year: userData.year || 'Unspecified',
+          }).catch(() => {});
+        }
       } else {
         throw new Error('Failed to create user profile');
       }
@@ -80,7 +99,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       await authService.updateUserProfile(currentUser.uid, updates);
-      // Firestore write succeeded; onSnapshot listener will also confirm
+      // Log profile update event to AWS Data Lake
+      if (isLambdaConfigured()) {
+        lambdaApiService.logEvent(null, 'profile_update', currentUser.uid, {
+          updatedFields: Object.keys(updates),
+        }).catch(() => {});
+      }
     } catch {
       // Revert optimistic update on failure
       set({ currentUser });

@@ -131,7 +131,17 @@ export const postService = {
 
       // ── Step 4: Log analytics event via Lambda ──
       if (isLambdaConfigured()) {
-        lambdaApiService.logEvent(postRef.id, 'view', authorId).catch(() => {});
+        lambdaApiService.logEvent(
+          postRef.id, 
+          'post_create', 
+          authorId, 
+          { 
+            hasImage: !!imageUrl, 
+            hasFile: !!fileUrl, 
+            tagsCount: allTags.length, 
+            contentLength: content?.length || 0 
+          }
+        ).catch(() => {});
       }
 
       return postRef.id;
@@ -193,6 +203,10 @@ export const postService = {
       await updateDoc(doc(db, 'posts', postId), {
         likes: arrayUnion(userId),
       });
+
+      if (isLambdaConfigured()) {
+        lambdaApiService.logEvent(postId, 'like', userId).catch(() => {});
+      }
     } catch (error: any) {
       throw new Error(error.message || 'Failed to like post');
     }
@@ -227,6 +241,10 @@ export const postService = {
       await updateDoc(doc(db, 'posts', postId), {
         commentsCount: increment(1),
       });
+
+      if (isLambdaConfigured()) {
+        lambdaApiService.logEvent(postId, 'comment_create', authorId, { textLength: text?.length || 0 }).catch(() => {});
+      }
 
       return commentRef.id;
     } catch (error: any) {

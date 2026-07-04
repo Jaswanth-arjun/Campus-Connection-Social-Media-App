@@ -157,16 +157,17 @@ export const lambdaApiService = {
   },
 
   /**
-   * Log a post engagement event (view, like, share).
+   * Log a user activity or post engagement event (view, like, login, signup, etc.).
    */
   async logEvent(
-    postId: string,
-    event: 'view' | 'like' | 'share',
-    userId?: string
-  ): Promise<{ success: boolean }> {
+    postId: string | null,
+    event: 'view' | 'like' | 'share' | 'login' | 'signup' | 'post_create' | 'comment_create' | 'profile_update' | 'settings_update',
+    userId: string,
+    metadata?: object
+  ): Promise<{ success: boolean; eventId: string }> {
     return apiRequest('/api/analytics', {
       method: 'POST',
-      body: JSON.stringify({ postId, event, userId }),
+      body: JSON.stringify({ postId, event, userId, metadata }),
     });
   },
 
