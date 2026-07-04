@@ -21,6 +21,12 @@ const isS3Configured = (): boolean => {
  * Detect content type from URI extension
  */
 const getContentType = (uri: string): string => {
+  if (uri.startsWith('data:')) {
+    const match = uri.match(/^data:([^;]+);/);
+    if (match) {
+      return match[1];
+    }
+  }
   const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
   const contentTypeMap: Record<string, string> = {
     jpg: 'image/jpeg',
