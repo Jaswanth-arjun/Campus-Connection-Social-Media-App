@@ -11,6 +11,15 @@ interface S3UploadOptions {
   contentType: string;
 }
 
+export interface S3DeleteOptions {
+  bucket: string;
+  key: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
+}
+
 /**
  * URI encode according to AWS specifications.
  */
@@ -181,4 +190,78 @@ export async function uploadToS3(options: S3UploadOptions): Promise<string> {
   }
 
   return url;
+}
+
+/**
+ * Delete a file from AWS S3 using pure JS fetch and Signature Version 4.
+ */
+export async function deleteFromS3(options: S3DeleteOptions): Promise<void> {
+  const { bucket, key, region, accessKeyId, secretAccessKey, sessionToken } = options;
+
+  const host = `${bucket}.s3.${region}.amazonaws.com`;
+  const url = `https://${host}/${key}`;
+
+  const { datetime, dateStamp } = getAmzDates();
+
+  // Define S3 headers
+  const headers: Record<string, string> = {
+    'host': host,
+    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+    'x-amz-date': datetime,
+  };
+
+  if (sessionToken) {
+    headers['x-amz-security-token'] = sessionToken;
+  }
+
+  // Sort and canonicalize headers
+  const sortedHeaderKeys = Object.keys(headers).sort();
+  const canonicalHeaders = sortedHeaderKeys
+    .map(k => `${k}:${headers[k].trim()}`)
+    .join('\n') + '\n';
+
+  const signedHeaders = sortedHeaderKeys.join(';');
+
+  // Create canonical request
+  const canonicalRequest = [
+    'DELETE',
+    getCanonicalURI(key),
+    '', // canonical query string
+    canonicalHeaders,
+    signedHeaders,
+    'UNSIGNED-PAYLOAD'
+  ].join('\n');
+
+  // Create string to sign
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  const hashedCanonicalRequest = sha256(canonicalRequest);
+  
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    datetime,
+    credentialScope,
+    hashedCanonicalRequest
+  ].join('\n');
+
+  // Generate signature
+  const signingKey = getSignatureKey(secretAccessKey, dateStamp, region, 's3');
+  const signature = sha256.hmac.create(signingKey).update(stringToSign).hex();
+
+  // Assemble ultimate authorization header
+  const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  // Send request using standard fetch
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      ...headers,
+      'Authorization': authorizationHeader,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[s3Service] S3 direct delete failed:', errorText);
+    throw new Error(`S3 delete responded with status ${response.status}: ${errorText}`);
+  }
 }

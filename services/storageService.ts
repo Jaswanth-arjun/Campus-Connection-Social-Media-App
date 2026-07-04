@@ -71,13 +71,6 @@ export const storageService = {
   async uploadImage(uri: string, path: string): Promise<string> {
     const isS3 = isS3Configured();
     
-    // === DEBUG ALERT — REMOVE AFTER TESTING ===
-    Alert.alert(
-      '🔍 Upload Debug Info',
-      `S3 Configured: ${isS3}\nBucket: ${process.env.EXPO_PUBLIC_AWS_S3_BUCKET || 'NOT SET'}\nRegion: ${process.env.EXPO_PUBLIC_AWS_REGION || 'NOT SET'}\nAccess Key: ${process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID ? 'SET (' + process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID.substring(0, 6) + '...)' : 'NOT SET'}\nSession Token: ${process.env.EXPO_PUBLIC_AWS_SESSION_TOKEN ? 'SET' : 'NOT SET'}\nPath: ${isS3 ? 'S3' : 'Firebase'}`
-    );
-    // === END DEBUG ===
-    
     // --- AWS S3 Upload ---
     if (isS3) {
       try {
@@ -96,7 +89,6 @@ export const storageService = {
         });
 
         console.log('[StorageService] S3 upload success:', publicUrl);
-        Alert.alert('✅ S3 Upload Success', publicUrl);
         return publicUrl;
       } catch (error: any) {
         console.error('[StorageService] S3 uploadImage error:', error);
@@ -176,6 +168,47 @@ export const storageService = {
       console.error('[StorageService] Firebase uploadFile error:', error);
       Alert.alert('Firebase File Fallback Error', error.message || error.toString());
       throw new Error(error.message || 'File upload failed');
+    }
+  },
+
+  /**
+   * Delete a file from S3 or Firebase Storage based on its URL.
+   */
+  async deleteFile(fileUrl: string): Promise<void> {
+    if (!fileUrl) return;
+
+    const isS3Url = fileUrl.includes('.amazonaws.com');
+    
+    if (isS3Url) {
+      if (isS3Configured()) {
+        try {
+          const urlParts = fileUrl.split('.amazonaws.com/');
+          if (urlParts.length < 2) return;
+          const key = decodeURIComponent(urlParts[1]);
+
+          const { deleteFromS3 } = require('./s3Service');
+          await deleteFromS3({
+            bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET!,
+            key,
+            region: process.env.EXPO_PUBLIC_AWS_REGION || 'us-east-1',
+            accessKeyId: process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET_ACCESS_KEY!,
+            sessionToken: process.env.EXPO_PUBLIC_AWS_SESSION_TOKEN,
+          });
+          console.log('[StorageService] Successfully deleted S3 object:', key);
+        } catch (error) {
+          console.error('[StorageService] Failed S3 object deletion:', error);
+        }
+      }
+    } else if (fileUrl.includes('firebasestorage.googleapis.com')) {
+      try {
+        const { deleteObject, ref: storageRef } = require('firebase/storage');
+        const fileRef = storageRef(storage, fileUrl);
+        await deleteObject(fileRef);
+        console.log('[StorageService] Successfully deleted Firebase Storage object:', fileUrl);
+      } catch (error) {
+        console.error('[StorageService] Failed Firebase Storage object deletion:', error);
+      }
     }
   },
 };

@@ -41,7 +41,6 @@ export const postService = {
       if (imageUri) {
         try {
           imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
-          Alert.alert('✅ Upload Success', `Image uploaded to: ${imageUrl.substring(0, 100)}...`);
         } catch (uploadErr: any) {
           Alert.alert('❌ Post Image Upload Failed', uploadErr.message || uploadErr.toString());
           // Fallback to direct URI if upload fails
@@ -260,7 +259,24 @@ export const postService = {
 
   async deletePost(postId: string): Promise<void> {
     try {
-      await deleteDoc(doc(db, 'posts', postId));
+      const postRef = doc(db, 'posts', postId);
+      const postSnap = await getDoc(postRef);
+      
+      if (postSnap.exists()) {
+        const postData = postSnap.data();
+        
+        // Delete image from storage if exists
+        if (postData.imageUrl) {
+          await storageService.deleteFile(postData.imageUrl);
+        }
+        
+        // Delete attached file from storage if exists
+        if (postData.fileUrl) {
+          await storageService.deleteFile(postData.fileUrl);
+        }
+      }
+
+      await deleteDoc(postRef);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to delete post');
     }
