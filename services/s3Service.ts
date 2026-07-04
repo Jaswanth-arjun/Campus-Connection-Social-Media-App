@@ -143,12 +143,23 @@ export async function uploadToS3(options: S3UploadOptions): Promise<string> {
   // Assemble ultimate authorization header
   const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-  // Read binary data using expo-file-system
-  // Using XMLHttpRequest is another option, but FileSystem is cleaner for base64 conversions
-  const FileSystem = require('expo-file-system');
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  // Read binary data — handle both data: URIs and file:// URIs
+  let base64: string;
+  
+  if (uri.startsWith('data:')) {
+    // Extract base64 from data URI (e.g., "data:image/jpeg;base64,/9j/4AAQ...")
+    const commaIndex = uri.indexOf(',');
+    if (commaIndex === -1) {
+      throw new Error('Invalid data URI format');
+    }
+    base64 = uri.substring(commaIndex + 1);
+  } else {
+    // Read from local file using expo-file-system
+    const FileSystem = require('expo-file-system');
+    base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  }
   
   // Convert base64 to binary bytes using our pure JS decoder
   const bytes = base64ToUint8Array(base64);

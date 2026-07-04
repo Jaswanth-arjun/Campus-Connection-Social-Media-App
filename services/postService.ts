@@ -39,31 +39,22 @@ export const postService = {
       let fileUrl = '';
 
       if (imageUri) {
-        if (imageUri.startsWith('data:')) {
+        try {
+          imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
+          Alert.alert('✅ Upload Success', `Image uploaded to: ${imageUrl.substring(0, 100)}...`);
+        } catch (uploadErr: any) {
+          Alert.alert('❌ Post Image Upload Failed', uploadErr.message || uploadErr.toString());
+          // Fallback to direct URI if upload fails
           imageUrl = imageUri;
-        } else {
-          try {
-            imageUrl = await storageService.uploadImage(imageUri, `posts/${Date.now()}`);
-            Alert.alert('✅ Upload Success', `Image uploaded to: ${imageUrl.substring(0, 80)}...`);
-          } catch (uploadErr: any) {
-            // === DEBUG — shows exact error on device ===
-            Alert.alert('❌ Post Image Upload Failed', uploadErr.message || uploadErr.toString());
-            // Fallback to direct URI
-            imageUrl = imageUri;
-          }
         }
       }
 
       if (fileUri && fileName) {
-        if (fileUri.startsWith('data:')) {
+        try {
+          fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
+        } catch (uploadErr: any) {
+          Alert.alert('❌ Post File Upload Failed', uploadErr.message || uploadErr.toString());
           fileUrl = fileUri;
-        } else {
-          try {
-            fileUrl = await storageService.uploadFile(fileUri, 'files', fileName);
-          } catch (uploadErr: any) {
-            Alert.alert('❌ Post File Upload Failed', uploadErr.message || uploadErr.toString());
-            fileUrl = fileUri;
-          }
         }
       }
 
