@@ -47,6 +47,43 @@ function getSignatureKey(key: string, dateStamp: string, regionName: string, ser
 }
 
 /**
+ * Pure JavaScript base64 to Uint8Array decoder (since atob is not defined in React Native).
+ */
+function base64ToUint8Array(base64: string): Uint8Array {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const lookup = new Uint8Array(256);
+  for (let i = 0; i < chars.length; i++) {
+    lookup[chars.charCodeAt(i)] = i;
+  }
+  
+  let bufferLength = base64.length * 0.75;
+  if (base64[base64.length - 1] === '=') {
+    bufferLength--;
+    if (base64[base64.length - 2] === '=') {
+      bufferLength--;
+    }
+  }
+  
+  const bytes = new Uint8Array(bufferLength);
+  let p = 0;
+  for (let i = 0; i < base64.length; i += 4) {
+    const base64n1 = lookup[base64.charCodeAt(i)];
+    const base64n2 = lookup[base64.charCodeAt(i + 1)];
+    const base64n3 = lookup[base64.charCodeAt(i + 2)];
+    const base64n4 = lookup[base64.charCodeAt(i + 3)];
+    
+    bytes[p++] = (base64n1 << 2) | (base64n2 >> 4);
+    if (p < bufferLength) {
+      bytes[p++] = ((base64n2 & 15) << 4) | (base64n3 >> 2);
+    }
+    if (p < bufferLength) {
+      bytes[p++] = ((base64n3 & 3) << 6) | (base64n4 & 63);
+    }
+  }
+  return bytes;
+}
+
+/**
  * Upload a file directly to AWS S3 using pure JS fetch and Signature Version 4.
  * This completely avoids importing any heavy AWS SDK node-dependent packages.
  */
@@ -113,12 +150,8 @@ export async function uploadToS3(options: S3UploadOptions): Promise<string> {
     encoding: FileSystem.EncodingType.Base64,
   });
   
-  // Convert base64 to binary blob
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+  // Convert base64 to binary bytes using our pure JS decoder
+  const bytes = base64ToUint8Array(base64);
 
   // Send request using standard fetch
   const response = await fetch(url, {
