@@ -2,28 +2,45 @@
  * Campus Connect — AWS Lambda Function
  * 
  * Handles multiple API Gateway routes:
- *   POST /api/moderate        → Content moderation (checks post text)
- *   POST /api/analyze-image   → Amazon Rekognition AI (image moderation + auto-tags + OCR)
- *   POST /api/analytics       → Log post engagement events
- *   GET  /api/analytics       → Retrieve post engagement stats
- *   POST /api/announcements   → Create campus-wide announcement
- *   GET  /api/announcements   → Get announcements
- *   GET  /api/health          → Health check
+ *   POST /api/moderate          → Content moderation (checks post text)
+ *   POST /api/analyze-image     → Amazon Rekognition AI (image moderation + auto-tags + OCR)
+ *   POST /api/notifications/register  → Register device push token (Amazon SNS)
+ *   POST /api/notifications/send      → Send targeted push notification (Amazon SNS)
+ *   POST /api/notifications/broadcast → Campus-wide broadcast via SNS Topic
+ *   GET  /api/notifications/stats     → Get notification delivery stats
+ *   POST /api/analytics         → Log post engagement events
+ *   GET  /api/analytics         → Retrieve post engagement stats
+ *   POST /api/announcements     → Create campus-wide announcement
+ *   GET  /api/announcements     → Get announcements
+ *   GET  /api/health            → Health check
  *
  * Runtime: Node.js 18.x (ES Modules)
  * AWS SDK v3 is included in Lambda runtime by default.
  */
 
 import { RekognitionClient, DetectModerationLabelsCommand, DetectLabelsCommand, DetectTextCommand } from '@aws-sdk/client-rekognition';
+import { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand, ListSubscriptionsByTopicCommand } from '@aws-sdk/client-sns';
 
-// ─── AWS Rekognition Client ─────────────────────────────────────────────
-const rekognitionClient = new RekognitionClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+// ─── AWS Clients ────────────────────────────────────────────────────────
+const REGION = process.env.AWS_REGION || 'us-east-1';
+
+const rekognitionClient = new RekognitionClient({ region: REGION });
+const snsClient = new SNSClient({ region: REGION });
+
+// ─── SNS Topic ARN (set via environment variable or auto-created) ───────
+let campusTopicArn = process.env.SNS_TOPIC_ARN || null;
 
 // ─── In-memory store (use DynamoDB for production persistence) ────────────
 const analyticsStore = {};   // { postId: { views: N, likes: N, shares: N } }
 const announcements  = [];   // [{ id, title, body, authorName, createdAt }]
+
+// ─── Push Token Registry (in-memory; use DynamoDB for production) ────────
+// { userId: { token: string, platform: string, registeredAt: string } }
+const pushTokenStore = {};
+
+// ─── Notification History (in-memory log) ────────────────────────────────
+const notificationHistory = [];  // [{ id, type, title, body, recipients, sentAt, snsMessageId }]
+let notificationStats = { totalSent: 0, totalBroadcasts: 0, totalRegistered: 0 };
 
 // ─── Banned / Flagged Words List ─────────────────────────────────────────
 const BANNED_WORDS = [
@@ -397,6 +414,246 @@ function healthCheck() {
   });
 }
 
+// ─── Amazon SNS Notification Handlers ────────────────────────────────────
+
+/**
+ * Ensure the campus SNS topic exists. Creates it on first call.
+ */
+async function ensureSNSTopic() {
+  if (campusTopicArn) return campusTopicArn;
+
+  try {
+    const result = await snsClient.send(
+      new CreateTopicCommand({ Name: 'CampusConnect-Notifications' })
+    );
+    campusTopicArn = result.TopicArn;
+    console.log('[SNS] Topic created/found:', campusTopicArn);
+    return campusTopicArn;
+  } catch (err) {
+    console.error('[SNS] Failed to create topic:', err);
+    throw err;
+  }
+}
+
+/**
+ * POST /api/notifications/register
+ * Body: { userId: string, pushToken: string, platform?: string }
+ * Registers a device push token and subscribes the user's email to the SNS topic.
+ */
+async function registerPushToken(body) {
+  const { userId, pushToken, platform, email } = body;
+
+  if (!userId || !pushToken) {
+    return respond(400, { error: 'Missing required fields: userId, pushToken' });
+  }
+
+  // Store the push token
+  pushTokenStore[userId] = {
+    token: pushToken,
+    platform: platform || 'android',
+    registeredAt: new Date().toISOString(),
+  };
+  notificationStats.totalRegistered = Object.keys(pushTokenStore).length;
+
+  // Subscribe email to SNS topic (if provided)
+  let snsSubscription = null;
+  if (email) {
+    try {
+      const topicArn = await ensureSNSTopic();
+      const subResult = await snsClient.send(
+        new SubscribeCommand({
+          TopicArn: topicArn,
+          Protocol: 'email',
+          Endpoint: email,
+        })
+      );
+      snsSubscription = subResult.SubscriptionArn;
+    } catch (err) {
+      console.warn('[SNS] Email subscription failed:', err.message);
+    }
+  }
+
+  return respond(200, {
+    success: true,
+    message: 'Push token registered successfully.',
+    userId,
+    snsSubscription,
+    totalRegistered: notificationStats.totalRegistered,
+  });
+}
+
+/**
+ * POST /api/notifications/send
+ * Body: { targetUserId: string, title: string, body: string, type: string, data?: object }
+ * Sends a targeted push notification to a specific user via SNS.
+ */
+async function sendNotification(body) {
+  const { targetUserId, title, body: notifBody, type, data } = body;
+
+  if (!targetUserId || !title || !notifBody) {
+    return respond(400, { error: 'Missing required fields: targetUserId, title, body' });
+  }
+
+  const targetDevice = pushTokenStore[targetUserId];
+  if (!targetDevice) {
+    return respond(404, { error: `No registered device for user: ${targetUserId}` });
+  }
+
+  // Build the SNS message payload
+  const snsMessage = JSON.stringify({
+    notification: { title, body: notifBody, type: type || 'general' },
+    data: data || {},
+    targetUser: targetUserId,
+    pushToken: targetDevice.token,
+    timestamp: new Date().toISOString(),
+  });
+
+  try {
+    const topicArn = await ensureSNSTopic();
+    const publishResult = await snsClient.send(
+      new PublishCommand({
+        TopicArn: topicArn,
+        Message: snsMessage,
+        Subject: `[Campus Connect] ${title}`,
+        MessageAttributes: {
+          notificationType: { DataType: 'String', StringValue: type || 'general' },
+          targetUserId: { DataType: 'String', StringValue: targetUserId },
+        },
+      })
+    );
+
+    const record = {
+      id: `notif_${Date.now()}`,
+      type: type || 'general',
+      title,
+      body: notifBody,
+      recipients: [targetUserId],
+      sentAt: new Date().toISOString(),
+      snsMessageId: publishResult.MessageId,
+    };
+    notificationHistory.unshift(record);
+    if (notificationHistory.length > 100) notificationHistory.length = 100;
+    notificationStats.totalSent += 1;
+
+    // Also send via Expo Push API for instant device delivery
+    await sendExpoPush(targetDevice.token, title, notifBody, data);
+
+    return respond(200, {
+      success: true,
+      message: 'Notification sent successfully.',
+      snsMessageId: publishResult.MessageId,
+      deliveredTo: targetUserId,
+    });
+  } catch (err) {
+    console.error('[SNS] Send notification failed:', err);
+    return respond(500, { error: 'Failed to send notification', details: err.message });
+  }
+}
+
+/**
+ * POST /api/notifications/broadcast
+ * Body: { title: string, body: string, type?: string, senderName?: string }
+ * Sends a campus-wide broadcast to ALL registered devices via SNS Topic.
+ */
+async function broadcastNotification(body) {
+  const { title, body: broadcastBody, type, senderName } = body;
+
+  if (!title || !broadcastBody) {
+    return respond(400, { error: 'Missing required fields: title, body' });
+  }
+
+  const registeredUsers = Object.keys(pushTokenStore);
+
+  try {
+    const topicArn = await ensureSNSTopic();
+
+    // Publish broadcast to SNS Topic
+    const publishResult = await snsClient.send(
+      new PublishCommand({
+        TopicArn: topicArn,
+        Message: JSON.stringify({
+          notification: { title, body: broadcastBody, type: type || 'announcement' },
+          sender: senderName || 'Campus Admin',
+          broadcast: true,
+          timestamp: new Date().toISOString(),
+        }),
+        Subject: `[Campus Broadcast] ${title}`,
+      })
+    );
+
+    // Send push to all registered devices
+    const pushPromises = registeredUsers.map((userId) => {
+      const device = pushTokenStore[userId];
+      return sendExpoPush(device.token, `📢 ${title}`, broadcastBody, { type: 'broadcast' });
+    });
+    await Promise.allSettled(pushPromises);
+
+    const record = {
+      id: `broadcast_${Date.now()}`,
+      type: 'broadcast',
+      title,
+      body: broadcastBody,
+      recipients: registeredUsers,
+      sentAt: new Date().toISOString(),
+      snsMessageId: publishResult.MessageId,
+    };
+    notificationHistory.unshift(record);
+    notificationStats.totalBroadcasts += 1;
+
+    return respond(200, {
+      success: true,
+      message: `Broadcast sent to ${registeredUsers.length} registered device(s).`,
+      snsMessageId: publishResult.MessageId,
+      recipientCount: registeredUsers.length,
+    });
+  } catch (err) {
+    console.error('[SNS] Broadcast failed:', err);
+    return respond(500, { error: 'Broadcast failed', details: err.message });
+  }
+}
+
+/**
+ * GET /api/notifications/stats
+ * Returns notification delivery statistics.
+ */
+function getNotificationStats() {
+  return respond(200, {
+    stats: notificationStats,
+    registeredDevices: Object.keys(pushTokenStore).length,
+    recentNotifications: notificationHistory.slice(0, 10),
+  });
+}
+
+/**
+ * Helper: Send push notification via Expo Push API.
+ * This is called after SNS publish to deliver to the actual device.
+ */
+async function sendExpoPush(expoPushToken, title, body, data = {}) {
+  if (!expoPushToken || !expoPushToken.startsWith('ExponentPushToken')) {
+    console.warn('[Push] Invalid Expo push token:', expoPushToken);
+    return;
+  }
+
+  try {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: expoPushToken,
+        sound: 'default',
+        title,
+        body,
+        data,
+      }),
+    });
+    const result = await response.json();
+    console.log('[Push] Expo push result:', JSON.stringify(result));
+    return result;
+  } catch (err) {
+    console.error('[Push] Expo push failed:', err.message);
+  }
+}
+
 // ─── Main Handler (Lambda entry point) ──────────────────────────────────
 export const handler = async (event) => {
   console.log('[Lambda] Incoming request:', JSON.stringify({
@@ -426,6 +683,15 @@ export const handler = async (event) => {
 
   // Route requests
   try {
+    // --- /api/notifications/* (Amazon SNS Push Notifications) ---
+    if (path.includes('/notifications')) {
+      if (path.endsWith('/register') && method === 'POST') return await registerPushToken(body);
+      if (path.endsWith('/send') && method === 'POST')     return await sendNotification(body);
+      if (path.endsWith('/broadcast') && method === 'POST') return await broadcastNotification(body);
+      if (path.endsWith('/stats') && method === 'GET')     return getNotificationStats();
+      return respond(405, { error: 'Invalid notification endpoint. Use: /register, /send, /broadcast, or /stats' });
+    }
+
     // --- /api/analyze-image (Rekognition AI) ---
     if (path.endsWith('/analyze-image')) {
       if (method === 'POST') return await analyzeImage(body);
@@ -461,7 +727,11 @@ export const handler = async (event) => {
     return respond(404, {
       error: 'Route not found',
       availableRoutes: [
-        'POST /api/analyze-image   ← Rekognition AI (image moderation + auto-tags + OCR)',
+        'POST /api/notifications/register   ← Register device push token (Amazon SNS)',
+        'POST /api/notifications/send       ← Send targeted notification (Amazon SNS)',
+        'POST /api/notifications/broadcast  ← Campus-wide broadcast (Amazon SNS Topic)',
+        'GET  /api/notifications/stats      ← Notification delivery stats',
+        'POST /api/analyze-image            ← Rekognition AI',
         'POST /api/moderate',
         'POST /api/analytics',
         'GET  /api/analytics',

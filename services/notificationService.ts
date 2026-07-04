@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { Notification } from '../types';
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import { lambdaApiService, isLambdaConfigured } from './lambdaApiService';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -41,6 +43,12 @@ export const notificationService = {
         isRead: false,
         createdAt: serverTimestamp(),
       } as Omit<Notification, 'id' | 'createdAt'> & { createdAt: any });
+
+      // Send real-time push via Amazon SNS (fire-and-forget)
+      if (isLambdaConfigured()) {
+        lambdaApiService.sendNotification(userId, title, body, type, { referenceId })
+          .catch((err) => console.warn('[SNS] Push delivery failed:', err.message));
+      }
 
       return notificationRef.id;
     } catch (error: any) {
@@ -153,6 +161,46 @@ export const notificationService = {
     }
   },
 
+  /**
+   * Register the device's push token with the Amazon SNS backend.
+   * This enables server-side push notifications via AWS Lambda + SNS.
+   * Call this once on app startup after user is authenticated.
+   */
+  async registerWithSNS(userId: string, email?: string): Promise<boolean> {
+    try {
+      // Request notification permissions
+      const granted = await this.requestPermissions();
+      if (!granted) {
+        console.warn('[SNS] Notification permissions not granted');
+        return false;
+      }
+
+      // Get the Expo push token
+      const pushToken = await this.getExpoPushToken();
+      if (!pushToken) {
+        console.warn('[SNS] Could not get Expo push token');
+        return false;
+      }
+
+      // Register token with Lambda/SNS backend
+      if (isLambdaConfigured()) {
+        const result = await lambdaApiService.registerPushToken(
+          userId,
+          pushToken,
+          Platform.OS,
+          email
+        );
+        console.log('[SNS] Push token registered:', result.message);
+        return result.success;
+      }
+
+      return false;
+    } catch (error: any) {
+      console.error('[SNS] Registration failed:', error.message);
+      return false;
+    }
+  },
+
   async scheduleLocalNotification(title: string, body: string, data?: any): Promise<void> {
     try {
       await Notifications.scheduleNotificationAsync({
@@ -168,3 +216,4 @@ export const notificationService = {
     }
   },
 };
+

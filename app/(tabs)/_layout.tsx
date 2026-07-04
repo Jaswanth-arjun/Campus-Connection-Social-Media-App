@@ -7,6 +7,7 @@ import { useNotificationStore } from '../../store/notificationStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { auth } from '../../services/firebase';
+import { notificationService } from '../../services/notificationService';
 
 export default function TabLayout() {
   const { unreadCount, fetchNotifications } = useNotificationStore();
@@ -16,6 +17,12 @@ export default function TabLayout() {
   useEffect(() => {
     if (currentUser) {
       fetchNotifications(currentUser.uid);
+
+      // Register push token with Amazon SNS backend for real-time notifications
+      notificationService.registerWithSNS(
+        currentUser.uid,
+        currentUser.email || undefined
+      ).catch((err) => console.warn('[Layout] SNS registration skipped:', err.message));
     }
   }, [currentUser, fetchNotifications]);
 

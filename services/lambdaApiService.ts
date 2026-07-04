@@ -212,4 +212,65 @@ export const lambdaApiService = {
       method: 'GET',
     });
   },
+
+  // ─── Amazon SNS Push Notification Methods ───────────────────────────
+
+  /**
+   * Register a device's Expo push token with the SNS backend.
+   * Called on app startup after requesting notification permissions.
+   */
+  async registerPushToken(
+    userId: string,
+    pushToken: string,
+    platform: string = 'android',
+    email?: string
+  ): Promise<{ success: boolean; message: string; snsSubscription?: string }> {
+    return apiRequest('/api/notifications/register', {
+      method: 'POST',
+      body: JSON.stringify({ userId, pushToken, platform, email }),
+    });
+  },
+
+  /**
+   * Send a targeted push notification to a specific user via Amazon SNS.
+   */
+  async sendNotification(
+    targetUserId: string,
+    title: string,
+    body: string,
+    type: string = 'general',
+    data?: object
+  ): Promise<{ success: boolean; snsMessageId: string }> {
+    return apiRequest('/api/notifications/send', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserId, title, body, type, data }),
+    });
+  },
+
+  /**
+   * Send a campus-wide broadcast notification to all registered devices via SNS Topic.
+   */
+  async broadcastNotification(
+    title: string,
+    body: string,
+    senderName?: string
+  ): Promise<{ success: boolean; snsMessageId: string; recipientCount: number }> {
+    return apiRequest('/api/notifications/broadcast', {
+      method: 'POST',
+      body: JSON.stringify({ title, body, senderName }),
+    });
+  },
+
+  /**
+   * Get notification delivery stats from the SNS backend.
+   */
+  async getNotificationStats(): Promise<{
+    stats: { totalSent: number; totalBroadcasts: number; totalRegistered: number };
+    registeredDevices: number;
+    recentNotifications: any[];
+  }> {
+    return apiRequest('/api/notifications/stats', {
+      method: 'GET',
+    });
+  },
 };
