@@ -1,6 +1,4 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client, S3_BUCKET_NAME, getS3PublicUrl } from '../config/aws';
-import * as FileSystem from 'expo-file-system';
+import { uploadToS3 } from './s3Service';
 
 // Fallback imports for Firebase Storage (used if AWS is not configured)
 import { storage } from './firebase';
@@ -18,23 +16,9 @@ const isS3Configured = (): boolean => {
 };
 
 /**
- * Convert a local file URI to a Uint8Array for S3 upload.
- * Uses expo-file-system for reliable file reading in React Native.
+ * Detect content type from URI extension
  */
-const fileToUint8Array = async (uri: string): Promise<{ data: Uint8Array; contentType: string }> => {
-  // Read file as base64 using expo-file-system
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  // Convert base64 to Uint8Array
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-
-  // Detect content type from URI extension
+const getContentType = (uri: string): string => {
   const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
   const contentTypeMap: Record<string, string> = {
     jpg: 'image/jpeg',
@@ -47,9 +31,7 @@ const fileToUint8Array = async (uri: string): Promise<{ data: Uint8Array; conten
     doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   };
-
-  const contentType = contentTypeMap[extension] || 'application/octet-stream';
-  return { data: bytes, contentType };
+  return contentTypeMap[extension] || 'application/octet-stream';
 };
 
 /**
@@ -82,20 +64,20 @@ export const storageService = {
     // --- AWS S3 Upload ---
     if (isS3Configured()) {
       try {
-        const { data, contentType } = await fileToUint8Array(uri);
+        const contentType = getContentType(uri);
         const key = `${path}.${contentType.split('/')[1] || 'jpg'}`;
 
-        const command = new PutObjectCommand({
-          Bucket: S3_BUCKET_NAME,
-          Key: key,
-          Body: data,
-          ContentType: contentType,
-          // Make the object publicly readable
-          ACL: 'public-read',
+        const publicUrl = await uploadToS3({
+          uri,
+          bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET!,
+          key,
+          region: process.env.EXPO_PUBLIC_AWS_REGION || 'us-east-1',
+          accessKeyId: process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET_ACCESS_KEY!,
+          sessionToken: process.env.EXPO_PUBLIC_AWS_SESSION_TOKEN,
+          contentType,
         });
 
-        await s3Client.send(command);
-        const publicUrl = getS3PublicUrl(key);
         console.log('[StorageService] S3 upload success:', publicUrl);
         return publicUrl;
       } catch (error: any) {
@@ -133,21 +115,20 @@ export const storageService = {
     // --- AWS S3 Upload ---
     if (isS3Configured()) {
       try {
-        const { data, contentType } = await fileToUint8Array(uri);
+        const contentType = getContentType(uri);
         const key = `${path}/${fileName}`;
 
-        const command = new PutObjectCommand({
-          Bucket: S3_BUCKET_NAME,
-          Key: key,
-          Body: data,
-          ContentType: contentType,
-          ACL: 'public-read',
-          // Set content disposition so files download with correct name
-          ContentDisposition: `inline; filename="${fileName}"`,
+        const publicUrl = await uploadToS3({
+          uri,
+          bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET!,
+          key,
+          region: process.env.EXPO_PUBLIC_AWS_REGION || 'us-east-1',
+          accessKeyId: process.env.EXPO_PUBLIC_AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET_ACCESS_KEY!,
+          sessionToken: process.env.EXPO_PUBLIC_AWS_SESSION_TOKEN,
+          contentType,
         });
 
-        await s3Client.send(command);
-        const publicUrl = getS3PublicUrl(key);
         console.log('[StorageService] S3 file upload success:', publicUrl);
         return publicUrl;
       } catch (error: any) {
