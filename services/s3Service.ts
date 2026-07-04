@@ -98,7 +98,6 @@ export async function uploadToS3(options: S3UploadOptions): Promise<string> {
   // Define S3 headers
   const headers: Record<string, string> = {
     'host': host,
-    'x-amz-acl': 'public-read',
     'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
     'x-amz-date': datetime,
   };
