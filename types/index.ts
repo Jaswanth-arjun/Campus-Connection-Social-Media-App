@@ -44,6 +44,13 @@ export interface Comment {
   createdAt: Date;
 }
 
+export interface CustomField {
+  id: string;
+  name: string;
+  type: 'text' | 'options' | 'checkbox' | 'image';
+  options?: string[];
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -55,7 +62,7 @@ export interface Event {
   category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other';
   registeredUsers: string[];
   createdAt: Date;
-  customFields?: string[];
+  customFields?: CustomField[];
 }
 
 export interface EventRegistration {

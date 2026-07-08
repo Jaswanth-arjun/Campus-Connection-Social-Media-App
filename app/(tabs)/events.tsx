@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { SkeletonLoader } from '../../components/SkeletonLoader';
 import { useTheme } from '../../hooks/useTheme';
+import { CustomField } from '../../types';
 
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
@@ -42,8 +43,11 @@ export default function EventsScreen() {
   const [category, setCategory] = useState<'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'>('Academic');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [customFields, setCustomFields] = useState<string[]>([]);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [newFieldName, setNewFieldName] = useState('');
+  const [newFieldType, setNewFieldType] = useState<'text' | 'options' | 'checkbox' | 'image'>('text');
+  const [newFieldOptions, setNewFieldOptions] = useState<string[]>([]);
+  const [newOption, setNewOption] = useState('');
 
   const handlePickBanner = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -127,6 +131,9 @@ export default function EventsScreen() {
       setImageUri(null);
       setCustomFields([]);
       setNewFieldName('');
+      setNewFieldType('text');
+      setNewFieldOptions([]);
+      setNewOption('');
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -435,38 +442,174 @@ export default function EventsScreen() {
                 <Text className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
                   Registration Form Fields (Google Form style)
                 </Text>
-                <Text className="text-slate-500 text-xs mb-3">
-                  Add details students must fill to register (e.g. Roll No, Department, Transaction ID)
+                <Text className="text-slate-500 text-[11px] mb-3 leading-relaxed">
+                  Define custom fields for student registration (e.g. Roll No, Department options, Payment Screenshot upload).
                 </Text>
 
+                {/* List of currently added fields */}
                 {customFields.map((field, idx) => (
-                  <View key={idx} className="flex-row items-center bg-slate-50 dark:bg-darkElevated px-4 py-2.5 rounded-xl border border-slate-100 dark:border-white/[0.06] mb-2">
-                    <Ionicons name="document-text-outline" size={18} color="#8B5CF6" />
-                    <Text className="flex-1 text-slate-800 dark:text-white font-medium ml-2">{field}</Text>
-                    <TouchableOpacity onPress={() => setCustomFields(customFields.filter((_, i) => i !== idx))}>
-                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                    </TouchableOpacity>
+                  <View key={field.id} className="bg-slate-50 dark:bg-darkElevated p-3.5 rounded-xl border border-slate-100 dark:border-white/[0.06] mb-3">
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center space-x-2">
+                        <Ionicons 
+                          name={
+                            field.type === 'text' ? 'document-text-outline' :
+                            field.type === 'options' ? 'radio-button-on-outline' :
+                            field.type === 'checkbox' ? 'checkbox-outline' : 'image-outline'
+                          } 
+                          size={18} 
+                          color="#8B5CF6" 
+                        />
+                        <Text className="text-slate-800 dark:text-white font-bold ml-1.5">{field.name}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => setCustomFields(customFields.filter((_, i) => i !== idx))}>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View className="flex-row items-center mt-1">
+                      <Text className="text-[10px] uppercase font-bold text-slate-400 bg-slate-200/50 dark:bg-white/[0.04] px-2 py-0.5 rounded">
+                        Type: {field.type}
+                      </Text>
+                    </View>
+
+                    {/* Options list preview */}
+                    {field.options && field.options.length > 0 && (
+                      <View className="flex-row flex-wrap mt-2 space-x-1">
+                        {field.options.map((opt, oIdx) => (
+                          <View key={oIdx} className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/10 px-2 py-0.5 rounded-md mr-1 mb-1">
+                            <Text className="text-[10px] text-[#8B5CF6] dark:text-[#A78BFA] font-medium">{opt}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 ))}
 
-                <View className="flex-row items-center mt-2 space-x-2">
+                {/* Form to add a new custom field */}
+                <View className="bg-slate-50/50 dark:bg-darkElevated/30 p-4 rounded-2xl border border-dashed border-slate-200 dark:border-white/[0.08] mt-2">
+                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
+                    + Add Questionnaire Field
+                  </Text>
+                  
+                  {/* Field Name Input */}
                   <TextInput
-                    className="flex-1 bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3 text-slate-900 dark:text-white text-sm"
+                    className="bg-white dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm mb-3"
                     value={newFieldName}
                     onChangeText={setNewFieldName}
-                    placeholder="e.g. Payment Transaction ID"
+                    placeholder="e.g. Roll Number / Upload Payment Proof"
                     placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   />
+
+                  {/* Field Type Selector */}
+                  <Text className="text-[10px] font-bold uppercase text-slate-400 mb-1.5">Field Input Type</Text>
+                  <View className="flex-row flex-wrap mb-3">
+                    {([
+                      { key: 'text', label: 'Text Field', icon: 'document-text-outline' },
+                      { key: 'options', label: 'Radio Choices', icon: 'radio-button-on-outline' },
+                      { key: 'checkbox', label: 'Checklist', icon: 'checkbox-outline' },
+                      { key: 'image', label: 'Screenshot Upload', icon: 'image-outline' }
+                    ] as const).map((typeObj) => (
+                      <TouchableOpacity
+                        key={typeObj.key}
+                        onPress={() => {
+                          setNewFieldType(typeObj.key);
+                          setNewFieldOptions([]);
+                          setNewOption('');
+                        }}
+                        className={`flex-row items-center px-3 py-2 rounded-xl mr-2 mb-2 border ${
+                          newFieldType === typeObj.key
+                            ? 'bg-[#6A2FF9]/10 border-[#6A2FF9]/30'
+                            : 'bg-white dark:bg-darkElevated border-slate-200 dark:border-white/[0.06]'
+                        }`}
+                      >
+                        <Ionicons name={typeObj.icon} size={15} color={newFieldType === typeObj.key ? '#6A2FF9' : '#6B7280'} />
+                        <Text
+                          className={`text-xs font-bold ml-1.5 ${
+                            newFieldType === typeObj.key ? 'text-[#6A2FF9] dark:text-[#A78BFA]' : 'text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          {typeObj.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Options Input (Only visible for choices/checklist) */}
+                  {(newFieldType === 'options' || newFieldType === 'checkbox') && (
+                    <View className="bg-white dark:bg-darkElevated p-3 rounded-xl border border-slate-200/60 dark:border-white/[0.04] mb-3">
+                      <Text className="text-[10px] font-bold uppercase text-slate-400 mb-1.5">Add Choice Items</Text>
+                      
+                      <View className="flex-row items-center space-x-2 mb-2">
+                        <TextInput
+                          className="flex-1 bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-slate-900 dark:text-white text-xs"
+                          value={newOption}
+                          onChangeText={setNewOption}
+                          placeholder="e.g. Yes / MCA / ECE"
+                          placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                        />
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (newOption.trim()) {
+                              if (!newFieldOptions.includes(newOption.trim())) {
+                                setNewFieldOptions([...newFieldOptions, newOption.trim()]);
+                              }
+                              setNewOption('');
+                            }
+                          }}
+                          className="bg-[#6A2FF9] px-3.5 py-2 rounded-xl"
+                        >
+                          <Text className="text-white font-bold text-xs">+ Add</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Display added options */}
+                      <View className="flex-row flex-wrap mt-1">
+                        {newFieldOptions.map((opt, oIdx) => (
+                          <View key={oIdx} className="flex-row items-center bg-slate-100 dark:bg-white/[0.04] px-2.5 py-1 rounded-full mr-1.5 mb-1.5 border border-slate-200/50 dark:border-white/[0.06]">
+                            <Text className="text-xs text-slate-700 dark:text-slate-300 font-medium mr-1.5">{opt}</Text>
+                            <TouchableOpacity onPress={() => setNewFieldOptions(newFieldOptions.filter((_, i) => i !== oIdx))}>
+                              <Ionicons name="close-circle" size={14} color="#EF4444" />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                        {newFieldOptions.length === 0 && (
+                          <Text className="text-[11px] text-slate-400 italic">No options added yet.</Text>
+                        )}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Add Field Button */}
                   <TouchableOpacity
                     onPress={() => {
-                      if (newFieldName.trim()) {
-                        setCustomFields([...customFields, newFieldName.trim()]);
-                        setNewFieldName('');
+                      if (!newFieldName.trim()) {
+                        Toast.show({ type: 'error', text1: 'Name Required', text2: 'Please enter a field name or question' });
+                        return;
                       }
+                      if ((newFieldType === 'options' || newFieldType === 'checkbox') && newFieldOptions.length === 0) {
+                        Toast.show({ type: 'error', text1: 'Options Required', text2: 'Please add at least one choice option' });
+                        return;
+                      }
+                      
+                      const addedField: CustomField = {
+                        id: Math.random().toString(36).substring(7),
+                        name: newFieldName.trim(),
+                        type: newFieldType,
+                        options: (newFieldType === 'options' || newFieldType === 'checkbox') ? newFieldOptions : undefined
+                      };
+
+                      setCustomFields([...customFields, addedField]);
+                      
+                      // Clear builder state
+                      setNewFieldName('');
+                      setNewFieldType('text');
+                      setNewFieldOptions([]);
+                      setNewOption('');
                     }}
-                    className="bg-[#6A2FF9] px-4 py-3 rounded-2xl items-center justify-center"
+                    className="bg-purple-100 dark:bg-purple-500/10 py-2.5 rounded-xl border border-purple-200 dark:border-purple-500/20 items-center mt-1"
                   >
-                    <Text className="text-white font-bold text-sm">Add Field</Text>
+                    <Text className="text-[#6A2FF9] dark:text-[#A78BFA] font-bold text-xs">+ Add Question to Form</Text>
                   </TouchableOpacity>
                 </View>
               </View>

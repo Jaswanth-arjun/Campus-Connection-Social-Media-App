@@ -16,8 +16,10 @@ import { useEventStore } from '../../store/eventStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { eventService } from '../../services/eventService';
+import { storageService } from '../../services/storageService';
 import { format } from 'date-fns';
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function EventDetailScreen() {
   const { eventId } = useLocalSearchParams();
@@ -27,9 +29,12 @@ export default function EventDetailScreen() {
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [formResponses, setFormResponses] = useState<Record<string, string>>({});
+  const [selectedImages, setSelectedImages] = useState<Record<string, string>>({}); // field.id -> local uri
+  const [checkedOptions, setCheckedOptions] = useState<Record<string, string[]>>({}); // field.id -> array of selected options
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loadingRegs, setLoadingRegs] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   const loadRegistrations = async () => {
     if (currentUser?.isAdmin && eventId && typeof eventId === 'string') {
@@ -87,6 +92,35 @@ export default function EventDetailScreen() {
     );
   };
 
+  const handlePickFieldImage = async (fieldId: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.35,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      setSelectedImages({
+        ...selectedImages,
+        [fieldId]: result.assets[0].uri,
+      });
+    }
+  };
+
+  const handleToggleCheckbox = (fieldId: string, option: string) => {
+    const currentChecked = checkedOptions[fieldId] || [];
+    let updated;
+    if (currentChecked.includes(option)) {
+      updated = currentChecked.filter(o => o !== option);
+    } else {
+      updated = [...currentChecked, option];
+    }
+    setCheckedOptions({
+      ...checkedOptions,
+      [fieldId]: updated,
+    });
+  };
+
   const handleRegister = async () => {
     if (!currentUser || !currentEvent) return;
 
@@ -123,10 +157,20 @@ export default function EventDetailScreen() {
     } else {
       if (currentEvent.customFields && currentEvent.customFields.length > 0) {
         const initialResponses: Record<string, string> = {};
+        const initialChecked: Record<string, string[]> = {};
+        const initialImages: Record<string, string> = {};
         currentEvent.customFields.forEach(f => {
-          initialResponses[f] = '';
+          if (f.type === 'text' || f.type === 'options') {
+            initialResponses[f.id] = '';
+          } else if (f.type === 'checkbox') {
+            initialChecked[f.id] = [];
+          } else if (f.type === 'image') {
+            initialImages[f.id] = '';
+          }
         });
         setFormResponses(initialResponses);
+        setCheckedOptions(initialChecked);
+        setSelectedImages(initialImages);
         setShowFormModal(true);
       } else {
         Alert.alert(
@@ -162,14 +206,44 @@ export default function EventDetailScreen() {
   const handleSubmitForm = async () => {
     if (!currentUser || !currentEvent) return;
 
-    const missingFields = currentEvent.customFields?.filter(f => !formResponses[f]?.trim());
-    if (missingFields && missingFields.length > 0) {
-      Alert.alert('Required Fields', `Please fill in all details: ${missingFields.join(', ')}`);
-      return;
+    // Validate fields
+    for (const field of currentEvent.customFields || []) {
+      if (field.type === 'text' && !formResponses[field.id]?.trim()) {
+        Alert.alert('Required Field', `Please fill out: ${field.name}`);
+        return;
+      }
+      if (field.type === 'options' && !formResponses[field.id]) {
+        Alert.alert('Required Field', `Please select an option for: ${field.name}`);
+        return;
+      }
+      if (field.type === 'checkbox' && (!checkedOptions[field.id] || checkedOptions[field.id].length === 0)) {
+        Alert.alert('Required Field', `Please check at least one option for: ${field.name}`);
+        return;
+      }
+      if (field.type === 'image' && !selectedImages[field.id]) {
+        Alert.alert('Required Field', `Please upload a screenshot for: ${field.name}`);
+        return;
+      }
     }
 
     try {
       setIsSubmittingForm(true);
+
+      const finalResponses: Record<string, string> = {};
+      
+      for (const field of currentEvent.customFields || []) {
+        if (field.type === 'text' || field.type === 'options') {
+          finalResponses[field.name] = formResponses[field.id] || '';
+        } else if (field.type === 'checkbox') {
+          finalResponses[field.name] = checkedOptions[field.id]?.join(', ') || '';
+        } else if (field.type === 'image') {
+          const localUri = selectedImages[field.id];
+          const storagePath = `registrations/${currentEvent.id}/${currentUser.uid}_${field.id}`;
+          const uploadedUrl = await storageService.uploadImage(localUri, storagePath);
+          finalResponses[field.name] = uploadedUrl;
+        }
+      }
+
       const studentName = currentUser.fullName || currentUser.email?.split('@')[0] || 'Student';
       const studentEmail = currentUser.email || '';
       
@@ -178,7 +252,7 @@ export default function EventDetailScreen() {
         currentUser.uid,
         studentName,
         studentEmail,
-        formResponses
+        finalResponses
       );
       setShowFormModal(false);
       Toast.show({
@@ -312,13 +386,23 @@ export default function EventDetailScreen() {
                   
                   {/* Form Submission Details */}
                   {reg.submittedDetails && Object.keys(reg.submittedDetails).length > 0 && (
-                    <View className="bg-white dark:bg-darkSurface p-2 rounded-lg border border-slate-100 dark:border-white/[0.06] space-y-1">
-                      {Object.entries(reg.submittedDetails).map(([key, val]) => (
-                        <View key={key} className="flex-row justify-between">
-                          <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{key}:</Text>
-                          <Text className="text-[11px] font-bold text-slate-800 dark:text-white">{val as string}</Text>
-                        </View>
-                      ))}
+                    <View className="bg-white dark:bg-darkSurface p-2.5 rounded-lg border border-slate-100 dark:border-white/[0.06] space-y-2 mt-1">
+                      {Object.entries(reg.submittedDetails).map(([key, val]) => {
+                        const isUrl = typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://'));
+                        return (
+                          <View key={key} className="space-y-1">
+                            <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{key}:</Text>
+                            {isUrl ? (
+                              <TouchableOpacity onPress={() => setFullscreenImage(val)}>
+                                <Image source={{ uri: val }} className="w-24 h-24 rounded-md border border-slate-200 dark:border-white/[0.08]" resizeMode="cover" />
+                                <Text className="text-[10px] text-purple-600 dark:text-purple-400 font-bold mt-1">🔍 Tap to enlarge</Text>
+                              </TouchableOpacity>
+                            ) : (
+                              <Text className="text-[11px] font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-darkElevated px-2.5 py-1 rounded">{val as string}</Text>
+                            )}
+                          </View>
+                        );
+                      })}
                     </View>
                   )}
                 </View>
@@ -364,17 +448,95 @@ export default function EventDetailScreen() {
               </Text>
 
               {currentEvent.customFields?.map((field) => (
-                <View key={field}>
-                  <Text className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                    {field} *
+                <View key={field.id} className="mb-4">
+                  <Text className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    {field.name} *
                   </Text>
-                  <TextInput
-                    className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm"
-                    value={formResponses[field] || ''}
-                    onChangeText={(text) => setFormResponses({ ...formResponses, [field]: text })}
-                    placeholder={`Enter your ${field.toLowerCase()}`}
-                    placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
-                  />
+                  
+                  {field.type === 'text' && (
+                    <TextInput
+                      className="bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-slate-900 dark:text-white text-sm"
+                      value={formResponses[field.id] || ''}
+                      onChangeText={(text) => setFormResponses({ ...formResponses, [field.id]: text })}
+                      placeholder={`Enter your ${field.name.toLowerCase()}`}
+                      placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                    />
+                  )}
+
+                  {field.type === 'options' && (
+                    <View className="space-y-2 mt-1">
+                      {field.options?.map((opt) => (
+                        <TouchableOpacity
+                          key={opt}
+                          onPress={() => setFormResponses({ ...formResponses, [field.id]: opt })}
+                          className={`flex-row items-center px-4 py-3 rounded-xl border ${
+                            formResponses[field.id] === opt
+                              ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/40'
+                              : 'bg-slate-50 dark:bg-darkElevated border-slate-200 dark:border-white/[0.08]'
+                          }`}
+                        >
+                          <Ionicons 
+                            name={formResponses[field.id] === opt ? 'radio-button-on' : 'radio-button-off'} 
+                            size={18} 
+                            color={formResponses[field.id] === opt ? '#8B5CF6' : '#94A3B8'} 
+                          />
+                          <Text className="text-slate-800 dark:text-white text-sm ml-2.5 font-medium">{opt}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {field.type === 'checkbox' && (
+                    <View className="space-y-2 mt-1">
+                      {field.options?.map((opt) => {
+                        const isChecked = (checkedOptions[field.id] || []).includes(opt);
+                        return (
+                          <TouchableOpacity
+                            key={opt}
+                            onPress={() => handleToggleCheckbox(field.id, opt)}
+                            className={`flex-row items-center px-4 py-3 rounded-xl border ${
+                              isChecked
+                                ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/40'
+                                : 'bg-slate-50 dark:bg-darkElevated border-slate-200 dark:border-white/[0.08]'
+                            }`}
+                          >
+                            <Ionicons 
+                              name={isChecked ? 'checkbox' : 'square-outline'} 
+                              size={18} 
+                              color={isChecked ? '#8B5CF6' : '#94A3B8'} 
+                            />
+                            <Text className="text-slate-800 dark:text-white text-sm ml-2.5 font-medium">{opt}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  {field.type === 'image' && (
+                    <View className="mt-1">
+                      {selectedImages[field.id] ? (
+                        <View className="relative w-full h-40 rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08] mb-2 bg-slate-50 dark:bg-darkElevated">
+                          <Image source={{ uri: selectedImages[field.id] }} className="w-full h-full" resizeMode="contain" />
+                          <TouchableOpacity 
+                            onPress={() => setSelectedImages({ ...selectedImages, [field.id]: '' })}
+                            className="absolute top-2 right-2 bg-black/60 w-8 h-8 rounded-full items-center justify-center"
+                          >
+                            <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => handlePickFieldImage(field.id)}
+                          className="flex-row items-center justify-center border border-dashed border-slate-300 dark:border-white/[0.12] rounded-xl py-6 bg-slate-50 dark:bg-darkElevated"
+                        >
+                          <Ionicons name="cloud-upload-outline" size={24} color="#8B5CF6" />
+                          <Text className="text-[#8B5CF6] dark:text-[#A78BFA] font-bold text-sm ml-2">
+                            Upload Payment Screenshot
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
                 </View>
               ))}
             </ScrollView>
@@ -391,6 +553,25 @@ export default function EventDetailScreen() {
               )}
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* Fullscreen Image Preview Modal */}
+      <Modal visible={!!fullscreenImage} transparent animationType="fade">
+        <View className="flex-1 bg-black justify-center items-center">
+          <TouchableOpacity 
+            onPress={() => setFullscreenImage(null)}
+            className="absolute top-12 right-6 bg-white/20 w-10 h-10 rounded-full items-center justify-center z-10"
+          >
+            <Ionicons name="close" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          {fullscreenImage && (
+            <Image 
+              source={{ uri: fullscreenImage }} 
+              className="w-full h-5/6" 
+              resizeMode="contain" 
+            />
+          )}
         </View>
       </Modal>
     </ScrollView>

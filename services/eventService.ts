@@ -14,7 +14,7 @@ import {
   onSnapshot,
   limit,
 } from 'firebase/firestore';
-import { Event } from '../types';
+import { Event, CustomField } from '../types';
 import { storageService } from './storageService';
 
 export const eventService = {
@@ -26,7 +26,7 @@ export const eventService = {
     organizer: string,
     imageUrl: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ): Promise<string> {
     try {
       const eventRef = await addDoc(collection(db, 'events'), {
@@ -56,7 +56,7 @@ export const eventService = {
     organizer: string,
     imageUri: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ): Promise<string> {
     try {
       const imageUrl = await storageService.uploadImage(imageUri, `events/${Date.now()}`);

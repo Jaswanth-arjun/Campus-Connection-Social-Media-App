@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Event } from '../types';
+import { Event, CustomField } from '../types';
 import { eventService } from '../services/eventService';
 
 interface EventState {
@@ -18,7 +18,7 @@ interface EventState {
     organizer: string,
     imageUrl: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ) => Promise<void>;
   createEventWithImage: (
     title: string,
@@ -28,7 +28,7 @@ interface EventState {
     organizer: string,
     imageUri: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ) => Promise<void>;
   deleteEvent: (eventId: string, imageUrl?: string) => Promise<void>;
   registerForEventWithDetails: (
@@ -111,7 +111,7 @@ export const useEventStore = create<EventState>((set, get) => ({
     organizer: string,
     imageUrl: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ) => {
     try {
       set({ isLoading: true });
@@ -132,7 +132,7 @@ export const useEventStore = create<EventState>((set, get) => ({
     organizer: string,
     imageUri: string,
     category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
-    customFields?: string[]
+    customFields?: CustomField[]
   ) => {
     try {
       set({ isLoading: true });
