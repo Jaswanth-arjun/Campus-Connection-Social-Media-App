@@ -91,9 +91,7 @@ export const storageService = {
         console.log('[StorageService] S3 upload success:', publicUrl);
         return publicUrl;
       } catch (error: any) {
-        console.error('[StorageService] S3 uploadImage error:', error);
-        Alert.alert('❌ S3 Image Upload Error', error.message || error.toString());
-        throw new Error(error.message || 'S3 image upload failed');
+        console.warn('[StorageService] S3 upload failed, falling back to Firebase Storage:', error.message || error);
       }
     }
 
@@ -146,9 +144,7 @@ export const storageService = {
         console.log('[StorageService] S3 file upload success:', publicUrl);
         return publicUrl;
       } catch (error: any) {
-        console.error('[StorageService] S3 uploadFile error:', error);
-        Alert.alert('S3 File Upload Error', error.message || error.toString());
-        throw new Error(error.message || 'S3 file upload failed');
+        console.warn('[StorageService] S3 uploadFile failed, falling back to Firebase Storage:', error.message || error);
       }
     }
 
