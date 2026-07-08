@@ -107,6 +107,58 @@ export const PostCard: React.FC<PostCardProps> = ({
         </View>
       )}
 
+      {/* Amazon Comprehend AI Insights (Sentiment + Language) */}
+      {(post.sentiment || post.language) && (
+        <View className="flex-row items-center px-4.5 pb-2 gap-2">
+          {/* Sentiment Badge */}
+          {post.sentiment && (
+            <View
+              className={`flex-row items-center px-2.5 py-1 rounded-2xl border ${
+                post.sentiment === 'POSITIVE'
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20'
+                  : post.sentiment === 'NEGATIVE'
+                  ? 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20'
+                  : post.sentiment === 'MIXED'
+                  ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20'
+                  : 'bg-slate-50 dark:bg-slate-500/10 border-slate-100 dark:border-slate-500/20'
+              }`}
+            >
+              <Text className="text-[11px] mr-0.5">
+                {post.sentiment === 'POSITIVE' ? '😊' : post.sentiment === 'NEGATIVE' ? '😔' : post.sentiment === 'MIXED' ? '😐' : '🔵'}
+              </Text>
+              <Text
+                className={`text-[10px] font-extrabold ${
+                  post.sentiment === 'POSITIVE'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : post.sentiment === 'NEGATIVE'
+                    ? 'text-red-600 dark:text-red-400'
+                    : post.sentiment === 'MIXED'
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {post.sentiment}
+              </Text>
+            </View>
+          )}
+
+          {/* Language Badge */}
+          {post.language && (
+            <View className="flex-row items-center bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-2.5 py-1 rounded-2xl">
+              <Text className="text-[11px] mr-0.5">🌐</Text>
+              <Text className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400">
+                {post.language}
+              </Text>
+            </View>
+          )}
+
+          {/* AI Badge */}
+          <View className="flex-row items-center bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 px-2 py-1 rounded-2xl">
+            <Text className="text-[10px] font-extrabold text-violet-500 dark:text-violet-400">✨ AI</Text>
+          </View>
+        </View>
+      )}
+
       {/* Tags */}
       {post.tags && post.tags.length > 0 && (
         <View className="flex-row flex-wrap px-4.5 pb-2">

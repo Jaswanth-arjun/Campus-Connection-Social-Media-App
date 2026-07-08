@@ -6,7 +6,8 @@
  *
  * Endpoints:
  *   POST /api/analyze-image  → Amazon Rekognition AI (image moderation + auto-tags + OCR)
- *   POST /api/moderate       → Content moderation
+ *   POST /api/analyze-text   → Amazon Comprehend NLP (sentiment, keyPhrases, language, toxicity)
+ *   POST /api/moderate       → AI-enhanced content moderation (Comprehend + rules)
  *   POST /api/analytics      → Log engagement events
  *   GET  /api/analytics      → Get engagement stats
  *   POST /api/announcements  → Create announcement (admin)
@@ -71,6 +72,52 @@ export interface ModerationResult {
   safe: boolean;
   flaggedWords: string[];
   message: string;
+  sentiment?: SentimentResult;
+  toxicity?: ToxicityResult;
+}
+
+// ─── Amazon Comprehend NLP Types ─────────────────────────────────────────
+
+export interface SentimentScores {
+  positive: number;
+  negative: number;
+  neutral: number;
+  mixed: number;
+}
+
+export interface SentimentResult {
+  label: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | 'MIXED';
+  scores: SentimentScores;
+}
+
+export interface KeyPhraseResult {
+  text: string;
+  score: number;
+}
+
+export interface LanguageResult {
+  code: string;
+  name: string;
+  score: number;
+}
+
+export interface ToxicityLabel {
+  name: string;
+  score: number;
+}
+
+export interface ToxicityResult {
+  safe: boolean;
+  toxicityScore: number;
+  labels: ToxicityLabel[];
+  note?: string;
+}
+
+export interface TextAnalysisResult {
+  sentiment?: SentimentResult;
+  keyPhrases?: KeyPhraseResult[];
+  language?: LanguageResult;
+  toxicity?: ToxicityResult;
 }
 
 export interface AnalyticsStats {
@@ -142,6 +189,23 @@ export const lambdaApiService = {
     return apiRequest<ImageAnalysisResult>('/api/analyze-image', {
       method: 'POST',
       body: JSON.stringify({ bucket, key, features }),
+    });
+  },
+
+  /**
+   * Analyze text using Amazon Comprehend NLP.
+   * Supports: sentiment analysis, key phrase extraction, language detection, toxicity detection.
+   *
+   * @param text - The text content to analyze
+   * @param features - Array of features to run: 'sentiment', 'keyPhrases', 'language', 'toxicity'
+   */
+  async analyzeText(
+    text: string,
+    features: ('sentiment' | 'keyPhrases' | 'language' | 'toxicity')[] = ['sentiment', 'keyPhrases', 'language', 'toxicity']
+  ): Promise<TextAnalysisResult> {
+    return apiRequest<TextAnalysisResult>('/api/analyze-text', {
+      method: 'POST',
+      body: JSON.stringify({ text, features }),
     });
   },
 

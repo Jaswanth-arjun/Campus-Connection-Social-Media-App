@@ -2,8 +2,9 @@
  * Campus Connect — AWS Lambda Function
  * 
  * Handles multiple API Gateway routes:
- *   POST /api/moderate          → Content moderation (checks post text)
+ *   POST /api/moderate          → AI-enhanced content moderation (Comprehend + rules)
  *   POST /api/analyze-image     → Amazon Rekognition AI (image moderation + auto-tags + OCR)
+ *   POST /api/analyze-text      → Amazon Comprehend NLP (sentiment, keyPhrases, language, toxicity)
  *   POST /api/notifications/register  → Register device push token (Amazon SNS)
  *   POST /api/notifications/send      → Send targeted push notification (Amazon SNS)
  *   POST /api/notifications/broadcast → Campus-wide broadcast via SNS Topic
@@ -21,6 +22,7 @@
 import { RekognitionClient, DetectModerationLabelsCommand, DetectLabelsCommand, DetectTextCommand } from '@aws-sdk/client-rekognition';
 import { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand, ListSubscriptionsByTopicCommand } from '@aws-sdk/client-sns';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { ComprehendClient, DetectSentimentCommand, DetectKeyPhrasesCommand, DetectDominantLanguageCommand, DetectToxicContentCommand } from '@aws-sdk/client-comprehend';
 
 // ─── AWS Clients ────────────────────────────────────────────────────────
 const REGION = process.env.AWS_REGION || 'us-east-1';
@@ -28,6 +30,7 @@ const REGION = process.env.AWS_REGION || 'us-east-1';
 const rekognitionClient = new RekognitionClient({ region: REGION });
 const snsClient = new SNSClient({ region: REGION });
 const s3Client = new S3Client({ region: REGION });
+const comprehendClient = new ComprehendClient({ region: REGION });
 
 // ─── SNS Topic ARN (set via environment variable or auto-created) ───────
 let campusTopicArn = process.env.SNS_TOPIC_ARN || null;
@@ -214,17 +217,171 @@ async function analyzeImage(body) {
 }
 
 /**
- * POST /api/moderate
- * Body: { content: string }
- * Returns: { safe: boolean, flaggedWords: string[], message: string }
+ * POST /api/analyze-text
+ * Amazon Comprehend NLP — Sentiment, Key Phrases, Language, Toxicity
+ *
+ * Body: { text: string, features?: string[] }
+ * Features (optional, defaults to all):
+ *   - "sentiment"   → Detect emotional tone (POSITIVE, NEGATIVE, NEUTRAL, MIXED)
+ *   - "keyPhrases"  → Extract key noun phrases for auto-tagging
+ *   - "language"    → Detect the dominant language
+ *   - "toxicity"    → Detect toxic/harmful content categories
+ *
+ * Returns: {
+ *   sentiment?: { label, scores },
+ *   keyPhrases?: [{ text, score }],
+ *   language?: { code, name, score },
+ *   toxicity?: { safe, toxicityScore, labels }
+ * }
  */
-function moderateContent(body) {
+async function analyzeText(body) {
+  const { text, features } = body;
+
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    return respond(400, { error: 'Missing required field: text (non-empty string)' });
+  }
+
+  const enabledFeatures = features || ['sentiment', 'keyPhrases', 'language', 'toxicity'];
+  const runSentiment  = enabledFeatures.includes('sentiment');
+  const runKeyPhrases = enabledFeatures.includes('keyPhrases');
+  const runLanguage   = enabledFeatures.includes('language');
+  const runToxicity   = enabledFeatures.includes('toxicity');
+
+  const result = {};
+  let detectedLangCode = 'en'; // default fallback
+
+  // ── 1. Detect dominant language first (needed for sentiment & keyPhrases) ──
+  if (runLanguage || runSentiment || runKeyPhrases) {
+    try {
+      const langResponse = await comprehendClient.send(
+        new DetectDominantLanguageCommand({ Text: text })
+      );
+      const topLang = (langResponse.Languages || []).sort((a, b) => b.Score - a.Score)[0];
+      if (topLang) {
+        detectedLangCode = topLang.LanguageCode;
+        if (runLanguage) {
+          result.language = {
+            code: topLang.LanguageCode,
+            name: getLanguageName(topLang.LanguageCode),
+            score: Math.round(topLang.Score * 10000) / 10000,
+          };
+        }
+      }
+    } catch (langErr) {
+      console.warn('[Comprehend] Dominant language detection failed:', langErr.message);
+      result.languageNote = 'Language detection unavailable due to permissions or service issues';
+    }
+  }
+
+  // ── 2. Sentiment Analysis ─────────────────────────────────────────────
+  if (runSentiment) {
+    try {
+      const sentimentResponse = await comprehendClient.send(
+        new DetectSentimentCommand({
+          Text: text,
+          LanguageCode: detectedLangCode,
+        })
+      );
+      result.sentiment = {
+        label: sentimentResponse.Sentiment, // POSITIVE | NEGATIVE | NEUTRAL | MIXED
+        scores: {
+          positive: Math.round((sentimentResponse.SentimentScore?.Positive || 0) * 10000) / 10000,
+          negative: Math.round((sentimentResponse.SentimentScore?.Negative || 0) * 10000) / 10000,
+          neutral:  Math.round((sentimentResponse.SentimentScore?.Neutral  || 0) * 10000) / 10000,
+          mixed:    Math.round((sentimentResponse.SentimentScore?.Mixed    || 0) * 10000) / 10000,
+        },
+      };
+    } catch (sentErr) {
+      console.warn('[Comprehend] Sentiment analysis failed:', sentErr.message);
+      result.sentimentNote = 'Sentiment analysis unavailable due to permissions or service issues';
+    }
+  }
+
+  // ── 3. Key Phrase Extraction ──────────────────────────────────────────
+  if (runKeyPhrases) {
+    try {
+      const keyPhrasesResponse = await comprehendClient.send(
+        new DetectKeyPhrasesCommand({
+          Text: text,
+          LanguageCode: detectedLangCode,
+        })
+      );
+      result.keyPhrases = (keyPhrasesResponse.KeyPhrases || [])
+        .filter((kp) => kp.Score >= 0.7) // Only high-confidence phrases
+        .slice(0, 10) // Max 10 phrases
+        .map((kp) => ({
+          text: kp.Text,
+          score: Math.round(kp.Score * 10000) / 10000,
+        }));
+    } catch (kpErr) {
+      console.warn('[Comprehend] Key phrase extraction failed:', kpErr.message);
+      result.keyPhrasesNote = 'Key phrase extraction unavailable due to permissions or service issues';
+    }
+  }
+
+  // ── 4. Toxicity Detection ────────────────────────────────────────────
+  if (runToxicity) {
+    try {
+      const toxicityResponse = await comprehendClient.send(
+        new DetectToxicContentCommand({
+          TextSegments: [{ Text: text }],
+          LanguageCode: 'en', // Toxicity detection currently supports English
+        })
+      );
+
+      const resultList = toxicityResponse.ResultList || [];
+      const firstResult = resultList[0] || {};
+      const overallToxicity = firstResult.Toxicity || 0;
+      const toxicLabels = (firstResult.Labels || [])
+        .filter((l) => l.Score >= 0.5)
+        .map((l) => ({
+          name: l.Name,
+          score: Math.round(l.Score * 10000) / 10000,
+        }));
+
+      result.toxicity = {
+        safe: overallToxicity < 0.6,
+        toxicityScore: Math.round(overallToxicity * 10000) / 10000,
+        labels: toxicLabels,
+      };
+    } catch (toxErr) {
+      console.warn('[Comprehend] Toxicity detection unavailable:', toxErr.message);
+      result.toxicity = { safe: true, toxicityScore: 0, labels: [], note: 'Toxicity detection unavailable' };
+    }
+  }
+
+  return respond(200, result);
+}
+
+/**
+ * Helper: Map ISO 639-1 language codes to human-readable names.
+ */
+function getLanguageName(code) {
+  const LANGUAGES = {
+    en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+    pt: 'Portuguese', ar: 'Arabic', hi: 'Hindi', ja: 'Japanese', ko: 'Korean',
+    zh: 'Chinese', ru: 'Russian', nl: 'Dutch', sv: 'Swedish', pl: 'Polish',
+    tr: 'Turkish', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian', ms: 'Malay',
+    te: 'Telugu', ta: 'Tamil', kn: 'Kannada', ml: 'Malayalam', bn: 'Bengali',
+    gu: 'Gujarati', mr: 'Marathi', pa: 'Punjabi', ur: 'Urdu',
+  };
+  return LANGUAGES[code] || code.toUpperCase();
+}
+
+/**
+ * POST /api/moderate
+ * Enhanced with Amazon Comprehend AI sentiment + toxicity analysis.
+ * Body: { content: string }
+ * Returns: { safe: boolean, flaggedWords: string[], message: string, sentiment?: object, toxicity?: object }
+ */
+async function moderateContent(body) {
   const { content } = body;
 
   if (!content || typeof content !== 'string') {
     return respond(400, { error: 'Missing required field: content' });
   }
 
+  // ── Rule-based checks (fast, no API call) ──
   const lowerContent = content.toLowerCase();
   const flaggedWords = BANNED_WORDS.filter((word) => lowerContent.includes(word));
 
@@ -236,7 +393,6 @@ function moderateContent(body) {
     });
   }
 
-  // Additional checks
   if (content.length > 5000) {
     return respond(200, {
       safe: false,
@@ -245,7 +401,6 @@ function moderateContent(body) {
     });
   }
 
-  // Check for excessive caps (shouting)
   const capsRatio = (content.replace(/[^A-Z]/g, '').length) / content.length;
   if (content.length > 20 && capsRatio > 0.7) {
     return respond(200, {
@@ -255,10 +410,81 @@ function moderateContent(body) {
     });
   }
 
+  // ── Amazon Comprehend AI Moderation (sentiment + toxicity) ──
+  let sentiment = null;
+  let toxicity = null;
+
+  try {
+    // Detect sentiment
+    const sentimentResponse = await comprehendClient.send(
+      new DetectSentimentCommand({ Text: content, LanguageCode: 'en' })
+    );
+    sentiment = {
+      label: sentimentResponse.Sentiment,
+      scores: {
+        positive: Math.round((sentimentResponse.SentimentScore?.Positive || 0) * 10000) / 10000,
+        negative: Math.round((sentimentResponse.SentimentScore?.Negative || 0) * 10000) / 10000,
+        neutral:  Math.round((sentimentResponse.SentimentScore?.Neutral  || 0) * 10000) / 10000,
+        mixed:    Math.round((sentimentResponse.SentimentScore?.Mixed    || 0) * 10000) / 10000,
+      },
+    };
+
+    // Detect toxicity
+    try {
+      const toxicityResponse = await comprehendClient.send(
+        new DetectToxicContentCommand({
+          TextSegments: [{ Text: content }],
+          LanguageCode: 'en',
+        })
+      );
+      const firstResult = (toxicityResponse.ResultList || [])[0] || {};
+      const overallToxicity = firstResult.Toxicity || 0;
+      const toxicLabels = (firstResult.Labels || [])
+        .filter((l) => l.Score >= 0.5)
+        .map((l) => ({ name: l.Name, score: Math.round(l.Score * 10000) / 10000 }));
+
+      toxicity = {
+        safe: overallToxicity < 0.6,
+        toxicityScore: Math.round(overallToxicity * 10000) / 10000,
+        labels: toxicLabels,
+      };
+
+      // Block if toxicity is high
+      if (overallToxicity >= 0.6) {
+        const flaggedCategories = toxicLabels.map((l) => l.name).join(', ');
+        return respond(200, {
+          safe: false,
+          flaggedWords: [],
+          message: `Your post was flagged by AI moderation for: ${flaggedCategories || 'toxic content'}. Please revise before posting.`,
+          sentiment,
+          toxicity,
+        });
+      }
+    } catch (toxErr) {
+      console.warn('[Comprehend] Toxicity check skipped:', toxErr.message);
+    }
+
+    // Block if sentiment is overwhelmingly negative (>85% negative)
+    if (sentiment.scores.negative > 0.85) {
+      return respond(200, {
+        safe: false,
+        flaggedWords: [],
+        message: 'Your post appears to contain highly negative content. Please consider revising the tone.',
+        sentiment,
+        toxicity,
+      });
+    }
+  } catch (comprehendErr) {
+    // If Comprehend fails, allow through (degrade gracefully)
+    console.warn('[Comprehend] Moderation analysis skipped:', comprehendErr.message);
+  }
+
   return respond(200, {
     safe: true,
     flaggedWords: [],
     message: 'Content is appropriate.',
+    sentiment,
+    toxicity,
   });
 }
 
@@ -436,8 +662,12 @@ function healthCheck() {
   return respond(200, {
     status: 'healthy',
     service: 'Campus Connect Lambda API',
-    version: '2.0.0',
-    features: ['text-moderation', 'image-moderation-rekognition', 'auto-tagging', 'ocr', 'analytics', 'announcements'],
+    version: '3.0.0',
+    features: [
+      'text-moderation', 'image-moderation-rekognition', 'auto-tagging', 'ocr',
+      'analytics', 'announcements', 'comprehend-sentiment', 'comprehend-keyphrases',
+      'comprehend-language', 'comprehend-toxicity',
+    ],
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: {
@@ -725,6 +955,12 @@ export const handler = async (event) => {
       return respond(405, { error: 'Invalid notification endpoint. Use: /register, /send, /broadcast, or /stats' });
     }
 
+    // --- /api/analyze-text (Amazon Comprehend NLP) ---
+    if (path.endsWith('/analyze-text')) {
+      if (method === 'POST') return await analyzeText(body);
+      return respond(405, { error: 'Method not allowed. Use POST.' });
+    }
+
     // --- /api/analyze-image (Rekognition AI) ---
     if (path.endsWith('/analyze-image')) {
       if (method === 'POST') return await analyzeImage(body);
@@ -733,7 +969,7 @@ export const handler = async (event) => {
 
     // --- /api/moderate ---
     if (path.endsWith('/moderate')) {
-      if (method === 'POST') return moderateContent(body);
+      if (method === 'POST') return await moderateContent(body);
       return respond(405, { error: 'Method not allowed. Use POST.' });
     }
 
@@ -764,8 +1000,9 @@ export const handler = async (event) => {
         'POST /api/notifications/send       ← Send targeted notification (Amazon SNS)',
         'POST /api/notifications/broadcast  ← Campus-wide broadcast (Amazon SNS Topic)',
         'GET  /api/notifications/stats      ← Notification delivery stats',
+        'POST /api/analyze-text             ← Amazon Comprehend NLP (sentiment, keyPhrases, language, toxicity)',
         'POST /api/analyze-image            ← Rekognition AI',
-        'POST /api/moderate',
+        'POST /api/moderate                 ← AI-enhanced content moderation (Comprehend + rules)',
         'POST /api/analytics',
         'GET  /api/analytics',
         'POST /api/announcements',

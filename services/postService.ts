@@ -114,6 +114,45 @@ export const postService = {
       // Merge user tags with AI-generated tags (deduplicate)
       const allTags = [...new Set([...tags, ...rekognitionTags])];
 
+      // ── Step 2.75: Amazon Comprehend NLP — Sentiment, Key Phrases, Language ──
+      let sentiment: string | undefined;
+      let sentimentScores: { positive: number; negative: number; neutral: number; mixed: number } | undefined;
+      let language: string | undefined;
+      let languageCode: string | undefined;
+      let aiKeyPhrases: string[] = [];
+
+      if (content && content.trim().length > 0 && isLambdaConfigured()) {
+        try {
+          const nlpAnalysis = await lambdaApiService.analyzeText(
+            content,
+            ['sentiment', 'keyPhrases', 'language']
+          );
+
+          if (nlpAnalysis.sentiment) {
+            sentiment = nlpAnalysis.sentiment.label;
+            sentimentScores = nlpAnalysis.sentiment.scores;
+          }
+
+          if (nlpAnalysis.language) {
+            language = nlpAnalysis.language.name;
+            languageCode = nlpAnalysis.language.code;
+          }
+
+          if (nlpAnalysis.keyPhrases && nlpAnalysis.keyPhrases.length > 0) {
+            aiKeyPhrases = nlpAnalysis.keyPhrases
+              .slice(0, 5)
+              .map(kp => kp.text.toLowerCase());
+            // Merge Comprehend key phrases into tags
+            allTags.push(...aiKeyPhrases);
+          }
+        } catch (nlpErr: any) {
+          console.warn('[PostService] Comprehend NLP analysis skipped:', nlpErr.message);
+        }
+      }
+
+      // Deduplicate final tags
+      const finalTags = [...new Set(allTags)];
+
       // ── Step 3: Save post to Firestore ──
       const postRef = await addDoc(collection(db, 'posts'), {
         authorId,
@@ -126,7 +165,13 @@ export const postService = {
         likes: [],
         commentsCount: 0,
         createdAt: serverTimestamp(),
-        tags: allTags,
+        tags: finalTags,
+        // Amazon Comprehend NLP fields
+        sentiment: sentiment || null,
+        sentimentScores: sentimentScores || null,
+        language: language || null,
+        languageCode: languageCode || null,
+        aiKeyPhrases: aiKeyPhrases.length > 0 ? aiKeyPhrases : [],
       } as Omit<Post, 'id' | 'createdAt'> & { createdAt: any });
 
       // ── Step 4: Log analytics event via Lambda ──
@@ -138,8 +183,11 @@ export const postService = {
           { 
             hasImage: !!imageUrl, 
             hasFile: !!fileUrl, 
-            tagsCount: allTags.length, 
-            contentLength: content?.length || 0 
+            tagsCount: finalTags.length, 
+            contentLength: content?.length || 0,
+            sentiment: sentiment || 'unknown',
+            language: language || 'unknown',
+            aiKeyPhrasesCount: aiKeyPhrases.length,
           }
         ).catch(() => {});
       }

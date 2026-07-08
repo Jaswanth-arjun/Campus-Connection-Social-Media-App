@@ -27,6 +27,12 @@ export interface Post {
   commentsCount: number;
   createdAt: Date;
   tags: string[];
+  // Amazon Comprehend NLP fields
+  sentiment?: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | 'MIXED';
+  sentimentScores?: { positive: number; negative: number; neutral: number; mixed: number };
+  language?: string;
+  languageCode?: string;
+  aiKeyPhrases?: string[];
 }
 
 export interface Comment {
