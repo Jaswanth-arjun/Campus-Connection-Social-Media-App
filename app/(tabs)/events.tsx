@@ -42,6 +42,8 @@ export default function EventsScreen() {
   const [category, setCategory] = useState<'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'>('Academic');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [customFields, setCustomFields] = useState<string[]>([]);
+  const [newFieldName, setNewFieldName] = useState('');
 
   const handlePickBanner = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -84,7 +86,8 @@ export default function EventsScreen() {
           location,
           organizer,
           imageUri,
-          category
+          category,
+          customFields
         );
       } else {
         // Fallback banner URLs matching category
@@ -102,7 +105,8 @@ export default function EventsScreen() {
           location,
           organizer,
           defaultImages[category],
-          category
+          category,
+          customFields
         );
       }
 
@@ -121,6 +125,8 @@ export default function EventsScreen() {
       setOrganizer('');
       setCategory('Academic');
       setImageUri(null);
+      setCustomFields([]);
+      setNewFieldName('');
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -421,6 +427,47 @@ export default function EventsScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                </View>
+              </View>
+
+              {/* Custom Questionnaire Fields Builder */}
+              <View className="border-t border-slate-100 dark:border-white/[0.06] pt-5 mt-4">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Registration Form Fields (Google Form style)
+                </Text>
+                <Text className="text-slate-500 text-xs mb-3">
+                  Add details students must fill to register (e.g. Roll No, Department, Transaction ID)
+                </Text>
+
+                {customFields.map((field, idx) => (
+                  <View key={idx} className="flex-row items-center bg-slate-50 dark:bg-darkElevated px-4 py-2.5 rounded-xl border border-slate-100 dark:border-white/[0.06] mb-2">
+                    <Ionicons name="document-text-outline" size={18} color="#8B5CF6" />
+                    <Text className="flex-1 text-slate-800 dark:text-white font-medium ml-2">{field}</Text>
+                    <TouchableOpacity onPress={() => setCustomFields(customFields.filter((_, i) => i !== idx))}>
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                <View className="flex-row items-center mt-2 space-x-2">
+                  <TextInput
+                    className="flex-1 bg-slate-50 dark:bg-darkElevated border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3 text-slate-900 dark:text-white text-sm"
+                    value={newFieldName}
+                    onChangeText={setNewFieldName}
+                    placeholder="e.g. Payment Transaction ID"
+                    placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (newFieldName.trim()) {
+                        setCustomFields([...customFields, newFieldName.trim()]);
+                        setNewFieldName('');
+                      }
+                    }}
+                    className="bg-[#6A2FF9] px-4 py-3 rounded-2xl items-center justify-center"
+                  >
+                    <Text className="text-white font-bold text-sm">Add Field</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>

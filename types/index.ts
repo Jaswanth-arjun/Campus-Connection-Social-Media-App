@@ -55,7 +55,19 @@ export interface Event {
   category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other';
   registeredUsers: string[];
   createdAt: Date;
+  customFields?: string[];
 }
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  submittedDetails: Record<string, string>;
+  registeredAt: Date;
+}
+
 
 export interface ChatRoom {
   id: string;

@@ -17,7 +17,8 @@ interface EventState {
     location: string,
     organizer: string,
     imageUrl: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
   ) => Promise<void>;
   createEventWithImage: (
     title: string,
@@ -26,7 +27,16 @@ interface EventState {
     location: string,
     organizer: string,
     imageUri: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
+  ) => Promise<void>;
+  deleteEvent: (eventId: string, imageUrl?: string) => Promise<void>;
+  registerForEventWithDetails: (
+    eventId: string,
+    userId: string,
+    userName: string,
+    userEmail: string,
+    submittedDetails: Record<string, string>
   ) => Promise<void>;
   fetchEvent: (eventId: string) => Promise<void>;
   searchEvents: (query: string) => Promise<void>;
@@ -100,11 +110,12 @@ export const useEventStore = create<EventState>((set, get) => ({
     location: string,
     organizer: string,
     imageUrl: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
   ) => {
     try {
       set({ isLoading: true });
-      await eventService.createEvent(title, description, date, location, organizer, imageUrl, category);
+      await eventService.createEvent(title, description, date, location, organizer, imageUrl, category, customFields);
       await get().fetchEvents(get().filter);
       set({ isLoading: false });
     } catch (error: any) {
@@ -120,15 +131,58 @@ export const useEventStore = create<EventState>((set, get) => ({
     location: string,
     organizer: string,
     imageUri: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
   ) => {
     try {
       set({ isLoading: true });
-      await eventService.createEventWithImage(title, description, date, location, organizer, imageUri, category);
+      await eventService.createEventWithImage(title, description, date, location, organizer, imageUri, category, customFields);
       await get().fetchEvents(get().filter);
       set({ isLoading: false });
     } catch (error: any) {
       set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  deleteEvent: async (eventId: string, imageUrl?: string) => {
+    try {
+      set({ isLoading: true });
+      await eventService.deleteEvent(eventId, imageUrl);
+      set({
+        events: get().events.filter((event) => event.id !== eventId),
+        currentEvent: get().currentEvent?.id === eventId ? null : get().currentEvent,
+        isLoading: false,
+      });
+    } catch (error: any) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  registerForEventWithDetails: async (
+    eventId: string,
+    userId: string,
+    userName: string,
+    userEmail: string,
+    submittedDetails: Record<string, string>
+  ) => {
+    try {
+      await eventService.registerForEventWithDetails(eventId, userId, userName, userEmail, submittedDetails);
+      set({
+        events: get().events.map((event) =>
+          event.id === eventId
+            ? { ...event, registeredUsers: [...event.registeredUsers, userId] }
+            : event
+        ),
+        currentEvent: get().currentEvent
+          ? {
+              ...get().currentEvent!,
+              registeredUsers: [...get().currentEvent!.registeredUsers, userId],
+            }
+          : null,
+      });
+    } catch (error: any) {
       throw error;
     }
   },

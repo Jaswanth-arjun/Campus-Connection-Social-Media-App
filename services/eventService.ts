@@ -25,7 +25,8 @@ export const eventService = {
     location: string,
     organizer: string,
     imageUrl: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
   ): Promise<string> {
     try {
       const eventRef = await addDoc(collection(db, 'events'), {
@@ -38,6 +39,7 @@ export const eventService = {
         category,
         registeredUsers: [],
         createdAt: serverTimestamp(),
+        customFields: customFields || [],
       } as Omit<Event, 'id' | 'createdAt'> & { createdAt: any });
 
       return eventRef.id;
@@ -53,11 +55,12 @@ export const eventService = {
     location: string,
     organizer: string,
     imageUri: string,
-    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other'
+    category: 'Academic' | 'Cultural' | 'Sports' | 'Workshop' | 'Other',
+    customFields?: string[]
   ): Promise<string> {
     try {
       const imageUrl = await storageService.uploadImage(imageUri, `events/${Date.now()}`);
-      return await this.createEvent(title, description, date, location, organizer, imageUrl, category);
+      return await this.createEvent(title, description, date, location, organizer, imageUrl, category, customFields);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to create event with image');
     }
@@ -134,8 +137,85 @@ export const eventService = {
       await updateDoc(doc(db, 'events', eventId), {
         registeredUsers: arrayRemove(userId),
       });
+
+      // Remove registration documents
+      const registrationsQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId),
+        where('userId', '==', userId)
+      );
+      const snapshot = await getDocs(registrationsQuery);
+      const { deleteDoc } = require('firebase/firestore');
+      const deletePromises = snapshot.docs.map(docSnapshot => deleteDoc(doc(db, 'eventRegistrations', docSnapshot.id)));
+      await Promise.all(deletePromises);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to unregister for event');
+    }
+  },
+
+  async deleteEvent(eventId: string, imageUrl?: string): Promise<void> {
+    try {
+      const { deleteDoc } = require('firebase/firestore');
+      await deleteDoc(doc(db, 'events', eventId));
+      
+      const registrationsQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId)
+      );
+      const regSnapshot = await getDocs(registrationsQuery);
+      const batchPromises = regSnapshot.docs.map(docSnapshot => deleteDoc(doc(db, 'eventRegistrations', docSnapshot.id)));
+      await Promise.all(batchPromises);
+
+      if (imageUrl) {
+        await storageService.deleteFile(imageUrl);
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to delete event');
+    }
+  },
+
+  async registerForEventWithDetails(
+    eventId: string,
+    userId: string,
+    userName: string,
+    userEmail: string,
+    submittedDetails: Record<string, string>
+  ): Promise<void> {
+    try {
+      await addDoc(collection(db, 'eventRegistrations'), {
+        eventId,
+        userId,
+        userName,
+        userEmail,
+        submittedDetails,
+        registeredAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, 'events', eventId), {
+        registeredUsers: arrayUnion(userId),
+      });
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to register with details');
+    }
+  },
+
+  async fetchEventRegistrations(eventId: string): Promise<any[]> {
+    try {
+      const registrationsQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId)
+      );
+      const snapshot = await getDocs(registrationsQuery);
+      return snapshot.docs.map(docSnapshot => {
+        const data = docSnapshot.data() as any;
+        return {
+          id: docSnapshot.id,
+          ...data,
+          registeredAt: data.registeredAt?.toDate() || new Date(),
+        };
+      });
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch registrations');
     }
   },
 
